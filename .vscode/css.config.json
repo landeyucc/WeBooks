@@ -1,0 +1,83 @@
+{
+  "css": {
+    "validate": true,
+    "lint": {
+      "compatibleVendorPrefixes": "ignore",
+      "vendorPrefix": "ignore",
+      "duplicateProperties": "warning",
+      "emptyRules": "warning",
+      "importStatement": "warning",
+      "boxModel": "warning",
+      "universalSelector": "warning",
+      "zeroUnits": "warning",
+      "fontFaceProperties": "warning",
+      "hexColorLength": "warning",
+      "argumentsInColorFunction": "warning",
+      "unknownProperties": "ignore",
+      "unknownAtRules": "ignore",
+      "propertyIgnoredDueToDisplay": "warning",
+      "unknownVendorSpecificProperties": "ignore",
+      "validProperties": [],
+      "validVendorSpecificProperties": [],
+      "insertFinalNewline": "warning",
+      "duplicateDeclarations": "warning",
+      "importantRule": "warning",
+ "floatRule": "warning",
+      "idSelector": "warning"
+    }
+  },
+  "scss": {
+    "validate": true,
+    "lint": {
+      "compatibleVendorPrefixes": "ignore",
+      "vendorPrefix": "ignore", 
+      "duplicateProperties": "warning",
+      "emptyRules": "warning",
+      "importStatement": "warning",
+      "boxModel": "warning",
+      "universalSelector": "warning",
+      "zeroUnits": "warning",
+      "fontFaceProperties": "warning",
+      "hexColorLength": "warning",
+      "argumentsInColorFunction": "warning",
+      "unknownProperties": "ignore",
+      "unknownAtRules": "ignore",
+      "propertyIgnoredDueToDisplay": "warning",
+      "unknownVendorSpecificProperties": "ignore",
+      "validProperties": [],
+      "validVendorSpecificProperties": [],
+      "insertFinalNewline": "warning",
+      "duplicateDeclarations": "warning",
+      "importantRule": "warning",
+      "floatRule": "warning",
+      "idSelector": "warning"
+    }
+  },
+  "less": {
+    "validate": true,
+    "lint": {
+      "compatibleVendorPrefixes": "ignore",
+      "vendorPrefix": "ignore",
+      "duplicateProperties": "warning",
+      "emptyRules": "warning",
+      "importStatement": "warning",
+      "boxModel": "warning",
+      "universalSelector": "warning",
+      "zeroUnits": "warning",
+      "fontFaceProperties": "warning",
+      "hexColorLength": "warning",
+      "argumentsInColorFunction": "warning",
+      "unknownProperties": "ignore",
+      "unknownAtRules": "ignore",
+      "propertyIgnoredDueToDisplay": "warning",
+      "unknownVendorSpecificProperties": "ignore",
+      "validProperties": [],
+      "validVendorSpecificProperties": [],
+      "insertFinalNewline": "warning",
+      "duplicateDeclarations": "warning",
+      "importantRule": "warning",
+      "floatRule": "warning",
+      "idSelector": "warning"
+    }
+  }
+}

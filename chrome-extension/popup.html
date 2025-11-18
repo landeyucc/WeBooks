@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webooks Bookmark Saver</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Webooks</h1>
+      <p class="subtitle">Bookmark Saver</p>
+    </div>
+
+    <!-- 书签信息输入区域（优先显示） -->
+    <div class="bookmark-info-section">
+      <h3>书签信息</h3>
+
+      <div class="current-page-preview" id="currentPagePreview" style="display: none;">
+        <h4>卡片预览</h4>
+        <div class="page-info">
+          <div class="page-favicon">
+            <img id="currentFavicon" src="" alt="">
+          </div>
+          <div class="page-details">
+            <div class="page-title" id="currentTitle">加载中...</div>
+            <div class="page-url" id="currentUrl">加载中...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="bookmarkTitle">标题 <span class="required">*</span></label>
+        <input type="text" id="bookmarkTitle" placeholder="输入书签标题">
+      </div>
+
+      <div class="form-group">
+        <label for="bookmarkUrl">URL <span class="required">*</span></label>
+        <input type="url" id="bookmarkUrl" placeholder="https://example.com">
+      </div>
+
+      <div class="form-group textarea-group">
+        <label for="bookmarkDescription">描述</label>
+        <textarea id="bookmarkDescription" placeholder="输入书签描述或备注" rows="3"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="bookmarkIcon">图标URL</label>
+        <input type="url" id="bookmarkIcon" placeholder="https://example.com/favicon.ico">
+      </div>
+
+      <div class="form-group">
+        <div class="button-group">
+          <button type="button" id="refreshFromPage" class="btn btn-secondary">重新填充页面信息</button>
+          <button type="button" id="saveBookmark" class="btn btn-primary" disabled>保存书签</button>
+        </div>
+      </div>
+
+      
+    <!-- 状态信息 -->
+    <div class="status" id="status">
+      <div class="status-message" id="statusMessage"></div>
+    </div>
+
+      
+    </div>
+
+    <div class="bookmark-config-section">
+      <h3>书签配置</h3>
+      
+      <div class="form-group">
+        <label for="defaultSpace">目标空间 <span class="required">*</span></label>
+        <select id="defaultSpace">
+          <option value="">请选择空间</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="defaultFolder">目标文件夹</label>
+        <select id="defaultFolder">
+          <option value="">请选择文件夹（可选）</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <small>自动抓取功能已默认开启，保存时自动更新标题、描述等信息</small>
+      </div>
+    </div>
+
+    <div class="config-section" id="configSection">
+      <div class="section-header">
+        <h3 style="color: blueviolet;">连接配置</h3>
+      </div>
+      
+      <div class="section-content" id="configContent">
+        <div class="form-group">
+          <label for="apiUrl">服务器地址</label>
+          <input type="url" id="apiUrl" placeholder="http://localhost:3000" value="http://localhost:3000">
+        </div>
+
+        <div class="form-group">
+          <label for="apiKey">API Key</label>
+          <input type="password" id="apiKey" placeholder="输入你的API Key (webooks_...)">
+          <div class="button-group">
+            <button type="button" id="testConnection" class="btn btn-secondary">测试连接</button>
+            <button type="button" id="saveKey" class="btn btn-primary">保存配置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 帮助信息 -->
+    <div class="help">
+      <h4>默认快捷键</h4>
+      <p><strong>Alt+Shift+S</strong>&nbsp;在任何网页上快速保存书签</p>
+    </div>
+  </div>
+
+  <div class="loading" id="loading" style="display: none;">
+    <div class="spinner"></div>
+    <p>处理中...</p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

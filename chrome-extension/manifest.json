@@ -1,0 +1,43 @@
+{
+	"manifest_version": 3,
+	"name": "Webooks Bookmark Saver",
+	"version": "1.0.0",
+	"description": "通过快捷键快速保存当前网页到Webooks书签系统",
+	"permissions": ["activeTab", "storage", "commands"],
+	"host_permissions": ["http://localhost:3000/*", "https://*/*"],
+	"background": {
+		"service_worker": "background.js"
+	},
+	"content_scripts": [{
+		"matches": ["<all_urls>"],
+		"js": ["content.js"],
+		"css": ["styles.css"],
+		"run_at": "document_end"
+	}],
+	"action": {
+		"default_popup": "popup.html",
+		"default_title": "Webooks Bookmark Saver",
+		"default_icon": {
+			"16": "./icons/icon16.png",
+			"48": "./icons/icon48.png",
+			"128": "./icons/icon128.png"
+		}
+	},
+	"icons": {
+		"16": "./icons/icon16.png",
+		"48": "./icons/icon48.png",
+		"128": "./icons/icon128.png"
+	},
+	"commands": {
+		"save-bookmark": {
+			"suggested_key": {
+				"default": "Alt+Shift+S"
+			},
+			"description": "保存当前网页到Webooks书签系统"
+		}
+	},
+	"web_accessible_resources": [{
+		"resources": ["popup.html", "popup.js", "styles.css"],
+		"matches": ["<all_urls>"]
+	}]
+}

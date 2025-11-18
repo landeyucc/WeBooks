@@ -1,0 +1,358 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useApp } from '@/contexts/AppContext'
+import CustomSelect from './ui/CustomSelect'
+import { ChevronDown, Folder, FolderOpen } from 'lucide-react'
+
+interface Space {
+  id: string
+  name: string
+  description: string | null
+  iconUrl: string | null
+  systemCardUrl: string | null
+  _count?: {
+    bookmarks: number
+    folders: number
+  }
+}
+
+interface Folder {
+  id: string
+  name: string
+  spaceId: string
+  parentFolderId: string | null
+  bookmarkCount: number
+  _count?: {
+    bookmarks: number
+    childFolders: number
+  }
+}
+
+interface SidebarProps {
+  selectedSpaceId: string | null
+  selectedFolderId: string | null
+  onSelectSpace: (spaceId: string | null) => void
+  onSelectFolder: (folderId: string | null) => void
+}
+
+export default function Sidebar({
+  selectedSpaceId,
+  selectedFolderId,
+  onSelectSpace,
+  onSelectFolder
+}: SidebarProps) {
+  const { t, theme, toggleTheme, language, setLanguage, isAuthenticated, token, collapsedFolders, toggleFolderCollapse, setCollapsedFolders } = useApp()
+  const [spaces, setSpaces] = useState<Space[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchSpaces()
+    }
+  }, [isAuthenticated, token])
+
+  useEffect(() => {
+    if (selectedSpaceId) {
+      fetchFolders(selectedSpaceId)
+    } else {
+      setFolders([])
+    }
+  }, [selectedSpaceId])
+
+  // 跟踪是否已经为当前空间设置了默认折叠状态
+  const [isInitialCollapsedSet, setIsInitialCollapsedSet] = useState(false)
+
+  useEffect(() => {
+    if (selectedSpaceId) {
+      // 空间切换时，重置标记
+      setIsInitialCollapsedSet(false)
+    }
+  }, [selectedSpaceId])
+
+  // 只在首次加载每个空间的文件夹时设置默认折叠状态
+  useEffect(() => {
+    if (folders.length > 0 && !isInitialCollapsedSet) {
+      // 为所有有父目录的文件夹设置折叠状态
+      const newCollapsedIds = new Set<string>()
+      folders.forEach(folder => {
+        if (folder.parentFolderId) {
+          newCollapsedIds.add(folder.id)
+        }
+      })
+      
+      // 设置新的折叠状态
+      setCollapsedFolders(newCollapsedIds)
+      setIsInitialCollapsedSet(true)
+    }
+  }, [folders, isInitialCollapsedSet])
+
+  const fetchSpaces = async () => {
+    try {
+      const response = await fetch('/api/spaces', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await response.json()
+      const spacesData = data.spaces || data || []
+      setSpaces(spacesData)
+      
+      // 移除自动选择第一个空间的逻辑，避免与HomePage的默认空间逻辑冲突
+      // 让HomePage组件决定默认选择哪个空间
+      // if (spacesData.length > 0 && !selectedSpaceId) {
+      //   onSelectSpace(spacesData[0].id)
+      // }
+    } catch (error) {
+      console.error(t('fetchSpacesFailed'), error)
+    }
+  }
+
+  const fetchFolders = async (spaceId: string) => {
+    try {
+      const response = await fetch(`/api/folders?spaceId=${spaceId}`)
+      const data = await response.json()
+      const foldersData = data.folders || []
+      setFolders(foldersData)
+    } catch (error) {
+      console.error(t('fetchFoldersFailedSide'), error)
+    }
+  }
+
+  // 构建文件夹树
+  const buildFolderTree = (folders: Folder[]) => {
+    const tree: Folder[] = []
+    const map = new Map<string, Folder & { children: Folder[] }>()
+
+    folders.forEach(folder => {
+      map.set(folder.id, { ...folder, children: [] })
+    })
+
+    folders.forEach(folder => {
+      const node = map.get(folder.id)!
+      if (folder.parentFolderId) {
+        const parent = map.get(folder.parentFolderId)
+        if (parent) {
+          parent.children.push(node)
+        } else {
+          tree.push(node)
+        }
+      } else {
+        tree.push(node)
+      }
+    })
+
+
+
+    return tree
+  }
+
+  const renderFolder = (folder: Folder & { children?: Folder[] }, level: number = 0) => {
+    const hasChildren = folder.children && folder.children.length > 0
+    const isCollapsed = collapsedFolders.has(folder.id)
+    const canCollapse = hasChildren
+
+    const handleFolderClick = (e: React.MouseEvent) => {
+      const target = e.target as HTMLElement
+      const isToggleButton = target.closest('.folder-toggle')
+      
+      if (isToggleButton) {
+        // 如果点击的是折叠按钮，执行折叠操作
+        e.stopPropagation()
+        toggleFolderCollapse(folder.id)
+      } else {
+        // 如果点击的是整个文件夹块
+        e.stopPropagation()
+        if (canCollapse && isCollapsed) {
+          // 如果可以折叠且当前是折叠状态，则展开
+          toggleFolderCollapse(folder.id)
+        } else {
+          // 否则选择文件夹
+          onSelectFolder(folder.id)
+        }
+      }
+    }
+
+    return (
+      <div key={folder.id} className="folder-item">
+        <div
+          className={`folder-button neu-button w-full text-left py-2 mb-1 text-sm group ${
+            selectedFolderId === folder.id ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+          }`}
+          style={{ 
+            paddingLeft: `${(level + 1) * 0.25 + 1}rem`,
+            marginLeft: level > 0 ? `${level * 0.25}rem` : '0',
+            width: level > 0 ? `calc(100% - ${level * 0.25}rem - 0.25rem)` : '100%'
+          }}
+          onClick={handleFolderClick}
+        >
+          <div className="flex items-center justify-between">
+            {/* 左侧内容 */}
+            <div className="flex items-center flex-1 min-w-0 mr-2">
+              {/* 折叠/展开按钮 */}
+              {canCollapse && (
+                <button
+                  className="folder-toggle w-4 h-4 mr-2 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 flex-shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleFolderCollapse(folder.id)
+                  }}
+                >
+                  <ChevronDown 
+                    className={`w-3 h-3 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+                  />
+                </button>
+              )}
+              
+              {/* 如果没有子文件夹，添加占位空间 */}
+              {!canCollapse && <div className="w-4 mr-2 flex-shrink-0" />}
+              
+              {/* 文件夹图标 */}
+              <div className="folder-icon mr-2 flex-shrink-0">
+                {hasChildren ? (
+                  isCollapsed ? (
+                    <Folder className="w-4 h-4 text-blue-500" />
+                  ) : (
+                    <FolderOpen className="w-4 h-4 text-blue-500" />
+                  )
+                ) : (
+                  <Folder className="w-4 h-4 text-gray-400" />
+                )}
+              </div>
+              
+              {/* 文件夹名称 */}
+              <span className="folder-name truncate">{folder.name}</span>
+            </div>
+            
+            {/* 右侧徽章 - 向右调整位置 */}
+            <div className="flex items-center space-x-1 flex-shrink-0">
+              {/* 文件夹数量徽章 - 蓝色背景 */}
+              {hasChildren && (
+                <span className="folder-count-badge bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs px-1.5 py-0.5 rounded-full">
+                  {folder.children?.length || 0}
+                </span>
+              )}
+              
+              {/* 书签数量徽章 - 绿色背景 */}
+              <span className="bookmark-count-badge bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs px-1.5 py-0.5 rounded-full">
+                {folder._count?.bookmarks || 0}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* 子文件夹列表 - 带动画 */}
+        {hasChildren && (
+          <div className={`folder-children transition-all duration-300 ease-in-out ${
+            isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-96 opacity-100 overflow-hidden'
+          }`}>
+            <div className="folder-children-inner">
+              {folder.children?.map(child => renderFolder(child, level + 1)) || []}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const folderTree = buildFolderTree(folders)
+
+  return (
+    <aside className="neu-base flex flex-col h-full transition-opacity duration-300 ease-in-out" style={{ width: 'calc(100% - 10px)', marginRight: '10px' }}>
+      {/* 系统卡图展示 - 移动到最顶部 */}
+      <div className="px-6 pt-6 pb-4 flex-shrink-0">
+        <div className="relative overflow-hidden rounded-lg shadow-lg" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
+          {(() => {
+            const currentSpace = spaces.find(s => s.id === selectedSpaceId)
+            if (currentSpace?.systemCardUrl) {
+              return (
+                <img
+                  src={currentSpace.systemCardUrl}
+                  alt={t('systemCardImage')}
+                  className="w-full h-full object-cover"
+                  style={{ width: '520px', height: '120px', maxWidth: '100%' }}
+                  onError={(e) => {
+                    // 如果图片加载失败，显示默认标题
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                    const parent = target.parentElement
+                    if (parent) {
+                      const fallbackDiv = document.createElement('div')
+                      fallbackDiv.className = 'w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center'
+                      fallbackDiv.innerHTML = '<span class="text-white font-bold text-xl">webooks</span>'
+                      parent.appendChild(fallbackDiv)
+                    }
+                  }}
+                />
+              )
+            } else {
+              return (
+                <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
+                  <span className="text-white font-bold text-xl">{t('webooks')}</span>
+                </div>
+              )
+            }
+          })()}
+        </div>
+      </div>
+
+      {/* 空间切换器 */}
+      <div className="px-6 pb-4 flex-shrink-0">
+        <CustomSelect
+          value={selectedSpaceId || ''}
+          onChange={(value) => {
+            onSelectSpace(value)
+            onSelectFolder(null)
+          }}
+          options={spaces.map(space => ({
+            value: space.id,
+            label: space.name
+          }))}
+          placeholder={t('selectSpace') || '选择空间'}
+          className="w-full"
+        />
+      </div>
+
+      {/* 文件夹列表 */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-3">
+        <div className="py-3 space-y-1">
+          <button
+            onClick={() => onSelectFolder(null)}
+            className={`neu-button w-full text-left py-2 mb-2 text-sm group ${
+              selectedFolderId === null ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+            style={{ paddingLeft: '1rem' }}
+          >
+            <div className="flex items-center">
+              <Folder className="w-4 h-4 mr-2 text-gray-400" />
+              <span className="flex-1">{t('allBookmarks')}</span>
+            </div>
+          </button>
+          {folderTree.map(folder => renderFolder(folder))}
+        </div>
+      </div>
+
+      {/* 底部 - 设置 */}
+      <div className="p-6 space-y-3 flex-shrink-0">
+        <button
+          onClick={toggleTheme}
+          className="neu-button w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
+        >
+          {theme === 'light' ? <i className="fas fa-moon mr-2"></i> : <i className="fas fa-sun mr-2"></i>} {t('theme')}: {theme === 'light' ? t('light') : t('dark')}
+        </button>
+        <button
+          onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')}
+          className="neu-button w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
+        >
+          <i className="fas fa-language mr-2"></i> {language === 'zh' ? t('switchToChinese') : t('switchToEnglish')}
+        </button>
+        {isAuthenticated && (
+          <a
+            href="/admin"
+            className="btn-primary block w-full px-4 py-3 text-sm text-center"
+          >
+            {t('admin')}
+          </a>
+        )}
+      </div>
+    </aside>
+  )
+}

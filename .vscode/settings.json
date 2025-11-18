@@ -1,0 +1,32 @@
+{
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
+  "css.validate.enable": false,
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore", 
+  "less.lint.unknownAtRules": "ignore",
+  "css.lint.unknownProperties": "ignore",
+  "scss.lint.unknownProperties": "ignore",
+  "less.lint.unknownProperties": "ignore",
+  "css.lint.compatibleVendorPrefixes": "ignore",
+  "scss.lint.compatibleVendorPrefixes": "ignore",
+  "less.lint.compatibleVendorPrefixes": "ignore",
+  "css.lint.vendorPrefix": "ignore",
+  "scss.lint.vendorPrefix": "ignore",
+  "less.lint.vendorPrefix": "ignore",
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "tailwindCSS.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  "cssValidation.disabled": true,
+  "scssValidation.disabled": true,
+  "lessValidation.disabled": true
+}

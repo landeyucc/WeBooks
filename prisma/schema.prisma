@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  username     String        @unique
+  passwordHash String        @map("password_hash")
+  email        String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  bookmarks    Bookmark[]
+  folders      Folder[]
+  spaces       Space[]
+  systemConfig SystemConfig?
+
+  @@map("users")
+}
+
+model Space {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  iconUrl       String?        @map("icon_url")
+  systemCardUrl String?        @map("system_card_url")
+  userId        String         @map("user_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  bookmarks     Bookmark[]
+  folders       Folder[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  systemConfigs SystemConfig[]
+
+  @@map("spaces")
+}
+
+model Folder {
+  id             String     @id @default(uuid())
+  name           String
+  description    String?
+  iconUrl        String?    @map("icon_url")
+  spaceId        String     @map("space_id")
+  parentFolderId String?    @map("parent_folder_id")
+  userId         String     @map("user_id")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  bookmarkCount  Int        @default(0) @map("bookmark_count")
+  bookmarks      Bookmark[]
+  parentFolder   Folder?    @relation("FolderToFolder", fields: [parentFolderId], references: [id], onDelete: Cascade)
+  childFolders   Folder[]   @relation("FolderToFolder")
+  space          Space      @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("folders")
+}
+
+model Bookmark {
+  id          String   @id @default(uuid())
+  title       String
+  url         String
+  description String?
+  iconUrl     String?  @map("icon_url")
+  spaceId     String   @map("space_id")
+  folderId    String?  @map("folder_id")
+  userId      String   @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  space       Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bookmarks")
+}
+
+model SystemConfig {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  defaultSpaceId String?  @map("default_space_id")
+  siteTitle      String?  @map("site_title")
+  faviconUrl     String?  @map("favicon_url")
+  seoDescription String?  @map("seo_description")
+  keywords       String?
+  apiKey         String?  @unique @map("api_key")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  defaultSpace   Space?   @relation(fields: [defaultSpaceId], references: [id])
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("system_configs")
+}

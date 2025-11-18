@@ -1,0 +1,32 @@
+/**
+ * Content Script Styles
+ * 用于注入到页面的样式（如果需要的话）
+ */
+
+/* 可选：可以在页面上显示扩展状态的样式 */
+.webooks-extension-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.webooks-extension-status.show {
+  opacity: 1;
+}
+
+.webooks-extension-status.error {
+  background: #f44336;
+}
+
+.webooks-extension-status.warning {
+  background: #ff9800;
+}

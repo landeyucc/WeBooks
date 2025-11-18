@@ -1,0 +1,9 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    "cssause/no-unused-css": "off",
+    "@next/next/no-css-tags": "off",
+    "@next/next/no-page-custom-font": "off",
+    "@next/next/no-script-component-in-head": "off"
+  }
+}

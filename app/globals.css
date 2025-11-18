@@ -1,0 +1,301 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Neumorphism Design Colors */
+  --background: #e8ebf0;
+  --foreground: #2c3e50;
+  --primary: #667eea;
+  --primary-dark: #5a6fd8;
+  --secondary: #8e9aaf;
+  --border: #d1d9e6;
+  --card-bg: #dbfefe;
+  --hover-bg: #dfe4ea;
+  
+  /* Neumorphism Colors */
+  --neu-light: #ffffff;
+  --neu-dark: #c6d0dc;
+  --neu-shadow-light: rgba(255, 255, 255, 0.8);
+  --neu-shadow-dark: rgba(163, 177, 198, 0.6);
+  --neu-inset-light: rgba(255, 255, 255, 0.3);
+  --neu-inset-dark: rgba(163, 177, 198, 0.3);
+}
+
+.dark {
+  /* Dark Neumorphism Colors */
+  --background: #1a1a2e;
+  --foreground: #e4e6eb;
+  --primary: #667eea;
+  --primary-dark: #5a6fd8;
+  --secondary: #a0a8b8;
+  --border: #2d3748;
+  --card-bg: #1a1a2e;
+  --hover-bg: #252547;
+  
+  /* Dark Neumorphism Colors */
+  --neu-light: #2a2a3e;
+  --neu-dark: #0f1117;
+  --neu-shadow-light: rgba(255, 255, 255, 0.1);
+  --neu-shadow-dark: rgba(0, 0, 0, 0.5);
+  --neu-inset-light: rgba(255, 255, 255, 0.05);
+  --neu-inset-dark: rgba(0, 0, 0, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary);
+  }
+}
+
+@layer components {
+  /* Neumorphism Base Components */
+  .neu-base {
+    background: var(--card-bg);
+    box-shadow: 
+      3px 3px 6px var(--neu-shadow-dark),
+      -3px -3px 6px var(--neu-shadow-light);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+  }
+  
+  .neu-inset {
+    background: var(--card-bg);
+    box-shadow: 
+      inset 2px 2px 4px var(--neu-inset-dark),
+      inset -2px -2px 4px var(--neu-inset-light);
+    border-radius: 12px;
+  }
+  
+  .neu-button {
+    background: var(--card-bg);
+    box-shadow: 
+      4px 4px 8px var(--neu-shadow-dark),
+      -4px -4px 8px var(--neu-shadow-light);
+    border: none;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .neu-button:hover {
+    box-shadow: 
+      6px 6px 12px var(--neu-shadow-dark),
+      -6px -6px 12px var(--neu-shadow-light);
+    transform: translateY(-1px);
+  }
+  
+  .neu-button:active {
+    box-shadow: 
+      inset 2px 2px 4px var(--neu-inset-dark),
+      inset -2px -2px 4px var(--neu-inset-light);
+    transform: translateY(0px);
+  }
+  
+  .neu-input,
+  .neu-input-textarea {
+    background: var(--card-bg);
+    box-shadow: 
+      inset 3px 3px 6px var(--neu-inset-dark),
+      inset -3px -3px 6px var(--neu-inset-light);
+    border: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--foreground);
+    font-family: inherit;
+  }
+
+  textarea.neu-input {
+    resize: vertical;
+  }
+  
+  .neu-input:focus {
+    outline: none;
+    box-shadow: 
+      inset 4px 4px 8px var(--neu-inset-dark),
+      inset -4px -4px 8px var(--neu-inset-light),
+      0 0 0 2px var(--primary);
+  }
+  
+  .neu-card {
+    background: var(--card-bg);
+    box-shadow: 
+      8px 8px 16px var(--neu-shadow-dark),
+      -8px -8px 16px var(--neu-shadow-light);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+  }
+  
+  .neu-card:hover {
+    box-shadow: 
+      12px 12px 24px var(--neu-shadow-dark),
+      -12px -12px 24px var(--neu-shadow-light);
+  }
+  
+  .neu-select {
+    background: var(--card-bg);
+    box-shadow: 
+      inset 2px 2px 4px var(--neu-inset-dark),
+      inset -2px -2px 4px var(--neu-inset-light);
+    border: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--foreground);
+  }
+  
+  .neu-select:focus {
+    outline: none;
+    box-shadow: 
+      inset 3px 3px 6px var(--neu-inset-dark),
+      inset -3px -3px 6px var(--neu-inset-light),
+      0 0 0 2px var(--primary);
+  }
+  
+  /* Legacy components mapped to neumorphism */
+  .btn-primary {
+    @apply neu-button px-6 py-3 text-white font-medium;
+    background: linear-gradient(145deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+  
+  .btn-secondary {
+    @apply neu-button px-6 py-3 text-gray-700 dark:text-gray-300 font-medium;
+  }
+  
+  .input-field {
+    @apply neu-input w-full px-4 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400;
+    font-size: 14px;
+  }
+  
+  .card {
+    @apply neu-card bg-white dark:bg-gray-800 p-6;
+  }
+  
+  /* Table styling for neumorphism */
+  .neu-table {
+    @apply neu-base overflow-hidden;
+  }
+  
+  .neu-table th {
+    @apply neu-inset px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300;
+    margin: 1px;
+  }
+  
+  .neu-table td {
+    @apply px-6 py-4 text-sm text-gray-600 dark:text-gray-400;
+    background: var(--card-bg);
+  }
+  
+  .neu-table tr:hover td {
+    background: var(--hover-bg);
+  }
+  
+  /* Sidebar folder collapse animations */
+  .folder-children {
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    transform-origin: top;
+  }
+  
+  .folder-children-inner {
+    transition: transform 0.3s ease-in-out;
+    /* 确保阴影不被截断，添加额外的padding */
+    padding: 0.5rem;
+    margin-right: 0.25rem;
+    /* 保持右侧徽章的空间 */
+    margin-bottom: 0.25rem;
+    /* 添加阴影效果 */
+    background: var(--card-bg);
+    box-shadow: 
+      2px 2px 4px var(--neu-shadow-dark),
+      -2px -2px 4px var(--neu-shadow-light);
+    border-radius: 8px;
+    /* 根据层级设置左缩进 */
+    margin-left: 0.75rem;
+  }
+  
+  .folder-item {
+    position: relative;
+  }
+  
+  .folder-button {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .folder-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+  
+  .folder-button:hover::before {
+    left: 100%;
+  }
+  
+  .folder-toggle {
+    position: relative;
+    z-index: 10;
+  }
+  
+  .folder-icon {
+    transition: transform 0.2s ease;
+  }
+  
+  .folder-button:hover .folder-icon {
+    transform: scale(1.1);
+  }
+  
+  .folder-count {
+    transition: all 0.2s ease;
+  }
+  
+  .folder-button:hover .folder-count {
+    background: var(--primary);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+}

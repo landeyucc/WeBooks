@@ -1,0 +1,14 @@
+{
+  "css.references": {
+    "tailwindcss": {
+      "version": "^3.4.0",
+      "directives": [
+        "@tailwind",
+        "@apply",
+        "@layer",
+        "@variants",
+        "@responsive"
+      ]
+    }
+  }
+}
