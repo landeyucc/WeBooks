@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '@/contexts/AppContext'
 
 interface Space {
@@ -25,16 +25,7 @@ export default function SpaceManager() {
     systemCardUrl: ''
   })
 
-  useEffect(() => {
-    // 只有在用户已认证的情况下才获取空间
-    if (isAuthenticated && token) {
-      fetchSpaces()
-    } else {
-      setLoading(false)
-    }
-  }, [isAuthenticated, token])
-
-  const fetchSpaces = async () => {
+  const fetchSpaces = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch('/api/spaces', {
@@ -47,7 +38,16 @@ export default function SpaceManager() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token, t])
+
+  useEffect(() => {
+    // 只有在用户已认证的情况下才获取空间
+    if (isAuthenticated && token) {
+      fetchSpaces()
+    } else {
+      setLoading(false)
+    }
+  }, [isAuthenticated, token, fetchSpaces])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,8 +98,8 @@ export default function SpaceManager() {
         
         alert(errorMessage)
       }
-    } catch (error) {
-      console.error(t('operationFailed'), error)
+    } catch {
+      console.error(t('operationFailed'))
       alert(t('operationFailedNetwork'))
     }
   }
@@ -118,7 +118,7 @@ export default function SpaceManager() {
       } else {
         alert(t('deleteFailed'))
       }
-    } catch (error) {
+    } catch {
       alert(t('deleteFailed'))
     }
   }

@@ -160,9 +160,7 @@ export default function FolderManager() {
     setShowModal(true)
   }
 
-  const getSpaceName = (spaceId: string) => {
-    return spaces.find(s => s.id === spaceId)?.name || '-'
-  }
+
 
   // 获取文件夹的完整路径
   const getFolderPath = (folderId: string): string[] => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import type { Key } from 'react'
 import { ChevronDown } from 'lucide-react'
 
@@ -36,7 +36,7 @@ export default function CustomSelect<T extends Key | null | undefined = string>(
   const selectedOption = options.find(option => option.value === value)
 
   // 检测空间并确定展开方向
-  const checkSpaceAndSetDirection = () => {
+  const checkSpaceAndSetDirection = useCallback(() => {
     if (!selectRef.current) return
     
     const rect = selectRef.current.getBoundingClientRect()
@@ -51,7 +51,7 @@ export default function CustomSelect<T extends Key | null | undefined = string>(
     } else {
       setShowOnTop(false)
     }
-  }
+  }, [options.length])
 
   // 点击外部关闭下拉框
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function CustomSelect<T extends Key | null | undefined = string>(
     return () => {
       window.removeEventListener('resize', handleResize)
     }
-  }, [isOpen])
+  }, [isOpen, checkSpaceAndSetDirection])
 
   // 键盘导航
   useEffect(() => {
@@ -163,7 +163,7 @@ export default function CustomSelect<T extends Key | null | undefined = string>(
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${isOpen ? 'ring-2 ring-primary' : ''}
         `}
-        aria-expanded={`${isOpen}`}
+        aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={selectedOption ? selectedOption.label : placeholder}
       >
@@ -198,7 +198,7 @@ export default function CustomSelect<T extends Key | null | undefined = string>(
                 <li
                   key={option.value}
                   role="option"
-                  aria-selected={`${isSelected}`}
+                  aria-selected={isSelected}
                   className={`
                     px-4 py-3 text-sm cursor-pointer transition-all duration-150 rounded-[12px] mx-2 my-1
                     ${isSelected 
