@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import CustomSelect from '../ui/CustomSelect'
 
@@ -43,13 +43,7 @@ export default function FolderManager() {
   ])
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('all')
 
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      fetchData()
-    }
-  }, [isAuthenticated, token])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const [foldersRes, spacesRes] = await Promise.all([
@@ -71,7 +65,13 @@ export default function FolderManager() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token, t])
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchData()
+    }
+  }, [isAuthenticated, token, fetchData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -101,7 +101,7 @@ export default function FolderManager() {
       } else {
         alert(t('operationFailed'))
       }
-    } catch (error) {
+    } catch {
       alert(t('operationFailed'))
     }
   }
@@ -120,7 +120,7 @@ export default function FolderManager() {
       } else {
         alert(t('folderDeleteFailed'))
       }
-    } catch (error) {
+    } catch {
       alert(t('folderDeleteFailed'))
     }
   }
@@ -163,7 +163,7 @@ export default function FolderManager() {
 
 
   // 获取文件夹的完整路径
-  const getFolderPath = (folderId: string): string[] => {
+  const getFolderPath = useCallback((folderId: string): string[] => {
     const visited = new Set<string>()
     
     const buildPath = (currentFolderId: string): string[] => {
@@ -182,16 +182,16 @@ export default function FolderManager() {
     }
     
     return buildPath(folderId)
-  }
+  }, [folders])
 
-  const getParentFolderName = (parentId: string | null) => {
+  const getParentFolderName = useCallback((parentId: string | null) => {
     if (!parentId) return '-'
     const path = getFolderPath(parentId)
     return path.length > 0 ? path.join(' / ') : '-'
-  }
+  }, [getFolderPath])
 
   // 多级排序函数
-  const sortFolders = (folders: Folder[]) => {
+  const sortFolders = useCallback((folders: Folder[]) => {
     return [...folders].sort((a, b) => {
       // 按照优先级顺序进行比较
       for (const sortItem of sortConfig) {
@@ -231,7 +231,7 @@ export default function FolderManager() {
       }
       return 0
     })
-  }
+  }, [sortConfig, getParentFolderName])
 
   // 处理列排序点击
   const handleSort = (columnKey: string) => {

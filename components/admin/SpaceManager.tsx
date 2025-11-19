@@ -33,8 +33,8 @@ export default function SpaceManager() {
       })
       const data = await response.json()
       setSpaces(data.spaces || [])
-    } catch (error) {
-      console.error(t('operationFailedNetwork'), error)
+    } catch {
+      console.error(t('operationFailedNetwork'))
     } finally {
       setLoading(false)
     }

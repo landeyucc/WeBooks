@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import CustomSelect from '../ui/CustomSelect'
+import Image from 'next/image'
 
 interface Bookmark {
   id: string
@@ -151,19 +152,7 @@ export default function BookmarkManager() {
     setMoveTargetFolder('') // 重置文件夹选择
   }
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchData()
-    }
-  }, [isAuthenticated, token])
-
-  useEffect(() => {
-    if (formData.spaceId) {
-      fetchFolders(formData.spaceId)
-    }
-  }, [formData.spaceId])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const [bookmarksRes, spacesRes] = await Promise.all([
@@ -192,9 +181,9 @@ export default function BookmarkManager() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token, t])
 
-  const fetchFolders = async (spaceId: string) => {
+  const fetchFolders = useCallback(async (spaceId: string) => {
     try {
       const response = await fetch(`/api/folders?spaceId=${spaceId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -204,7 +193,19 @@ export default function BookmarkManager() {
     } catch (error) {
       console.error(t('fetchFoldersFailed'), error)
     }
-  }
+  }, [token, t])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData()
+    }
+  }, [isAuthenticated, token, fetchData])
+
+  useEffect(() => {
+    if (formData.spaceId) {
+      fetchFolders(formData.spaceId)
+    }
+  }, [formData.spaceId, fetchFolders])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -239,7 +240,7 @@ export default function BookmarkManager() {
         const data = await response.json()
         alert(data.error || t('operationFailed'))
       }
-    } catch (error) {
+    } catch {
       alert(t('operationFailed'))
     }
   }
@@ -258,7 +259,7 @@ export default function BookmarkManager() {
       } else {
         alert(t('deleteFailed'))
       }
-    } catch (error) {
+    } catch {
       alert(t('deleteFailed'))
     }
   }
@@ -344,23 +345,6 @@ export default function BookmarkManager() {
     }
   }
 
-  // 计算文件夹的层级深度
-  const getFolderDepth = (folderId: string): number => {
-    const visited = new Set<string>()
-    
-    const calculateDepth = (currentFolderId: string): number => {
-      if (visited.has(currentFolderId)) return 0 // 防止循环引用
-      visited.add(currentFolderId)
-      
-      const folder = folders.find(f => f.id === currentFolderId)
-      if (!folder || !folder.parentFolderId) return 0
-      
-      return 1 + calculateDepth(folder.parentFolderId)
-    }
-    
-    return calculateDepth(folderId)
-  }
-
   // 获取当前显示的书签数量
   const getFilteredBookmarksCount = () => {
     if (selectedSpaceId === 'all') {
@@ -417,9 +401,9 @@ export default function BookmarkManager() {
   }
 
   // 获取文件夹的完整路径（使用完整文件夹列表以支持跨空间层级）
-  const getFolderPath = (folderId: string, foldersList?: Folder[]): string[] => {
-    // 始终使用完整文件夹列表来构建路径，支持跨空间文件夹层级
-    const allFolders = folders || []
+  const getFolderPath = useCallback((folderId: string, foldersList?: Folder[]): string[] => {
+    // 优先使用传入的foldersList，否则使用当前folders状态
+    const allFolders = foldersList || folders || []
     const visited = new Set<string>()
     
     const buildPath = (currentFolderId: string): string[] => {
@@ -438,7 +422,7 @@ export default function BookmarkManager() {
     }
     
     return buildPath(folderId)
-  }
+  }, [folders])
 
   if (loading) {
     return <div>{t('loading')}</div>
@@ -564,9 +548,11 @@ export default function BookmarkManager() {
                       
                       <div className="flex items-start space-x-3">
                         {bookmark.iconUrl && (
-                          <img
+                          <Image
                             src={bookmark.iconUrl}
                             alt=""
+                            width={32}
+                            height={32}
                             className="w-8 h-8 flex-shrink-0 mt-1 rounded"
                             onError={(e) => e.currentTarget.style.display = 'none'}
                           />

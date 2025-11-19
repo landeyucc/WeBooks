@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useRouter, useSearchParams } from 'next/navigation'
 import CustomSelect from '../ui/CustomSelect'
 import BookmarkManager from './BookmarkManager'
@@ -39,7 +38,17 @@ interface ImportResult {
 }
 
 // 文件夹接口定义
-interface Folder {
+interface FolderData {
+  id: string
+  name: string
+  spaceId?: string
+  space?: {
+    id: string
+    name: string
+  }
+}
+
+interface FolderData {
   id: string
   name: string
   spaceId?: string
@@ -76,7 +85,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const initialTab = getTabFromUrl()
     setActiveTab(initialTab)
-  }, [searchParams])
+  }, [searchParams, getTabFromUrl])
   const [spaces, setSpaces] = useState<Space[]>([])
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('')
   const [defaultSpaceId, setDefaultSpaceId] = useState<string>('') // 新增默认空间ID状态
@@ -97,8 +106,8 @@ export default function AdminDashboard() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
-  const [folders, setFolders] = useState<any[]>([]) // 用于导出时选择文件夹
-  const [folderSpacesFolders, setFolderSpacesFolders] = useState<{[key: string]: any[]}>({}) // 按空间存储文件夹数据
+  const [folders, setFolders] = useState<FolderData[]>([]) // 用于导出时选择文件夹
+  const [folderSpacesFolders, setFolderSpacesFolders] = useState<{[key: string]: FolderData[]}>({}) // 按空间存储文件夹数据
 
   // 浏览器扩展API Key相关状态
   const [apiKeyState, setApiKeyState] = useState<ApiKeyState>({ current: '', isLoading: false })
@@ -156,7 +165,7 @@ export default function AdminDashboard() {
     if (activeTab === 'settings' && isAuthenticated) {
       fetchApiKey()
     }
-  }, [activeTab, isAuthenticated])
+  }, [activeTab, isAuthenticated, fetchApiKey])
 
   // 获取空间数据
   const fetchSpaces = async () => {
@@ -205,6 +214,27 @@ export default function AdminDashboard() {
     }
   }
 
+  // 获取系统配置
+  const fetchSystemConfig = async () => {
+    try {
+      const response = await fetch('/api/system-config', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setDefaultSpaceId(data.defaultSpaceId || '')
+        // 设置网站设置字段
+        setSiteTitle(data.siteTitle || '')
+        setFaviconUrl(data.faviconUrl || '')
+        setSeoDescription(data.seoDescription || '')
+        setKeywords(data.keywords || '')
+      }
+    } catch (error) {
+      console.error(t('adminFetchSystemConfigFailed'), error)
+    }
+  }
+
   // 组件首次加载时获取空间数据和系统配置
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -217,7 +247,7 @@ export default function AdminDashboard() {
           console.error(t('adminConfigLoadFailed'), error)
         })
     }
-  }, [isAuthenticated, token])
+  }, [isAuthenticated, token, fetchSpaces, fetchSystemConfig, t])
 
   // 当选择的空间改变时，更新systemCardUrl
   useEffect(() => {
@@ -300,27 +330,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // 获取系统配置
-  const fetchSystemConfig = async () => {
-    try {
-      const response = await fetch('/api/system-config', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setDefaultSpaceId(data.defaultSpaceId || '')
-        // 设置网站设置字段
-        setSiteTitle(data.siteTitle || '')
-        setFaviconUrl(data.faviconUrl || '')
-        setSeoDescription(data.seoDescription || '')
-        setKeywords(data.keywords || '')
-      }
-    } catch (error) {
-      console.error(t('adminFetchSystemConfigFailed'), error)
-    }
-  }
-
   // 保存网站设置
   const saveSiteSettings = async () => {
     setIsLoading(true)
@@ -368,8 +377,8 @@ export default function AdminDashboard() {
         const foldersData = Array.isArray(data) ? data : data.folders || []
         
         // 按空间分组文件夹数据
-        const groupedFolders: {[key: string]: any[]} = {}
-        foldersData.forEach((folder: any) => {
+        const groupedFolders: {[key: string]: FolderData[]} = {}
+        foldersData.forEach((folder: FolderData) => {
           const spaceId = folder.spaceId || folder.space?.id || 'unknown'
           if (!groupedFolders[spaceId]) {
             groupedFolders[spaceId] = []
@@ -517,7 +526,7 @@ export default function AdminDashboard() {
 
   // 处理书签导出
   const handleExport = async () => {
-    let params = new URLSearchParams()
+    const params = new URLSearchParams()
     
     if (exportScope === 'space' && exportSpaceId) {
       params.append('spaceId', exportSpaceId)
@@ -1003,29 +1012,9 @@ export default function AdminDashboard() {
                         {t('systemCardPreview')}
                       </label>
                       <div className="relative w-full overflow-hidden rounded-lg shadow-lg" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
-                        {systemCardUrl ? (
-                          <img
-                            src={systemCardUrl}
-                            alt="系统卡图预览"
-                            className="w-full h-full object-cover"
-                            style={{ width: '520px', height: '120px', maxWidth: '100%' }}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.style.display = 'none'
-                              const parent = target.parentElement
-                              if (parent) {
-                                const fallbackDiv = document.createElement('div')
-                                fallbackDiv.className = 'w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center'
-                                fallbackDiv.innerHTML = '<span class="text-white font-bold text-xl">webooks</span>'
-                                parent.appendChild(fallbackDiv)
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
+                        <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
                             <span className="text-white font-bold text-xl">webooks</span>
                           </div>
-                        )}
                       </div>
                     </div>
                   )}

@@ -262,10 +262,10 @@ export const translations = {
     tabsSettings: '系统设置',
     
     // 无障碍标签
-    selectOptions: 'Select options',
+    selectOptions: '选择选项',
     
     // 系统卡图说明
-    systemCardDesc: 'Set system card for space, will be displayed at the top of sidebar. Recommended size: 520px × 120px',
+    systemCardDesc: '设置空间的系统卡图，将显示在侧边栏顶部。推荐尺寸：520px × 120px',
     
     // 浏览器扩展API Key
     browserExtensionApiKey: '浏览器扩展API Key',
@@ -287,6 +287,9 @@ export const translations = {
     recommendRegularUpdate: '如需安全考虑，建议定期更新API Key',
     adminVisibleOnly: 'API Key仅对已认证的管理员可见，请妥善保管',
   },
+
+
+  
   en: {
     // Common
     search: 'Search',
