@@ -104,10 +104,10 @@ export default function BookmarkManager() {
       
       await fetchData()
       setSelectedBookmarks(new Set())
-      alert(t('batchDeletedCount', { count: selectedBookmarks.size }))
+      alert(`已删除 ${selectedBookmarks.size} 个书签`)
     } catch (error) {
-      console.error(t('batchDeleteFailed'), error)
-      alert(t('batchDeleteFailed'))
+      console.error('批量删除失败:', error)
+      alert('批量删除失败')
     }
   }
 
@@ -139,10 +139,10 @@ export default function BookmarkManager() {
       setShowMoveModal(false)
       setMoveTargetSpace('')
       setMoveTargetFolder('')
-      alert(t('batchMovedCount', { count: selectedBookmarks.size }))
+      alert(`已移动 ${selectedBookmarks.size} 个书签`)
     } catch (error) {
-      console.error(t('batchMoveFailed'), error)
-      alert(t('batchMoveFailed'))
+      console.error('批量移动失败:', error)
+      alert('批量移动失败')
     }
   }
 
@@ -386,9 +386,8 @@ export default function BookmarkManager() {
     const folderPaths: { [key: string]: string[] } = {}
 
     // 无文件夹的书签
-    const noFolderKey = t('noFolder')
-    groups[noFolderKey] = []
-    folderPaths[noFolderKey] = []
+    groups[t('noFolder')] = []
+    folderPaths[t('noFolder')] = []
 
     // 有文件夹的书签
     filteredBookmarks.forEach(bookmark => {
@@ -402,7 +401,7 @@ export default function BookmarkManager() {
         }
         groups[pathKey].push(bookmark)
       } else {
-        groups[noFolderKey].push(bookmark)
+        groups[t('noFolder')].push(bookmark)
       }
     })
 
@@ -448,10 +447,9 @@ export default function BookmarkManager() {
   const { groups, folderPaths } = groupedBookmarks()
 
   // 按文件夹层级深度排序组
-  const noFolderKey = t('noFolder')
   const sortedGroups = Object.keys(groups).sort((a, b) => {
-    if (a === noFolderKey) return 1 // 无文件夹组排在最后
-    if (b === noFolderKey) return -1
+    if (a === t('noFolder')) return 1 // 无文件夹组排在最后
+    if (b === t('noFolder')) return -1
     
     const depthA = folderPaths[a].length
     const depthB = folderPaths[b].length
@@ -481,7 +479,7 @@ export default function BookmarkManager() {
                 label: space.name
               }))
             ]}
-            placeholder="选择空间"
+            placeholder={t('selectSpace')}
             disabled={loading}
           />
           <button onClick={handleCreate} className="btn-primary">
@@ -495,7 +493,7 @@ export default function BookmarkManager() {
                 : 'neu-button text-blue-600 dark:text-blue-400'
             }`}
           >
-            {batchMode ? t('exitBatchMode') : t('batchOperations')}
+            {batchMode ? t('exitBatchMode') : t('batchOperation')}
           </button>
         </div>
       </div>
@@ -512,7 +510,7 @@ export default function BookmarkManager() {
               <div className="px-6 py-4 border-b border-gray-200/50">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">
-                    {groupKey === t('noFolder') ? t('uncategorizedBookmarks') : folderPath.join(' / ')}
+                    {groupKey === '无文件夹' ? t('uncategorizedBookmarks') : folderPath.join(' / ')}
                     <span className="ml-2 text-sm text-gray-500">
                       ({groupBookmarks.length})
                     </span>
@@ -524,7 +522,7 @@ export default function BookmarkManager() {
                         onClick={() => selectAllInGroup(groupKey)}
                         className="neu-button px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                       >
-                        全选
+                        {t('selectAll')}
                       </button>
                       <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
                         {groupBookmarks.filter(b => selectedBookmarks.has(b.id)).length}/{groupBookmarks.length}
@@ -632,7 +630,7 @@ export default function BookmarkManager() {
           <div className="neu-card px-6 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('selectedCount', { count: selectedBookmarks.size })}
+                {t('selectedCountBookmarks', selectedBookmarks.size)}
               </span>
               
               <div className="flex gap-2">
@@ -669,12 +667,12 @@ export default function BookmarkManager() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="neu-card max-w-md w-full p-6">
             <h3 className="text-xl font-bold mb-4">
-              {t('batchMoveTitle', { count: selectedBookmarks.size })}
+              {t('batchMoveBookmarks')} ({selectedBookmarks.size})
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">{t('targetSpace')} *</label>
+                <label className="block text-sm font-medium mb-1">{t('targetSpace')} *</label>
                 <CustomSelect
                   value={moveTargetSpace}
                   onChange={handleMoveTargetSpaceChange}
@@ -682,26 +680,26 @@ export default function BookmarkManager() {
                     value: space.id,
                     label: space.name
                   }))}
-                  placeholder="选择目标空间"
+                  placeholder={t('selectTargetSpace')}
                 />
               </div>
 
               <div>
-                  <label className="block text-sm font-medium mb-2">{t('targetFolder')}</label>
+                <label className="block text-sm font-medium mb-1">{t('targetFolder')}</label>
                 <CustomSelect
-                        value={moveTargetFolder}
-                        onChange={setMoveTargetFolder}
-                        options={[
-                          { value: '', label: t('noFolder') },
-                          ...folders
-                            .filter(folder => folder.spaceId === moveTargetSpace)
-                            .map((folder) => ({
-                              value: folder.id,
-                              label: getFolderPath(folder.id).join(' / ') || folder.name
-                            }))
-                        ]}
-                        placeholder="选择目标文件夹"
-                      />
+                  value={moveTargetFolder}
+                  onChange={setMoveTargetFolder}
+                  options={[
+                    { value: '', label: t('noFolder') },
+                    ...folders
+                      .filter(folder => folder.spaceId === moveTargetSpace)
+                      .map((folder) => ({
+                        value: folder.id,
+                        label: getFolderPath(folder.id).join(' / ') || folder.name
+                      }))
+                  ]}
+                  placeholder={t('selectTargetFolder')}
+                />
               </div>
             </div>
 
@@ -807,7 +805,7 @@ export default function BookmarkManager() {
                     value: space.id,
                     label: space.name
                   }))}
-                  placeholder={t('selectSpace') || '选择空间'}
+                  placeholder={t('selectSpace')}
                 />
               </div>
 
@@ -823,7 +821,7 @@ export default function BookmarkManager() {
                       label: getFolderPath(folder.id).join(' / ') || folder.name
                     }))
                   ]}
-                  placeholder="选择文件夹"
+                  placeholder={t('selectFolderPlaceholder')}
                 />
               </div>
 

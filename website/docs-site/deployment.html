@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>部署指南 - Webooks 文档</title>
+    <meta name="description" content="完整的 Webooks 部署指南，包含本地开发、云平台部署、Docker 部署等多种方式。">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/docs-site.css">
+</head>
+<body>
+    <header class="docs-header">
+        <nav class="docs-nav">
+            <div class="nav-brand">
+                <h1><a href="../official-site/index.html">Webooks</a></h1>
+                <span class="docs-badge">文档</span>
+            </div>
+            <ul class="docs-nav-menu">
+                <li><a href="index.html">首页</a></li>
+                <li><a href="quick-start.html">快速开始</a></li>
+                <li><a href="api.html">API 文档</a></li>
+                <li><a href="deployment.html" class="active">部署指南</a></li>
+                <li><a href="faq.html">常见问题</a></li>
+            </ul>
+            <div class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="docs-container">
+        <aside class="docs-sidebar">
+            <div class="sidebar-section">
+                <h3>部署概览</h3>
+                <ul>
+                    <li><a href="#requirements">系统要求</a></li>
+                    <li><a href="#environment">环境准备</a></li>
+                    <li><a href="#database">数据库设置</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>部署方式</h3>
+                <ul>
+                    <li><a href="#local">本地开发</a></li>
+                    <li><a href="#docker">Docker 部署</a></li>
+                    <li><a href="#production">生产环境</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>云平台部署</h3>
+                <ul>
+                    <li><a href="#vercel">Vercel</a></li>
+                    <li><a href="#netlify">Netlify</a></li>
+                    <li><a href="#railway">Railway</a></li>
+                    <li><a href="#digitalocean">DigitalOcean</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>配置管理</h3>
+                <ul>
+                    <li><a href="#environment-vars">环境变量</a></li>
+                    <li><a href="#security">安全配置</a></li>
+                    <li><a href="#monitoring">监控与日志</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>故障排除</h3>
+                <ul>
+                    <li><a href="#troubleshooting">常见问题</a></li>
+                    <li><a href="#performance">性能优化</a></li>
+                    <li><a href="#backup">备份与恢复</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="docs-main">
+            <div class="docs-content">
+                <h1>部署指南</h1>
+                <p class="lead">完整的 Webooks 部署指南，支持多种部署方式和云平台。</p>
+
+                <section id="requirements" class="deployment-section">
+                    <h2>系统要求</h2>
+                    <div class="requirements-grid">
+                        <div class="req-item">
+                            <h4>最低要求</h4>
+                            <ul>
+                                <li>Node.js 18.x 或更高版本</li>
+                                <li>PostgreSQL 13+ 或 SQLite</li>
+                                <li>1GB RAM</li>
+                                <li>5GB 磁盘空间</li>
+                            </ul>
+                        </div>
+                        <div class="req-item">
+                            <h4>推荐配置</h4>
+                            <ul>
+                                <li>Node.js 20.x LTS</li>
+                                <li>PostgreSQL 15+</li>
+                                <li>2GB+ RAM</li>
+                                <li>20GB+ SSD 存储</li>
+                            </ul>
+                        </div>
+                        <div class="req-item">
+                            <h4>支持的操作系统</h4>
+                            <ul>
+                                <li>Ubuntu 20.04+</li>
+                                <li>CentOS 7+</li>
+                                <li>macOS 10.15+</li>
+                                <li>Windows 10+</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="environment" class="deployment-section">
+                    <h2>环境准备</h2>
+                    <div class="step-by-step">
+                        <div class="step">
+                            <h3>步骤 1: 克隆代码仓库</h3>
+                            <pre><code class="language-bash">git clone https://github.com/yourusername/webooks.git
+cd webooks</code></pre>
+                        </div>
+
+                        <div class="step">
+                            <h3>步骤 2: 安装依赖</h3>
+                            <pre><code class="language-bash"># 使用 npm
+npm install
+
+# 或使用 yarn
+yarn install
+
+# 或使用 pnpm
+pnpm install</code></pre>
+                        </div>
+
+                        <div class="step">
+                            <h3>步骤 3: 配置环境变量</h3>
+                            <p>复制环境变量模板并配置：</p>
+                            <pre><code class="language-bash">cp .env.example .env</code></pre>
+                            
+                            <p>编辑 .env 文件，配置数据库连接和其他参数：</p>
+                            <pre><code class="language-bash"># 数据库配置
+DATABASE_URL="postgresql://username:password@localhost:5432/webooks"
+
+# JWT 密钥（生产环境请使用强密钥）
+JWT_SECRET="your-super-secret-jwt-key-here"
+
+# 应用配置
+NODE_ENV=production
+PORT=3000
+
+# 可选：外部服务配置
+OPENAI_API_KEY="your-openai-key"
+SCRAPINGBee_API_KEY="your-scrapingbee-key"</code></pre>
+                        </div>
+
+                        <div class="step">
+                            <h3>步骤 4: 数据库迁移</h3>
+                            <pre><code class="language-bash"># 生成 Prisma 客户端
+npx prisma generate
+
+# 运行数据库迁移
+npx prisma db push
+
+# 或执行具体的迁移文件
+npx prisma migrate deploy</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="database" class="deployment-section">
+                    <h2>数据库设置</h2>
+                    
+                    <div class="db-options">
+                        <div class="db-option">
+                            <h3>PostgreSQL（推荐）</h3>
+                            <div class="db-setup">
+                                <h4>安装 PostgreSQL</h4>
+                                <pre><code class="language-bash"># Ubuntu/Debian
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# macOS (使用 Homebrew)
+brew install postgresql
+
+# 启动服务
+sudo systemctl start postgresql
+sudo systemctl enable postgresql</code></pre>
+
+                                <h4>创建数据库和用户</h4>
+                                <pre><code class="language-sql">-- 连接到 PostgreSQL
+sudo -u postgres psql
+
+-- 创建数据库
+CREATE DATABASE webooks;
+
+-- 创建用户
+CREATE USER webooks_user WITH ENCRYPTED PASSWORD 'your_password';
+
+-- 授权
+GRANT ALL PRIVILEGES ON DATABASE webooks TO webooks_user;
+
+-- 退出
+\q</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="db-option">
+                            <h3>SQLite（开发环境）</h3>
+                            <div class="db-setup">
+                                <p>SQLite 配置更简单，适合开发和测试：</p>
+                                <pre><code class="language-bash"># .env 文件中配置
+DATABASE_URL="file:./dev.db"</code></pre>
+                                
+                                <div class="warning">
+                                    <strong>注意：</strong> SQLite 不适合生产环境的高并发场景，建议使用 PostgreSQL。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="local" class="deployment-section">
+                    <h2>本地开发部署</h2>
+                    
+                    <div class="development-setup">
+                        <h3>开发模式</h3>
+                        <p>启动开发服务器：</p>
+                        <pre><code class="language-bash"># 启动开发服务器
+npm run dev
+
+# 或使用其他包管理器
+yarn dev
+pnpm dev</code></pre>
+
+                        <p>开发服务器将在 http://localhost:3000 启动。</p>
+
+                        <h3>构建生产版本</h3>
+                        <pre><code class="language-bash"># 构建生产版本
+npm run build
+
+# 启动生产服务器
+npm run start</code></pre>
+
+                        <h3>开发工具</h3>
+                        <div class="dev-tools">
+                            <ul>
+                                <li><strong>热重载：</strong> 代码修改后自动刷新</li>
+                                <li><strong>TypeScript 检查：</strong> <code>npm run type-check</code></li>
+                                <li><strong>代码格式化：</strong> <code>npm run lint</code></li>
+                                <li><strong>测试：</strong> <code>npm run test</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="docker" class="deployment-section">
+                    <h2>Docker 部署</h2>
+                    
+                    <div class="docker-setup">
+                        <h3>Dockerfile</h3>
+                        <p>项目根目录已有 Dockerfile：</p>
+                        <pre><code class="language-dockerfile">FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install dependencies based on the preferred package manager
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+RUN \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Build the application
+ENV NEXT_TELEMETRY_DISABLED 1
+RUN npm run build
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Automatically leverage output traces to reduce image size
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+
+CMD ["node", "server.js"]</code></pre>
+
+                        <h3>Docker Compose</h3>
+                        <p>使用 docker-compose.yml 快速部署：</p>
+                        <pre><code class="language-yaml">version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://webooks_user:password@db:5432/webooks
+      - JWT_SECRET=your-jwt-secret-here
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=webooks
+      - POSTGRES_USER=webooks_user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:</code></pre>
+
+                        <h3>运行 Docker 部署</h3>
+                        <pre><code class="language-bash"># 构建并启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重新构建
+docker-compose up -d --build</code></pre>
+                    </div>
+                </section>
+
+                <section id="vercel" class="deployment-section">
+                    <h2>Vercel 部署</h2>
+                    
+                    <div class="platform-deployment">
+                        <h3>部署步骤</h3>
+                        <div class="step">
+                            <h4>1. 准备项目</h4>
+                            <p>确保项目根目录有 vercel.json 配置文件：</p>
+                            <pre><code class="language-json">{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "DATABASE_URL": "@database-url",
+    "JWT_SECRET": "@jwt-secret"
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "@database-url"
+    }
+  }
+}</code></pre>
+                        </div>
+
+                        <div class="step">
+                            <h4>2. 安装 Vercel CLI</h4>
+                            <pre><code class="language-bash">npm i -g vercel</code></pre>
+                        </div>
+
+                        <div class="step">
+                            <h4>3. 部署</h4>
+                            <pre><code class="language-bash">vercel --prod</code></pre>
+                        </div>
+
+                        <div class="step">
+                            <h4>4. 配置环境变量</h4>
+                            <p>在 Vercel Dashboard 中设置环境变量：</p>
+                            <ul>
+                                <li><code>DATABASE_URL</code> - 数据库连接字符串</li>
+                                <li><code>JWT_SECRET</code> - JWT 密钥</li>
+                                <li><code>NEXT_PUBLIC_APP_URL</code> - 应用 URL</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="vercel-features">
+                        <h3>Vercel 功能</h3>
+                        <ul>
+                            <li><strong>自动部署：</strong> Git 推送后自动部署</li>
+                            <li><strong>预览部署：</strong> Pull Request 自动创建预览</li>
+                            <li><strong>CDN：</strong> 全球内容分发网络</li>
+                            <li><strong>数据库：</strong> 支持 Vercel PostgreSQL</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="netlify" class="deployment-section">
+                    <h2>Netlify 部署</h2>
+                    
+                    <div class="platform-deployment">
+                        <h3>配置</h3>
+                        <p>netlify.toml 配置文件：</p>
+                        <pre><code class="language-toml">[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+
+[functions]
+  directory = "api"
+  external_node_modules = ["prisma", "@prisma/client"]</code></pre>
+
+                        <h3>部署流程</h3>
+                        <ol>
+                            <li>将项目推送到 GitHub/GitLab</li>
+                            <li>在 Netlify 中连接代码仓库</li>
+                            <li>设置构建设置和部署命令</li>
+                            <li>配置环境变量</li>
+                            <li>部署</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <section id="railway" class="deployment-section">
+                    <h2>Railway 部署</h2>
+                    
+                    <div class="platform-deployment">
+                        <h3>Railway 特点</h3>
+                        <ul>
+                            <li>自动数据库托管</li>
+                            <li>GitHub 集成</li>
+                            <li>一键部署</li>
+                            <li>内置监控</li>
+                        </ul>
+
+                        <h3>部署步骤</h3>
+                        <ol>
+                            <li>访问 <a href="https://railway.app" target="_blank">railway.app</a></li>
+                            <li>使用 GitHub 登录</li>
+                            <li>创建新项目，选择 "Deploy from GitHub repo"</li>
+                            <li>选择 Webooks 仓库</li>
+                            <li>Railway 会自动检测 Next.js 项目</li>
+                            <li>在 Variables 标签中添加环境变量</li>
+                            <li>部署会自动开始</li>
+                        </ol>
+
+                        <div class="railway-config">
+                            <h4>推荐的环境变量配置</h4>
+                            <pre><code class="language-bash">DATABASE_URL=${{Postgres.DATABASE_URL}}
+JWT_SECRET=your-random-jwt-secret
+NODE_ENV=production
+NEXT_PUBLIC_APP_URL=${{RAILWAY_PUBLIC_DOMAIN}}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="digitalocean" class="deployment-section">
+                    <h2>DigitalOcean 部署</h2>
+                    
+                    <div class="platform-deployment">
+                        <h3>Droplet 部署</h3>
+                        
+                        <div class="droplet-steps">
+                            <div class="step">
+                                <h4>1. 创建 Droplet</h4>
+                                <ul>
+                                    <li>选择 Ubuntu 20.04+</li>
+                                    <li>推荐配置：2GB RAM, 1 vCPU</li>
+                                    <li>添加 SSH 密钥</li>
+                                </ul>
+                            </div>
+
+                            <div class="step">
+                                <h4>2. 安装依赖</h4>
+                                <pre><code class="language-bash"># 更新系统
+sudo apt update && sudo apt upgrade -y
+
+# 安装 Node.js
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 安装 PostgreSQL
+sudo apt install postgresql postgresql-contrib
+
+# 安装 Nginx
+sudo apt install nginx</code></pre>
+                            </div>
+
+                            <div class="step">
+                                <h4>3. 部署应用</h4>
+                                <pre><code class="language-bash"># 克隆代码
+git clone https://github.com/yourusername/webooks.git
+cd webooks
+
+# 安装依赖
+npm install
+
+# 构建应用
+npm run build
+
+# 使用 PM2 管理进程
+npm install -g pm2
+pm2 start npm --name "webooks" -- start
+pm2 startup
+pm2 save</code></pre>
+                            </div>
+
+                            <div class="step">
+                                <h4>4. 配置 Nginx</h4>
+                                <pre><code class="language-bash"># /etc/nginx/sites-available/webooks
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}</code></pre>
+
+                                <pre><code class="language-bash"># 启用站点
+sudo ln -s /etc/nginx/sites-available/webooks /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="environment-vars" class="deployment-section">
+                    <h2>环境变量配置</h2>
+                    
+                    <div class="env-config">
+                        <h3>必需变量</h3>
+                        <table class="env-table">
+                            <thead>
+                                <tr>
+                                    <th>变量名</th>
+                                    <th>描述</th>
+                                    <th>示例值</th>
+                                    <th>必填</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>DATABASE_URL</code></td>
+                                    <td>数据库连接字符串</td>
+                                    <td>postgresql://user:pass@localhost:5432/webooks</td>
+                                    <td>是</td>
+                                </tr>
+                                <tr>
+                                    <td><code>JWT_SECRET</code></td>
+                                    <td>JWT 签名密钥</td>
+                                    <td>your-super-secret-key-here</td>
+                                    <td>是</td>
+                                </tr>
+                                <tr>
+                                    <td><code>NODE_ENV</code></td>
+                                    <td>运行环境</td>
+                                    <td>production</td>
+                                    <td>是</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>可选变量</h3>
+                        <table class="env-table">
+                            <thead>
+                                <tr>
+                                    <th>变量名</th>
+                                    <th>描述</th>
+                                    <th>示例值</th>
+                                    <th>默认值</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>NEXT_PUBLIC_APP_URL</code></td>
+                                    <td>应用公开 URL</td>
+                                    <td>https://webooks.example.com</td>
+                                    <td>自动检测</td>
+                                </tr>
+                                <tr>
+                                    <td><code>OPENAI_API_KEY</code></td>
+                                    <td>OpenAI API 密钥</td>
+                                    <td>sk-...</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td><code>SCRAPINGBee_API_KEY</code></td>
+                                    <td>网页抓取服务密钥</td>
+                                    <td>your-api-key</td>
+                                    <td>-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="env-security">
+                            <h3>安全建议</h3>
+                            <ul>
+                                <li><strong>强密钥：</strong> JWT_SECRET 使用随机生成的强密钥</li>
+                                <li><strong>数据库安全：</strong> 使用独立数据库用户，限制权限</li>
+                                <li><strong>环境隔离：</strong> 生产、开发、测试环境分别配置</li>
+                                <li><strong>密钥管理：</strong> 使用密钥管理服务（如 AWS Secrets Manager）</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="security" class="deployment-section">
+                    <h2>安全配置</h2>
+                    
+                    <div class="security-config">
+                        <div class="security-item">
+                            <h3>HTTPS 配置</h3>
+                            <p>生产环境必须使用 HTTPS：</p>
+                            <pre><code class="language-bash"># 使用 Let's Encrypt
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com</code></pre>
+                        </div>
+
+                        <div class="security-item">
+                            <h3>防火墙配置</h3>
+                            <pre><code class="language-bash"># Ubuntu/Debian UFW
+sudo ufw allow ssh
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+
+# 检查状态
+sudo ufw status</code></pre>
+                        </div>
+
+                        <div class="security-item">
+                            <h3>数据库安全</h3>
+                            <ul>
+                                <li>限制数据库网络访问</li>
+                                <li>使用强密码</li>
+                                <li>定期更新软件包</li>
+                                <li>启用 PostgreSQL SSL</li>
+                            </ul>
+                        </div>
+
+                        <div class="security-item">
+                            <h3>应用安全</h3>
+                            <ul>
+                                <li><strong>CORS 配置：</strong> 限制允许的源</li>
+                                <li><strong>速率限制：</strong> 防止 API 滥用</li>
+                                <li><strong>输入验证：</strong> 验证所有用户输入</li>
+                                <li><strong>错误处理：</strong> 不暴露敏感信息</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="troubleshooting" class="deployment-section">
+                    <h2>故障排除</h2>
+                    
+                    <div class="troubleshooting">
+                        <div class="issue">
+                            <h3>数据库连接失败</h3>
+                            <div class="solution">
+                                <p><strong>检查项：</strong></p>
+                                <ul>
+                                    <li>数据库服务是否运行</li>
+                                    <li>连接字符串是否正确</li>
+                                    <li>防火墙是否阻止连接</li>
+                                    <li>数据库用户权限</li>
+                                </ul>
+                                <p><strong>调试命令：</strong></p>
+                                <pre><code class="language-bash"># 测试数据库连接
+psql "postgresql://user:pass@host:port/db" -c "SELECT 1;"
+
+# 检查 PostgreSQL 日志
+sudo tail -f /var/log/postgresql/postgresql-*.log</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="issue">
+                            <h3>构建失败</h3>
+                            <div class="solution">
+                                <p><strong>常见原因：</strong></p>
+                                <ul>
+                                    <li>依赖版本冲突</li>
+                                    <li>TypeScript 编译错误</li>
+                                    <li>环境变量缺失</li>
+                                    <li>磁盘空间不足</li>
+                                </ul>
+                                <p><strong>解决方案：</strong></p>
+                                <pre><code class="language-bash"># 清理缓存
+rm -rf node_modules package-lock.json
+npm install
+
+# 检查构建日志
+npm run build 2>&1 | tee build.log</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="issue">
+                            <h3>JWT 认证问题</h3>
+                            <div class="solution">
+                                <p><strong>检查项：</strong></p>
+                                <ul>
+                                    <li>JWT_SECRET 是否设置</li>
+                                    <li>令牌是否过期</li>
+                                    <li>客户端时区设置</li>
+                                </ul>
+                                <p><strong>调试：</strong></p>
+                                <pre><code class="language-bash"># 检查环境变量
+echo $JWT_SECRET
+
+# 测试令牌生成
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="issue">
+                            <h3>内存不足</h3>
+                            <div class="solution">
+                                <p><strong>监控内存使用：</strong></p>
+                                <pre><code class="language-bash"># 查看内存使用
+free -h
+htop
+
+# 查看 Next.js 内存
+pm2 monit
+
+# 优化建议：
+# 1. 增加服务器内存
+# 2. 启用 SWAP
+# 3. 优化数据库查询
+# 4. 使用 CDN</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="performance" class="deployment-section">
+                    <h2>性能优化</h2>
+                    
+                    <div class="performance-tips">
+                        <div class="tip-category">
+                            <h3>应用优化</h3>
+                            <ul>
+                                <li><strong>启用 gzip 压缩</strong></li>
+                                <li><strong>使用 CDN</strong> 静态资源</li>
+                                <li><strong>数据库连接池</strong></li>
+                                <li><strong>API 响应缓存</strong></li>
+                                <li><strong>图片优化</strong> 和懒加载</li>
+                            </ul>
+                        </div>
+
+                        <div class="tip-category">
+                            <h3>服务器优化</h3>
+                            <ul>
+                                <li><strong>反向代理</strong> 配置缓存</li>
+                                <li><strong>HTTP/2</strong> 支持</li>
+                                <li><strong>浏览器缓存</strong> 策略</li>
+                                <li><strong>负载均衡</strong> 配置</li>
+                            </ul>
+                        </div>
+
+                        <div class="tip-category">
+                            <h3>数据库优化</h3>
+                            <ul>
+                                <li><strong>索引优化</strong></li>
+                                <li><strong>查询优化</strong></li>
+                                <li><strong>连接池配置</strong></li>
+                                <li><strong>定期维护</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="monitoring-setup">
+                        <h3>监控设置</h3>
+                        <p>推荐使用以下工具进行监控：</p>
+                        <ul>
+                            <li><strong>应用监控：</strong> Sentry、New Relic</li>
+                            <li><strong>服务器监控：</strong> Prometheus + Grafana</li>
+                            <li><strong>日志聚合：</strong> ELK Stack、Papertrail</li>
+                            <li><strong>Uptime 监控：</strong> Pingdom、UptimeRobot</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="backup" class="deployment-section">
+                    <h2>备份与恢复</h2>
+                    
+                    <div class="backup-strategy">
+                        <div class="backup-item">
+                            <h3>数据库备份</h3>
+                            <pre><code class="language-bash"># PostgreSQL 备份
+pg_dump webooks > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# 自动备份脚本
+#!/bin/bash
+BACKUP_DIR="/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+pg_dump "postgresql://user:pass@localhost:5432/webooks" > "$BACKUP_DIR/webooks_$DATE.sql"
+find "$BACKUP_DIR" -name "webooks_*.sql" -mtime +7 -delete</code></pre>
+                        </div>
+
+                        <div class="backup-item">
+                            <h3>文件备份</h3>
+                            <pre><code class="language-bash"># 备份上传文件和配置
+tar -czf webooks_files_$(date +%Y%m%d).tar.gz /path/to/uploads /path/to/.env
+
+# 使用 rsync 同步到远程服务器
+rsync -avz /path/to/webooks/ user@backup-server:/backups/webooks/</code></pre>
+                        </div>
+
+                        <div class="backup-item">
+                            <h3>恢复流程</h3>
+                            <pre><code class="language-bash"># 1. 停止应用
+pm2 stop webooks
+
+# 2. 恢复数据库
+psql webooks < backup_20241201_120000.sql
+
+# 3. 恢复文件
+tar -xzf webooks_files_20241201.tar.gz -C /
+
+# 4. 重启应用
+pm2 restart webooks</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="backup-best-practices">
+                        <h3>备份最佳实践</h3>
+                        <ul>
+                            <li><strong>定期备份：</strong> 每天自动备份</li>
+                            <li><strong>异地备份：</strong> 备份到不同位置</li>
+                            <li><strong>测试恢复：</strong> 定期测试备份恢复流程</li>
+                            <li><strong>版本保留：</strong> 保留多个备份版本</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="next-steps">
+                    <h2>下一步</h2>
+                    <div class="next-steps-grid">
+                        <a href="faq.html" class="next-step">
+                            <div class="step-icon">❓</div>
+                            <h3>常见问题</h3>
+                            <p>查看常见问题和解决方案</p>
+                        </a>
+                        <a href="api.html" class="next-step">
+                            <div class="step-icon">🔌</div>
+                            <h3>API 文档</h3>
+                            <p>了解完整的 API 参考</p>
+                        </a>
+                        <a href="../official-site/index.html" class="next-step">
+                            <div class="step-icon">🏠</div>
+                            <h3>返回官网</h3>
+                            <p>查看产品介绍和功能特性</p>
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>文档</h4>
+                    <ul>
+                        <li><a href="quick-start.html">快速开始</a></li>
+                        <li><a href="api.html">API 文档</a></li>
+                        <li><a href="deployment.html">部署指南</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>资源</h4>
+                    <ul>
+                        <li><a href="../official-site/index.html">官方网站</a></li>
+                        <li><a href="faq.html">常见问题</a></li>
+                        <li><a href="https://github.com/yourusername/webooks">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Webooks 文档. 开源项目，遵循 MIT 许可证。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

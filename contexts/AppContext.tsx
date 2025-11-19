@@ -24,7 +24,7 @@ interface AppContextType {
   // Language
   language: Language
   setLanguage: (lang: Language) => void
-  t: (key: TranslationKey, params?: Record<string, string | number>) => string
+  t: (key: TranslationKey, ...args: (string | number)[]) => string
   
   // Loading
   loading: boolean
@@ -147,13 +147,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCollapsedFoldersState(folders)
   }
 
-  const t = (key: TranslationKey, params?: Record<string, string | number>): string => {
+  const t = (key: TranslationKey, ...args: (string | number)[]): string => {
     let translation = translations[language][key] || key
     
-    // 如果有参数，进行简单的参数替换
-    if (params) {
-      Object.entries(params).forEach(([param, value]) => {
-        translation = translation.replace(new RegExp(`\\{${param}\\}`, 'g'), String(value))
+    // 如果有参数，进行简单的字符串替换
+    if (args.length > 0) {
+      args.forEach((arg, index) => {
+        const placeholder = `%${index + 1}`
+        translation = translation.replace(new RegExp(`%d|${placeholder}`, 'g'), arg.toString())
       })
     }
     

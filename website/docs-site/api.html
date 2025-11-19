@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 文档 - Webooks 文档</title>
+    <meta name="description" content="Webooks RESTful API 完整参考文档，包含认证、书签管理、空间管理等所有API端点。">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/docs-site.css">
+</head>
+<body>
+    <header class="docs-header">
+        <nav class="docs-nav">
+            <div class="nav-brand">
+                <h1><a href="../official-site/index.html">Webooks</a></h1>
+                <span class="docs-badge">文档</span>
+            </div>
+            <ul class="docs-nav-menu">
+                <li><a href="index.html">首页</a></li>
+                <li><a href="quick-start.html">快速开始</a></li>
+                <li><a href="api.html">API 文档</a></li>
+                <li><a href="deployment.html">部署指南</a></li>
+                <li><a href="faq.html">常见问题</a></li>
+            </ul>
+            <div class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="docs-container">
+        <aside class="docs-sidebar">
+            <div class="sidebar-section">
+                <h3>API 概览</h3>
+                <ul>
+                    <li><a href="#authentication">认证方式</a></li>
+                    <li><a href="#response-format">响应格式</a></li>
+                    <li><a href="#error-handling">错误处理</a></li>
+                    <li><a href="#rate-limiting">限流策略</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>认证相关</h3>
+                <ul>
+                    <li><a href="#auth-login">用户登录</a></li>
+                    <li><a href="#auth-init">系统初始化</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>书签管理</h3>
+                <ul>
+                    <li><a href="#bookmarks-list">获取书签列表</a></li>
+                    <li><a href="#bookmarks-create">创建书签</a></li>
+                    <li><a href="#bookmarks-detail">获取书签详情</a></li>
+                    <li><a href="#bookmarks-update">更新书签</a></li>
+                    <li><a href="#bookmarks-delete">删除书签</a></li>
+                    <li><a href="#bookmarks-import">导入书签</a></li>
+                    <li><a href="#bookmarks-export">导出书签</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>空间管理</h3>
+                <ul>
+                    <li><a href="#spaces-list">获取空间列表</a></li>
+                    <li><a href="#spaces-create">创建空间</a></li>
+                    <li><a href="#spaces-detail">获取空间详情</a></li>
+                    <li><a href="#spaces-update">更新空间</a></li>
+                    <li><a href="#spaces-delete">删除空间</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>文件夹管理</h3>
+                <ul>
+                    <li><a href="#folders-list">获取文件夹列表</a></li>
+                    <li><a href="#folders-create">创建文件夹</a></li>
+                    <li><a href="#folders-detail">获取文件夹详情</a></li>
+                    <li><a href="#folders-update">更新文件夹</a></li>
+                    <li><a href="#folders-delete">删除文件夹</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>扩展功能</h3>
+                <ul>
+                    <li><a href="#extension-bookmarks">扩展书签管理</a></li>
+                    <li><a href="#extension-api-key">API 密钥管理</a></li>
+                    <li><a href="#scrape">网页抓取</a></li>
+                    <li><a href="#system-config">系统配置</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="docs-main">
+            <div class="docs-content">
+                <h1>API 文档</h1>
+                <p class="lead">Webooks RESTful API 完整参考，支持所有书签管理功能。</p>
+
+                <section id="authentication" class="api-section">
+                    <h2>认证方式</h2>
+                    <p>Webooks API 使用 JWT (JSON Web Token) 进行认证。大部分操作需要有效的 JWT 令牌。</p>
+                    
+                    <div class="auth-methods">
+                        <h3>获取 JWT 令牌</h3>
+                        <p>通过登录接口获取 JWT 令牌：</p>
+                        <pre><code>POST /api/auth/login
+Content-Type: application/json
+
+{
+  "username": "your_username",
+  "password": "your_password"
+}</code></pre>
+                        
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user_123",
+    "username": "your_username",
+    "email": "your_email@example.com"
+  }
+}</code></pre>
+
+                        <h3>使用令牌</h3>
+                        <p>在后续请求的 Authorization 头中包含令牌：</p>
+                        <pre><code>Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</code></pre>
+                    </div>
+                </section>
+
+                <section id="response-format" class="api-section">
+                    <h2>响应格式</h2>
+                    <p>所有 API 响应都使用统一的 JSON 格式：</p>
+                    
+                    <div class="response-examples">
+                        <h3>成功响应</h3>
+                        <pre><code>{
+  "success": true,
+  "data": {
+    // 实际数据
+  }
+}</code></pre>
+
+                        <h3>错误响应</h3>
+                        <pre><code>{
+  "error": "错误描述",
+  "details": "详细错误信息（可选）"
+}</code></pre>
+
+                        <h3>分页响应</h3>
+                        <pre><code>{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 100,
+    "pages": 5
+  }
+}</code></pre>
+                    </div>
+                </section>
+
+                <section id="error-handling" class="api-section">
+                    <h2>错误处理</h2>
+                    <p>Webooks API 使用标准 HTTP 状态码：</p>
+                    
+                    <div class="error-codes">
+                        <div class="error-code">
+                            <h4>200 OK</h4>
+                            <p>请求成功</p>
+                        </div>
+                        <div class="error-code">
+                            <h4>400 Bad Request</h4>
+                            <p>请求参数错误</p>
+                        </div>
+                        <div class="error-code">
+                            <h4>401 Unauthorized</h4>
+                            <p>未认证或令牌无效</p>
+                        </div>
+                        <div class="error-code">
+                            <h4>403 Forbidden</h4>
+                            <p>权限不足</p>
+                        </div>
+                        <div class="error-code">
+                            <h4>404 Not Found</h4>
+                            <p>资源不存在</p>
+                        </div>
+                        <div class="error-code">
+                            <h4>500 Internal Server Error</h4>
+                            <p>服务器内部错误</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 书签管理 API -->
+                <section id="bookmarks" class="api-section">
+                    <h2>书签管理</h2>
+                    <p>完整的书签 CRUD 操作接口。</p>
+
+                    <div id="bookmarks-list" class="api-endpoint">
+                        <h3>GET /api/bookmarks</h3>
+                        <p>获取书签列表</p>
+                        
+                        <h4>查询参数</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>参数</th>
+                                    <th>类型</th>
+                                    <th>必填</th>
+                                    <th>描述</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>spaceId</td>
+                                    <td>string</td>
+                                    <td>否</td>
+                                    <td>按空间 ID 筛选</td>
+                                </tr>
+                                <tr>
+                                    <td>folderId</td>
+                                    <td>string</td>
+                                    <td>否</td>
+                                    <td>按文件夹 ID 筛选</td>
+                                </tr>
+                                <tr>
+                                    <td>search</td>
+                                    <td>string</td>
+                                    <td>否</td>
+                                    <td>搜索关键词（标题、描述、URL）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "bookmarks": [
+    {
+      "id": "bookmark_123",
+      "title": "GitHub",
+      "url": "https://github.com",
+      "description": "代码托管平台",
+      "iconUrl": "https://github.com/favicon.ico",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "folder": {
+        "id": "folder_456",
+        "name": "开发工具"
+      },
+      "space": {
+        "id": "space_789",
+        "name": "工作空间"
+      }
+    }
+  ]
+}</code></pre>
+                    </div>
+
+                    <div id="bookmarks-create" class="api-endpoint">
+                        <h3>POST /api/bookmarks</h3>
+                        <p>创建新书签（需要认证）</p>
+                        
+                        <h4>请求体</h4>
+                        <pre><code>{
+  "title": "书签标题",
+  "url": "https://example.com",
+  "description": "书签描述",
+  "iconUrl": "https://example.com/favicon.ico",
+  "spaceId": "space_123",
+  "folderId": "folder_456"
+}</code></pre>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "bookmark": {
+    "id": "bookmark_789",
+    "title": "书签标题",
+    "url": "https://example.com",
+    "description": "书签描述",
+    "iconUrl": "https://example.com/favicon.ico",
+    "spaceId": "space_123",
+    "folderId": "folder_456",
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+}</code></pre>
+                    </div>
+
+                    <div id="bookmarks-detail" class="api-endpoint">
+                        <h3>GET /api/bookmarks/[id]</h3>
+                        <p>获取指定书签的详细信息</p>
+                        
+                        <h4>路径参数</h4>
+                        <ul>
+                            <li><code>id</code> - 书签 ID</li>
+                        </ul>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "bookmark": {
+    "id": "bookmark_123",
+    "title": "GitHub",
+    "url": "https://github.com",
+    "description": "代码托管平台",
+    "iconUrl": "https://github.com/favicon.ico",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z",
+    "folder": {
+      "id": "folder_456",
+      "name": "开发工具"
+    },
+    "space": {
+      "id": "space_789",
+      "name": "工作空间"
+    }
+  }
+}</code></pre>
+                    </div>
+
+                    <div id="bookmarks-update" class="api-endpoint">
+                        <h3>PUT /api/bookmarks/[id]</h3>
+                        <p>更新书签信息（需要认证）</p>
+                        
+                        <h4>路径参数</h4>
+                        <ul>
+                            <li><code>id</code> - 书签 ID</li>
+                        </ul>
+
+                        <h4>请求体</h4>
+                        <pre><code>{
+  "title": "更新后的标题",
+  "description": "更新后的描述",
+  "folderId": "folder_789"
+}</code></pre>
+                    </div>
+
+                    <div id="bookmarks-delete" class="api-endpoint">
+                        <h3>DELETE /api/bookmarks/[id]</h3>
+                        <p>删除书签（需要认证）</p>
+                        
+                        <h4>路径参数</h4>
+                        <ul>
+                            <li><code>id</code> - 书签 ID</li>
+                        </ul>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "success": true,
+  "message": "书签删除成功"
+}</code></pre>
+                    </div>
+
+                    <div id="bookmarks-import" class="api-endpoint">
+                        <h3>POST /api/bookmarks/import</h3>
+                        <p>导入书签文件（需要认证）</p>
+                        
+                        <h4>请求体 (multipart/form-data)</h4>
+                        <ul>
+                            <li><code>file</code> - 书签 HTML 文件</li>
+                            <li><code>spaceId</code> - 目标空间 ID</li>
+                            <li><code>folderId</code> - 目标文件夹 ID（可选）</li>
+                        </ul>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "success": true,
+  "imported": 45,
+  "duplicates": 3,
+  "message": "成功导入 45 个书签，3 个重复"
+}</code></pre>
+                    </div>
+
+                    <div id="bookmarks-export" class="api-endpoint">
+                        <h3>GET /api/bookmarks/export</h3>
+                        <p>导出书签为 HTML 文件</p>
+                        
+                        <h4>查询参数</h4>
+                        <ul>
+                            <li><code>spaceId</code> - 指定要导出的空间 ID（可选）</li>
+                        </ul>
+
+                        <h4>响应</h4>
+                        <p>返回 HTML 文件下载，内容为 NETSCAPE-Bookmark-file-1 格式</p>
+                    </div>
+                </section>
+
+                <!-- 空间管理 API -->
+                <section id="spaces" class="api-section">
+                    <h2>空间管理</h2>
+                    <p>书签空间的创建和管理接口。</p>
+
+                    <div id="spaces-list" class="api-endpoint">
+                        <h3>GET /api/spaces</h3>
+                        <p>获取用户的所有空间列表</p>
+                        
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "spaces": [
+    {
+      "id": "space_123",
+      "name": "工作空间",
+      "description": "用于工作相关的书签",
+      "iconUrl": "https://example.com/icon.png",
+      "systemCardUrl": "https://example.com/card.png",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "_count": {
+        "bookmarks": 25,
+        "folders": 3
+      }
+    }
+  ]
+}</code></pre>
+                    </div>
+
+                    <div id="spaces-create" class="api-endpoint">
+                        <h3>POST /api/spaces</h3>
+                        <p>创建新空间（需要认证）</p>
+                        
+                        <h4>请求体</h4>
+                        <pre><code>{
+  "name": "新空间名称",
+  "description": "空间描述",
+  "iconUrl": "https://example.com/icon.png",
+  "systemCardUrl": "https://example.com/card.png"
+}</code></pre>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "space": {
+    "id": "space_456",
+    "name": "新空间名称",
+    "description": "空间描述",
+    "iconUrl": "https://example.com/icon.png",
+    "systemCardUrl": "https://example.com/card.png",
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+}</code></pre>
+                    </div>
+
+                    <div id="spaces-detail" class="api-endpoint">
+                        <h3>GET /api/spaces/[id]</h3>
+                        <p>获取指定空间的详细信息</p>
+                        
+                        <h4>路径参数</h4>
+                        <ul>
+                            <li><code>id</code> - 空间 ID</li>
+                        </ul>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "space": {
+    "id": "space_123",
+    "name": "工作空间",
+    "description": "用于工作相关的书签",
+    "iconUrl": "https://example.com/icon.png",
+    "systemCardUrl": "https://example.com/card.png",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "bookmarks": [...],
+    "folders": [...]
+  }
+}</code></pre>
+                    </div>
+
+                    <div id="spaces-update" class="api-endpoint">
+                        <h3>PUT /api/spaces/[id]</h3>
+                        <p>更新空间信息（需要认证）</p>
+                        
+                        <h4>路径参数</h4>
+                        <ul>
+                            <li><code>id</code> - 空间 ID</li>
+                        </ul>
+
+                        <h4>请求体</h4>
+                        <pre><code>{
+  "name": "更新后的空间名称",
+  "description": "更新后的描述",
+  "iconUrl": "https://example.com/new-icon.png"
+}</code></pre>
+                    </div>
+
+                    <div id="spaces-delete" class="api-endpoint">
+                        <h3>DELETE /api/spaces/[id]</h3>
+                        <p>删除空间（需要认证）</p>
+                        
+                        <h4>路径参数</h4>
+                        <ul>
+                            <li><code>id</code> - 空间 ID</li>
+                        </ul>
+
+                        <h4>注意</h4>
+                        <p>删除空间会同时删除空间内的所有书签和文件夹</p>
+                    </div>
+                </section>
+
+                <!-- 文件夹管理 API -->
+                <section id="folders" class="api-section">
+                    <h2>文件夹管理</h2>
+                    <p>书签文件夹的创建和管理接口。</p>
+
+                    <div id="folders-list" class="api-endpoint">
+                        <h3>GET /api/folders</h3>
+                        <p>获取文件夹列表</p>
+                        
+                        <h4>查询参数</h4>
+                        <ul>
+                            <li><code>spaceId</code> - 按空间 ID 筛选（可选）</li>
+                            <li><code>parentId</code> - 按父文件夹 ID 筛选（可选）</li>
+                        </ul>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "folders": [
+    {
+      "id": "folder_123",
+      "name": "开发工具",
+      "description": "开发相关的工具和资源",
+      "spaceId": "space_456",
+      "parentId": null,
+      "bookmarkCount": 12,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "subfolders": [...]
+    }
+  ]
+}</code></pre>
+                    </div>
+
+                    <div id="folders-create" class="api-endpoint">
+                        <h3>POST /api/folders</h3>
+                        <p>创建新文件夹（需要认证）</p>
+                        
+                        <h4>请求体</h4>
+                        <pre><code>{
+  "name": "新文件夹名称",
+  "description": "文件夹描述",
+  "spaceId": "space_123",
+  "parentId": "folder_456"
+}</code></pre>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "folder": {
+    "id": "folder_789",
+    "name": "新文件夹名称",
+    "description": "文件夹描述",
+    "spaceId": "space_123",
+    "parentId": "folder_456",
+    "bookmarkCount": 0,
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+}</code></pre>
+                    </div>
+                </section>
+
+                <!-- 扩展功能 API -->
+                <section id="extension" class="api-section">
+                    <h2>扩展功能</h2>
+                    <p>浏览器扩展相关的 API 接口。</p>
+
+                    <div id="extension-bookmarks" class="api-endpoint">
+                        <h3>GET /api/extension/bookmarks</h3>
+                        <p>获取扩展可访问的书签（需要 API 密钥）</p>
+                        
+                        <h4>请求头</h4>
+                        <pre><code>Authorization: Bearer YOUR_API_KEY</code></pre>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "bookmarks": [
+    {
+      "id": "bookmark_123",
+      "title": "GitHub",
+      "url": "https://github.com",
+      "description": "代码托管平台"
+    }
+  ]
+}</code></pre>
+                    </div>
+
+                    <div id="scrape" class="api-endpoint">
+                        <h3>POST /api/scrape</h3>
+                        <p>抓取网页元数据（需要认证）</p>
+                        
+                        <h4>请求体</h4>
+                        <pre><code>{
+  "url": "https://example.com"
+}</code></pre>
+
+                        <h4>响应示例</h4>
+                        <pre><code>{
+  "title": "网页标题",
+  "description": "网页描述",
+  "iconUrl": "https://example.com/favicon.ico",
+  "imageUrl": "https://example.com/og-image.jpg"
+}</code></pre>
+                    </div>
+                </section>
+
+                <section class="next-steps">
+                    <h2>下一步</h2>
+                    <div class="next-steps-grid">
+                        <a href="deployment.html" class="next-step">
+                            <div class="step-icon">🚀</div>
+                            <h3>部署指南</h3>
+                            <p>学习如何部署到生产环境</p>
+                        </a>
+                        <a href="faq.html" class="next-step">
+                            <div class="step-icon">❓</div>
+                            <h3>常见问题</h3>
+                            <p>查看常见问题解答</p>
+                        </a>
+                        <a href="../official-site/index.html" class="next-step">
+                            <div class="step-icon">🏠</div>
+                            <h3>返回官网</h3>
+                            <p>查看产品介绍和功能特性</p>
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>文档</h4>
+                    <ul>
+                        <li><a href="quick-start.html">快速开始</a></li>
+                        <li><a href="api.html">API 文档</a></li>
+                        <li><a href="deployment.html">部署指南</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>资源</h4>
+                    <ul>
+                        <li><a href="../official-site/index.html">官方网站</a></li>
+                        <li><a href="faq.html">常见问题</a></li>
+                        <li><a href="https://github.com/yourusername/webooks">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Webooks 文档. 开源项目，遵循 MIT 许可证。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

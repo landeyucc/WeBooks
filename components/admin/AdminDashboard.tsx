@@ -1,22 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useApp } from '@/contexts/AppContext'
-import BookmarkManager from './BookmarkManager'
-import SpaceManager from './SpaceManager'
-import FolderManager from './FolderManager'
 import CustomSelect from '../ui/CustomSelect'
+import BookmarkManager from './BookmarkManager'
+import FolderManager from './FolderManager'
+import SpaceManager from './SpaceManager'
+import { useApp } from '../../contexts/AppContext'
+
+interface ApiKeyState {
+  current: string
+  isLoading: boolean
+}
 
 type TabType = 'spaces' | 'folders' | 'bookmarks' | 'settings' | 'import'
 
 // 选项卡配置
 const TABS: { id: TabType; key: string; label: string }[] = [
-  { id: 'spaces', key: 'spaces', label: 'spaces' },
-  { id: 'folders', key: 'folders', label: 'folders' },
-  { id: 'bookmarks', key: 'bookmarks', label: 'bookmarks' },
-  { id: 'import', key: 'import', label: 'importExport' },
-  { id: 'settings', key: 'settings', label: 'systemSettings' }
+  { id: 'spaces', key: 'spaces', label: 'tabsSpaces' },
+  { id: 'folders', key: 'folders', label: 'tabsFolders' },
+  { id: 'bookmarks', key: 'bookmarks', label: 'tabsBookmarks' },
+  { id: 'import', key: 'import', label: 'tabsImportExport' },
+  { id: 'settings', key: 'settings', label: 'tabsSettings' }
 ]
 
 interface Space {
@@ -83,12 +89,6 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false)
   const [dataLoaded, setDataLoaded] = useState(false) // 跟踪数据是否已加载
   
-  // API Key管理状态
-  const [currentApiKey, setCurrentApiKey] = useState<string>('')
-  const [maskedApiKey, setMaskedApiKey] = useState<string>('')
-  const [hasApiKey, setHasApiKey] = useState<boolean>(false)
-  const [showApiKey, setShowApiKey] = useState<boolean>(false)
-  
   // 书签导入导出相关状态
   const [exportScope, setExportScope] = useState<'all' | 'space' | 'folder'>('all')
   const [exportSpaceId, setExportSpaceId] = useState<string>('')
@@ -99,6 +99,64 @@ export default function AdminDashboard() {
   const [isDragOver, setIsDragOver] = useState(false)
   const [folders, setFolders] = useState<any[]>([]) // 用于导出时选择文件夹
   const [folderSpacesFolders, setFolderSpacesFolders] = useState<{[key: string]: any[]}>({}) // 按空间存储文件夹数据
+
+  // 浏览器扩展API Key相关状态
+  const [apiKeyState, setApiKeyState] = useState<ApiKeyState>({ current: '', isLoading: false })
+  const [showApiKey, setShowApiKey] = useState(false)
+
+  // 获取浏览器扩展API Key
+  const fetchApiKey = async () => {
+    try {
+      const response = await fetch('/api/extension/api-key', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setApiKeyState(prev => ({ ...prev, current: data.apiKey || '', isLoading: false }))
+      }
+    } catch (error) {
+      console.error('获取API Key失败:', error)
+      setApiKeyState(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+
+  // 生成新的浏览器扩展API Key
+  const generateApiKey = async () => {
+    setApiKeyState(prev => ({ ...prev, isLoading: true }))
+    try {
+      const response = await fetch('/api/extension/api-key', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setApiKeyState(prev => ({ ...prev, current: data.apiKey, isLoading: false }))
+        alert('新API Key生成成功！')
+      } else {
+        alert('生成API Key失败')
+        setApiKeyState(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error('生成API Key失败:', error)
+      alert('生成API Key失败')
+      setApiKeyState(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+
+  // 更新浏览器扩展API Key
+  const updateApiKey = async () => {
+    await generateApiKey()
+  }
+
+  // 在组件加载时获取API Key
+  useEffect(() => {
+    if (activeTab === 'settings' && isAuthenticated) {
+      fetchApiKey()
+    }
+  }, [activeTab, isAuthenticated])
 
   // 获取空间数据
   const fetchSpaces = async () => {
@@ -147,84 +205,11 @@ export default function AdminDashboard() {
     }
   }
 
-  // 获取API Key信息
-  const fetchApiKey = async () => {
-    try {
-      const response = await fetch('/api/extension/api-key', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          setHasApiKey(data.hasApiKey)
-          if (data.hasApiKey && data.apiKey) {
-            setCurrentApiKey(data.apiKey)
-            setMaskedApiKey(data.maskedKey || '')
-          } else {
-            setCurrentApiKey('')
-            setMaskedApiKey('')
-          }
-        }
-      } else {
-        console.error('获取API Key失败:', response.status)
-        setHasApiKey(false)
-        setCurrentApiKey('')
-        setMaskedApiKey('')
-      }
-    } catch (error) {
-      console.error('获取API Key错误:', error)
-      setHasApiKey(false)
-      setCurrentApiKey('')
-      setMaskedApiKey('')
-    }
-  }
-
-  // 生成新的API Key
-  const handleGenerateApiKey = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/extension/api-key', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        }
-      })
-
-      const result = await response.json()
-      
-      if (response.ok && result.success) {
-        setHasApiKey(true)
-        setCurrentApiKey(result.apiKey)
-        setMaskedApiKey(result.maskedKey || '')
-        alert(t('apiKeyGeneratedSuccess'))
-      } else {
-        alert(result.error || t('generateApiKeyFailed'))
-      }
-    } catch (error) {
-      console.error('生成API Key错误:', error)
-      alert(t('generateApiKeyFailedNetwork'))
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 复制API Key到剪贴板
-  const handleCopyApiKey = async () => {
-    try {
-      await navigator.clipboard.writeText(currentApiKey)
-      alert(t('copyApiKeyClipboard'))
-    } catch (error) {
-      console.error('复制失败:', error)
-      alert('复制失败，请手动复制')
-    }
-  }
-
   // 组件首次加载时获取空间数据和系统配置
   useEffect(() => {
     if (isAuthenticated && token) {
       console.log(t('adminLoadingSystemConfig'))
-      Promise.all([fetchSpaces(), fetchSystemConfig(), fetchApiKey()])
+      Promise.all([fetchSpaces(), fetchSystemConfig()])
         .then(() => {
           console.log(t('adminSystemConfigLoaded'))
         })
@@ -677,7 +662,7 @@ export default function AdminDashboard() {
         {activeTab === 'bookmarks' && <BookmarkManager />}
         {activeTab === 'import' && (
           <div className="neu-card p-6">
-            <h2 className="text-xl font-bold mb-4">{t('importExportTitle')}</h2>
+            <h2 className="text-xl font-bold mb-4">{t('importExport')}</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               {t('importExportDesc')}
             </p>
@@ -719,7 +704,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <p className="text-gray-600 dark:text-gray-400 mb-2">
-                          {t('dragDropHtmlFile')}
+                          {t('dragFileHere')}
                         </p>
                         <button
                           type="button"
@@ -796,11 +781,11 @@ export default function AdminDashboard() {
                         <div className="flex-1">
                           <p className="font-medium">{importResult.message}</p>
                           {importResult.folderName && (
-                            <p className="text-sm mt-1">{t('folderLabel')} {importResult.folderName}</p>
+                            <p className="text-sm mt-1">{t('folderName')}{importResult.folderName}</p>
                           )}
                           {importResult.errors && importResult.errors.length > 0 && (
                             <details className="mt-2">
-                              <summary className="cursor-pointer text-sm font-medium">{t('viewErrorDetails')}</summary>
+                              <summary className="cursor-pointer text-sm font-medium">{t('seeErrorDetails')}</summary>
                               <div className="mt-2 text-xs space-y-1 max-h-32 overflow-y-auto">
                                 {importResult.errors.map((error, index) => (
                                   <p key={index} className="font-mono bg-white/50 dark:bg-black/20 p-2 rounded">
@@ -816,7 +801,7 @@ export default function AdminDashboard() {
                   )}
                   
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {t('netscapeBookmarkFormat')}
+                    {t('supportNetscapeFormat')}
                   </p>
                 </div>
               </div>
@@ -825,23 +810,23 @@ export default function AdminDashboard() {
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('exportBookmarks')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {t('exportBookmarkDesc')}
+                  {t('exportBookmarksDesc')}
                 </p>
                 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('exportScopeTitle')}
+                      {t('selectExportScope')}
                     </label>
                     <CustomSelect<'all' | 'space' | 'folder'>
                       value={exportScope}
                       onChange={setExportScope}
                       options={[
-                        { value: 'all', label: t('allBookmarks') },
-                        { value: 'space', label: t('selectSpace') },
-                        { value: 'folder', label: t('selectFolder') }
+                        { value: 'all', label: t('allBookmarksExport') },
+                        { value: 'space', label: t('specifiedSpaceExport') },
+                        { value: 'folder', label: t('specifiedFolderExport') }
                       ]}
-                      placeholder={t('exportScopeTitle')}
+                      placeholder={t('exportScopePlaceholder')}
                     />
                   </div>
 
@@ -849,13 +834,13 @@ export default function AdminDashboard() {
                   {exportScope === 'space' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {t('selectSpace')}
+                        {t('selectExportSpace')}
                       </label>
                       <CustomSelect
                         value={exportSpaceId}
                         onChange={setExportSpaceId}
                         options={spaces ? spaces.map((space) => ({ value: space.id, label: space.name })) : []}
-                        placeholder={t('selectSpace')}
+                        placeholder={t('exportSpacePlaceholder')}
                       />
                     </div>
                   )}
@@ -866,11 +851,11 @@ export default function AdminDashboard() {
                       {/* 空间选择器（文件夹导出需要先选择空间） */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('selectFolderSpace')}
+                          {t('exportFolderSpace')}
                         </label>
                         <CustomSelect
                           value={exportFolderSpaceId}
-                          onChange={(value) => {
+                          onChange={(value: string) => {
                             setExportFolderSpaceId(value)
                             setExportFolderId('') // 重置文件夹选择
                             // 如果没有该空间的文件夹数据，则获取
@@ -879,7 +864,7 @@ export default function AdminDashboard() {
                             }
                           }}
                           options={spaces ? spaces.map((space) => ({ value: space.id, label: space.name })) : []}
-                          placeholder={t('selectFolderSpace')}
+                          placeholder={t('exportFolderPlaceholder')}
                         />
                       </div>
                       
@@ -887,7 +872,7 @@ export default function AdminDashboard() {
                       {exportFolderSpaceId && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            {t('selectFolder')}
+                            {t('selectExportFolder')}
                           </label>
                           <CustomSelect
                             value={exportFolderId}
@@ -897,18 +882,18 @@ export default function AdminDashboard() {
                                 value: folder.id, 
                                 label: folder.name 
                               })) : []}
-                            placeholder={t('selectFolder')}
+                            placeholder={t('selectExportFolder')}
                           />
                           {folderSpacesFolders[exportFolderSpaceId] && folderSpacesFolders[exportFolderSpaceId].length === 0 && (
                             <div className="mt-2 flex items-center gap-2">
                               <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {t('noFolderInSpace')}
+                                {t('folderNoData')}
                               </p>
                               <button
                                 onClick={() => fetchFoldersBySpace(exportFolderSpaceId)}
                                 className="text-sm btn-secondary"
                               >
-                                {t('reloadFolder')}
+                                {t('reload')}
                               </button>
                             </div>
                           )}
@@ -925,7 +910,7 @@ export default function AdminDashboard() {
                     }
                     className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {t('exportBookmarks')}
+                    {t('exportButton')}
                   </button>
                 </div>
               </div>
@@ -1183,81 +1168,108 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* API Key管理 */}
+              {/* 浏览器扩展API Key设置 */}
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('apiKeyManager')}</h3>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('browserExtensionApiKey')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {t('apiKeyDescription')}
+                  {t('browserExtensionApiKeyDesc')}
                 </p>
                 
                 <div className="space-y-4">
-                  {hasApiKey ? (
-                    <>
-                      {/* API Key显示 */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          {t('yourApiKey')}
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type={showApiKey ? 'text' : 'password'}
-                            value={showApiKey ? currentApiKey : maskedApiKey}
-                            readOnly
-                            className="neu-input flex-1 bg-gray-50 dark:bg-gray-800"
-                          />
-                          <button
-                            onClick={() => setShowApiKey(!showApiKey)}
-                            className="btn-secondary px-3 py-2 text-sm"
-                            title={showApiKey ? t('hideApiKey') : t('showApiKey')}
-                          >
-                            {showApiKey ? t('hide') : t('show')}
-                          </button>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {t('apiKeyWarning')}
-                        </p>
+                  {/* API Key显示框 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {t('currentApiKey')}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showApiKey ? "text" : "password"}
+                        value={apiKeyState.current}
+                        readOnly
+                        placeholder={t('noApiKeyPlaceholder')}
+                        className="neu-input pr-24"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 space-x-2">
+                        {apiKeyState.current && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setShowApiKey(!showApiKey)}
+                              className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                              title={showApiKey ? '隐藏API Key' : '显示API Key'}
+                            >
+                              {showApiKey ? (
+                                // 闭眼图标
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L12 12m-3.122-3.122l4.242 4.242" />
+                                </svg>
+                              ) : (
+                                // 睁眼图标
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(apiKeyState.current)
+                                alert(t('apiKeyCopiedSuccess'))
+                              }}
+                              className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              {t('copy')}
+                            </button>
+                          </>
+                        )}
                       </div>
+                    </div>
+                    {apiKeyState.current ? (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        {t('apiKeyGeneratedEnabled')}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                        {t('apiKeyNotGeneratedWarning')}
+                      </p>
+                    )}
+                  </div>
 
-                      {/* 操作按钮 */}
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={handleCopyApiKey}
-                          disabled={!currentApiKey}
-                          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {t('copyApiKey')}
-                        </button>
-                        <button
-                          onClick={handleGenerateApiKey}
-                          disabled={isLoading}
-                          className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isLoading ? t('generating') : t('regenerate')}
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* 无API Key状态 */}
-                      <div className="text-center py-6">
-                        <div className="text-gray-400 mb-4">
-                          <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                          </svg>
-                        </div>
-                        <p className="text-gray-600 dark:text-gray-400 mb-4">
-                          {t('noApiKeySet')}
-                        </p>
-                        <button
-                          onClick={handleGenerateApiKey}
-                          disabled={isLoading}
-                          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isLoading ? t('generating') : t('generateApiKey')}
-                        </button>
-                      </div>
-                    </>
-                  )}
+                  {/* 操作按钮 */}
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={generateApiKey}
+                      disabled={apiKeyState.isLoading}
+                      className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {apiKeyState.isLoading ? t('generating') : (apiKeyState.current ? t('regenerate') : t('generateApiKey'))}
+                    </button>
+                    {apiKeyState.current && (
+                      <button
+                        onClick={() => {
+                          if (confirm(t('confirmRegenerateApiKey'))) {
+                            updateApiKey()
+                          }
+                        }}
+                        disabled={apiKeyState.isLoading}
+                        className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {t('updateApiKey')}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 使用说明 */}
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">{t('usageInstructions')}</h4>
+                    <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                      <li>• {t('configureToBrowserExtension')}</li>
+                      <li>• {t('oldKeyInvalidAfterRegenerate')}</li>
+                      <li>• {t('recommendRegularUpdate')}</li>
+                      <li>• {t('adminVisibleOnly')}</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>

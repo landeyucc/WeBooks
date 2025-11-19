@@ -208,10 +208,12 @@ export default function HomePage() {
         }
       `}>
         <Sidebar
+          isOpen={isMobile ? true : isSidebarOpen}
           selectedSpaceId={selectedSpaceId}
           selectedFolderId={selectedFolderId}
           onSelectSpace={setSelectedSpaceId}
           onSelectFolder={setSelectedFolderId}
+          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         />
       </div>
 

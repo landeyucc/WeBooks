@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webooks - 现代化书签管理工具</title>
+    <meta name="description" content="功能强大的现代化书签管理工具，支持书签导入导出、分类管理、搜索和标签系统。专为提高浏览效率而设计。">
+    <link rel="stylesheet" href="./assets/css/style.css">
+    <link rel="stylesheet" href="./assets/css/official-site.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <a href="#hero" style="text-decoration: none; color: inherit;"><i class="fas fa-bookmark"></i> Webooks</a>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#hero"><i class="fas fa-home"></i> 首页</a></li>
+                    <li><a href="#features"><i class="fas fa-star"></i> 功能特性</a></li>
+                    <li><a href="#getting-started"><i class="fas fa-rocket"></i> 快速开始</a></li>
+                    <li><a href="#demo"><i class="fas fa-play-circle"></i> 产品演示</a></li>
+                    <li><a href="./docs-site/index.html"><i class="fas fa-book"></i> 文档</a></li>
+                </ul>
+            </div>
+            <div class="nav-actions">
+                <a href="#download" class="btn btn-primary"><i class="fas fa-download"></i> 立即下载</a>
+            </div>
+            <button class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="hero" class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="gradient-text">Webooks</span>
+                        <br>智能书签管理器
+                    </h1>
+                    <p class="hero-subtitle">
+                        让您的高效网络浏览体验更加完美。支持智能分类、标签管理、快速搜索，让书签管理变得简单而高效。
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#download" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            立即下载
+                        </a>
+                        <a href="#features" class="btn btn-secondary">
+                            <i class="fas fa-play"></i>
+                            了解更多
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">10万+</span>
+                            <span class="stat-label">用户信赖</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">100万+</span>
+                            <span class="stat-label">书签管理</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">99.9%</span>
+                            <span class="stat-label">稳定运行</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="mockup-browser">
+                        <div class="browser-header">
+                            <div class="browser-buttons">
+                                <span class="close"></span>
+                                <span class="minimize"></span>
+                                <span class="maximize"></span>
+                            </div>
+                            <div class="browser-address">
+                                <i class="fas fa-lock"></i>
+                                https://app.webooks.com/dashboard
+                            </div>
+                        </div>
+                        <div class="browser-content">
+                            <div class="app-interface">
+                                <div class="sidebar">
+                                    <div class="folder">
+                                        <i class="fas fa-folder"></i>
+                                        学习资源
+                                    </div>
+                                    <div class="folder">
+                                        <i class="fas fa-folder"></i>
+                                        工作工具
+                                    </div>
+                                    <div class="folder">
+                                        <i class="fas fa-folder"></i>
+                                        设计灵感
+                                    </div>
+                                </div>
+                                <div class="main-content">
+                                    <div class="bookmark-list">
+                                        <div class="bookmark-item">
+                                            <i class="fab fa-github"></i>
+                                            <span>GitHub - 代码仓库</span>
+                                            <div class="tags">
+                                                <span class="tag">开发</span>
+                                                <span class="tag">开源</span>
+                                            </div>
+                                        </div>
+                                        <div class="bookmark-item">
+                                            <i class="fab fa-notion"></i>
+                                            <span>Notion - 笔记工具</span>
+                                            <div class="tags">
+                                                <span class="tag">效率</span>
+                                            </div>
+                                        </div>
+                                        <div class="bookmark-item">
+                                            <i class="fab fa-dribbble"></i>
+                                            <span>Dribbble - 设计灵感</span>
+                                            <div class="tags">
+                                                <span class="tag">设计</span>
+                                                <span class="tag">创意</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-scroll-indicator">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features scroll-animation">
+            <div class="container">
+                <h2 class="section-title">核心功能特性</h2>
+                <p class="section-subtitle">强大而智能的书签管理功能，让您的网络浏览更加高效</p>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <h3>智能导入</h3>
+                        <p>一键导入所有浏览器的书签数据，支持Chrome、Firefox、Safari、Edge等主流浏览器，零学习成本。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <h3>智能分类</h3>
+                        <p>基于AI算法的智能分类系统，自动识别书签内容并推荐最合适的分类和标签，让组织更有序。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3>极速搜索</h3>
+                        <p>全文搜索、标签搜索、模糊匹配等多种搜索方式，让您在海量书签中快速找到所需内容。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-cloud"></i>
+                        </div>
+                        <h3>云端同步</h3>
+                        <p>多设备无缝同步，无论在电脑、手机还是平板上，您的书签始终保持最新状态，随时随地访问。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-share-alt"></i>
+                        </div>
+                        <h3>协作分享</h3>
+                        <p>支持书签集合的分享和协作，团队可以共享资源库，让知识和资源的传播更加高效。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3>数据统计</h3>
+                        <p>详细的书签使用统计和分析，了解您的浏览习惯和兴趣趋势，让数据驱动您的决策。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Getting Started Section -->
+        <section id="getting-started" class="getting-started scroll-animation">
+            <div class="container">
+                <h2 class="section-title">快速开始</h2>
+                <p class="section-subtitle">只需三步，轻松开始使用Webooks</p>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>下载安装</h3>
+                        <p>下载适合您操作系统的Webooks版本并完成安装</p>
+                        <code>下载地址见下方下载区域</code>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>导入书签</h3>
+                        <p>从浏览器导出书签文件，一键导入到Webooks</p>
+                        <code>支持Chrome、Firefox、Edge、Safari</code>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>开始使用</h3>
+                        <p>享受智能分类、标签管理和快速搜索的强大功能</p>
+                        <code>立即体验高效的书签管理</code>
+                    </div>
+                </div>
+                <div class="cta-section">
+                    <a href="#demo" class="btn btn-secondary">
+                        <i class="fas fa-play"></i>
+                        查看产品演示
+                    </a>
+                    <a href="./docs-site/index.html" class="btn btn-secondary">
+                        <i class="fas fa-book"></i>
+                        查看详细文档
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo Section -->
+        <section id="demo" class="demo scroll-animation">
+            <div class="container">
+                <h2 class="section-title">产品演示</h2>
+                <p class="section-subtitle">直观了解Webooks的强大功能</p>
+                <div class="demo-grid">
+                    <div class="demo-item">
+                        <h3>智能书签导入</h3>
+                        <div class="demo-visual">
+                            <div class="import-animation">
+                                <div class="browser-icon">
+                                    <i class="fab fa-chrome" style="font-size: 3rem; color: #4285f4;"></i>
+                                </div>
+                                <i class="fas fa-arrow-right" style="font-size: 2rem; color: #4facfe;"></i>
+                                <div class="folder-icon">
+                                    <i class="fas fa-folder" style="font-size: 3rem; color: #667eea;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <p>支持多种浏览器书签格式，一键导入所有收藏，自动识别并智能分类</p>
+                    </div>
+                    <div class="demo-item">
+                        <h3>智能分类管理</h3>
+                        <div class="demo-visual">
+                            <div class="folder-tree">
+                                <div class="folder">
+                                    <i class="fas fa-folder" style="color: #667eea;"></i>
+                                    学习资源
+                                    <div class="subfolder">
+                                        <i class="fas fa-file-alt" style="color: #4facfe;"></i>
+                                        前端开发
+                                    </div>
+                                    <div class="subfolder">
+                                        <i class="fas fa-file-alt" style="color: #4facfe;"></i>
+                                        后端技术
+                                    </div>
+                                </div>
+                                <div class="folder">
+                                    <i class="fas fa-folder" style="color: #667eea;"></i>
+                                    工作工具
+                                </div>
+                            </div>
+                        </div>
+                        <p>AI驱动的智能分类系统，自动识别内容并推荐最佳分类方案</p>
+                    </div>
+                    <div class="demo-item">
+                        <h3>极速搜索功能</h3>
+                        <div class="demo-visual">
+                            <div class="search-demo">
+                                <div class="search-box">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" placeholder="搜索书签...">
+                                </div>
+                                <div class="search-results">
+                                    <div class="result">
+                                        <i class="fab fa-github"></i>
+                                        GitHub - 开源代码仓库
+                                    </div>
+                                    <div class="result">
+                                        <i class="fab fa-stack-overflow"></i>
+                                        Stack Overflow - 编程问答
+                                    </div>
+                                    <div class="result">
+                                        <i class="fas fa-book"></i>
+                                        MDN - Web开发文档
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p>全文搜索、标签筛选、模糊匹配，让查找书签变得前所未有的简单</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Download Section -->
+        <section id="download" class="download scroll-animation">
+            <div class="container">
+                <h2 class="section-title">立即下载</h2>
+                <p class="section-subtitle">选择适合您系统的版本，体验智能书签管理的魅力</p>
+                <div class="download-options">
+                    <div class="download-card">
+                        <h3><i class="fab fa-windows"></i> Windows版</h3>
+                        <p>适用于 Windows 10/11 操作系统</p>
+                        <a href="https://github.com/webooks/webooks/releases/download/v1.0.0/webooks-windows-x64.exe" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            下载 Windows 版
+                        </a>
+                        <code>webooks-windows-x64.exe</code>
+                    </div>
+                    <div class="download-card">
+                        <h3><i class="fab fa-apple"></i> macOS版</h3>
+                        <p>适用于 macOS 10.15+ 操作系统</p>
+                        <a href="https://github.com/webooks/webooks/releases/download/v1.0.0/webooks-macos-universal.dmg" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            下载 macOS 版
+                        </a>
+                        <code>webooks-macos-universal.dmg</code>
+                    </div>
+                    <div class="download-card">
+                        <h3><i class="fab fa-linux"></i> Linux版</h3>
+                        <p>适用于 Ubuntu、CentOS 等主流Linux发行版</p>
+                        <a href="https://github.com/webooks/webooks/releases/download/v1.0.0/webooks-linux-x64.AppImage" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            下载 Linux 版
+                        </a>
+                        <code>webooks-linux-x64.AppImage</code>
+                    </div>
+                </div>
+                <div class="download-info">
+                    <p><i class="fas fa-info-circle"></i> 所有版本均支持书签导入、导出和云端同步功能</p>
+                    <p><i class="fas fa-shield-alt"></i> 完全免费，无广告，无数据收集，保护您的隐私</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4><i class="fas fa-bookmark"></i> Webooks</h4>
+                    <p>智能书签管理器，让网络浏览更有序、更高效。支持多浏览器书签导入，智能分类管理，快速搜索和云端同步。</p>
+                </div>
+                <div class="footer-section">
+                    <h4><i class="fas fa-link"></i> 产品链接</h4>
+                    <ul>
+                        <li><a href="#features">功能特性</a></li>
+                        <li><a href="#getting-started">快速开始</a></li>
+                        <li><a href="#demo">产品演示</a></li>
+                        <li><a href="#download">下载中心</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4><i class="fas fa-book"></i> 开发者</h4>
+                    <ul>
+                        <li><a href="./docs-site/index.html">使用文档</a></li>
+                        <li><a href="https://github.com/webooks/webooks" target="_blank">
+                            <i class="fab fa-github"></i> GitHub
+                        </a></li>
+                        <li><a href="https://github.com/webooks/webooks/issues" target="_blank">
+                            <i class="fas fa-bug"></i> 问题反馈
+                        </a></li>
+                        <li><a href="https://github.com/webooks/webooks/discussions" target="_blank">
+                            <i class="fas fa-comments"></i> 讨论区
+                        </a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4><i class="fas fa-users"></i> 关于我们</h4>
+                    <p>我们致力于为用户提供最好的书签管理体验。如果您有任何建议或意见，欢迎联系我们。</p>
+                    <div class="social-links">
+                        <a href="mailto:contact@webooks.com"><i class="fas fa-envelope"></i></a>
+                        <a href="https://twitter.com/webooks" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <a href="https://discord.gg/webooks" target="_blank"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Webooks. 保留所有权利。 | <a href="#" style="color: inherit;">隐私政策</a> | <a href="#" style="color: inherit;">服务条款</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="./assets/js/main.js"></script>
+    <script>
+        // 滚动动画
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate');
+                }
+            });
+        }, observerOptions);
+
+        // 观察所有滚动动画元素
+        document.querySelectorAll('.scroll-animation').forEach(el => {
+            observer.observe(el);
+        });
+
+        // 滚动指示器
+        const scrollIndicator = document.querySelector('.hero-scroll-indicator');
+        if (scrollIndicator) {
+            scrollIndicator.addEventListener('click', () => {
+                document.querySelector('#features').scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        // 添加平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 头部滚动效果
+        let lastScrollTop = 0;
+        const header = document.querySelector('.header');
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > lastScrollTop && scrollTop > 100) {
+                // 向下滚动 - 隐藏头部
+                header.style.transform = 'translateY(-100%)';
+            } else {
+                // 向上滚动 - 显示头部
+                header.style.transform = 'translateY(0)';
+            }
+            
+            lastScrollTop = scrollTop;
+        });
+
+        // 数字统计动画
+        function animateNumber(element, target, duration = 2000) {
+            let start = 0;
+            const increment = target / (duration / 16);
+            
+            function updateNumber() {
+                start += increment;
+                if (start < target) {
+                    element.textContent = Math.floor(start).toLocaleString() + (target > 100 ? '+' : (target === 99.9 ? '%' : ''));
+                    requestAnimationFrame(updateNumber);
+                } else {
+                    element.textContent = target.toLocaleString() + (target > 100 ? '+' : (target === 99.9 ? '%' : ''));
+                }
+            }
+            
+            updateNumber();
+        }
+
+        // 当统计数字进入视口时开始动画
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const statNumber = entry.target.querySelector('.stat-number');
+                    const text = statNumber.textContent;
+                    
+                    if (text.includes('10万+')) {
+                        animateNumber(statNumber, 100000);
+                    } else if (text.includes('100万+')) {
+                        animateNumber(statNumber, 1000000);
+                    } else if (text.includes('99.9%')) {
+                        animateNumber(statNumber, 99.9);
+                    }
+                    
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        });
+
+        document.querySelectorAll('.stat-item').forEach(item => {
+            statsObserver.observe(item);
+        });
+    </script>
+</body>
+</html>

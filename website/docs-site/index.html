@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webooks 文档 - 现代化书签管理工具</title>
+    <meta name="description" content="Webooks 完整文档，包含安装指南、使用教程、API文档和部署说明。">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/docs-site.css">
+</head>
+<body>
+    <header class="docs-header">
+        <nav class="docs-nav">
+            <div class="nav-brand">
+                <h1><a href="../official-site/index.html">Webooks</a></h1>
+                <span class="docs-badge">文档</span>
+            </div>
+            <div class="nav-container">
+                <ul class="docs-nav-menu">
+                    <li><a href="index.html">首页</a></li>
+                    <li><a href="quick-start.html">快速开始</a></li>
+                    <li><a href="api.html">API 文档</a></li>
+                    <li><a href="deployment.html">部署指南</a></li>
+                    <li><a href="faq.html">常见问题</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <div class="mobile-menu-toggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="docs-container">
+        <aside class="docs-sidebar">
+            <div class="sidebar-section">
+                <h3>快速入门</h3>
+                <ul>
+                    <li><a href="quick-start.html">安装指南</a></li>
+                    <li><a href="quick-start.html#first-use">首次使用</a></li>
+                    <li><a href="quick-start.html#basic-operations">基础操作</a></li>
+                    <li><a href="quick-start.html#import-bookmarks">导入书签</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>核心功能</h3>
+                <ul>
+                    <li><a href="api.html#bookmarks">书签管理</a></li>
+                    <li><a href="api.html#folders">文件夹管理</a></li>
+                    <li><a href="api.html#spaces">空间管理</a></li>
+                    <li><a href="api.html#search">搜索功能</a></li>
+                    <li><a href="api.html#tags">标签系统</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>开发指南</h3>
+                <ul>
+                    <li><a href="api.html">RESTful API</a></li>
+                    <li><a href="deployment.html">部署说明</a></li>
+                    <li><a href="deployment.html#vercel">Vercel 部署</a></li>
+                    <li><a href="deployment.html#docker">Docker 部署</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>其他</h3>
+                <ul>
+                    <li><a href="faq.html">常见问题</a></li>
+                    <li><a href="faq.html#troubleshooting">故障排除</a></li>
+                    <li><a href="../official-site/index.html">返回官网</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="docs-main">
+            <div class="docs-content">
+                <h1>Webooks 文档</h1>
+                <p class="lead">欢迎使用 Webooks 现代化书签管理工具的完整文档。</p>
+
+                <div class="quick-links">
+                    <h2>快速链接</h2>
+                    <div class="link-grid">
+                        <a href="quick-start.html" class="quick-link">
+                            <div class="link-icon">🚀</div>
+                            <h3>快速开始</h3>
+                            <p>5分钟快速部署和使用指南</p>
+                        </a>
+                        <a href="api.html" class="quick-link">
+                            <div class="link-icon">📚</div>
+                            <h3>API 文档</h3>
+                            <p>完整的 RESTful API 参考</p>
+                        </a>
+                        <a href="deployment.html" class="quick-link">
+                            <div class="link-icon">⚡</div>
+                            <h3>部署指南</h3>
+                            <p>多种部署方式的详细说明</p>
+                        </a>
+                        <a href="faq.html" class="quick-link">
+                            <div class="link-icon">❓</div>
+                            <h3>常见问题</h3>
+                            <p>常见问题解答和故障排除</p>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="overview-section">
+                    <h2>项目概述</h2>
+                    <p>Webooks 是一个功能强大的现代化书签管理工具，专为提高浏览效率而设计。它支持多种浏览器的书签格式导入导出，提供灵活的空间和文件夹分类管理，并具备强大的搜索和标签功能。</p>
+
+                    <div class="features-list">
+                        <h3>核心特性</h3>
+                        <ul>
+                            <li><strong>智能书签导入</strong>：支持 NETSCAPE-Bookmark-file-1 格式，自动识别 Chrome、Edge、Firefox 等浏览器导出的书签</li>
+                            <li><strong>分类管理</strong>：灵活的空间（Space）和文件夹（Folder）组织结构</li>
+                            <li><strong>高级搜索</strong>：全文搜索书签标题、描述和 URL，支持标签筛选</li>
+                            <li><strong>标签系统</strong>：多标签分类，支持快速筛选和批量操作</li>
+                            <li><strong>响应式设计</strong>：完美适配桌面和移动设备</li>
+                            <li><strong>多语言支持</strong>：内置中英文双语界面</li>
+                            <li><strong>RESTful API</strong>：完整的 API 支持，方便集成和扩展</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="tech-stack">
+                    <h2>技术栈</h2>
+                    <div class="tech-grid">
+                        <div class="tech-item">
+                            <h4>前端</h4>
+                            <ul>
+                                <li>Next.js 14.2.33</li>
+                                <li>React 18</li>
+                                <li>TypeScript</li>
+                                <li>Tailwind CSS</li>
+                                <li>Lucide React (图标)</li>
+                            </ul>
+                        </div>
+                        <div class="tech-item">
+                            <h4>后端</h4>
+                            <ul>
+                                <li>Next.js API Routes</li>
+                                <li>Prisma ORM</li>
+                                <li>PostgreSQL/SQLite</li>
+                                <li>JWT 认证</li>
+                                <li>bcryptjs (密码加密)</li>
+                            </ul>
+                        </div>
+                        <div class="tech-item">
+                            <h4>工具链</h4>
+                            <ul>
+                                <li>ESLint 代码检查</li>
+                                <li>PostCSS 样式处理</li>
+                                <li>Prisma 数据库管理</li>
+                                <li>Cheerio 网页抓取</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="requirements">
+                    <h2>环境要求</h2>
+                    <div class="requirement-grid">
+                        <div class="requirement-item">
+                            <h4>Node.js</h4>
+                            <p>版本 18.0 或更高</p>
+                        </div>
+                        <div class="requirement-item">
+                            <h4>包管理器</h4>
+                            <p>npm 8.0+ 或 pnpm 7.0+</p>
+                        </div>
+                        <div class="requirement-item">
+                            <h4>浏览器</h4>
+                            <p>Chrome 90+、Firefox 88+、Safari 14+、Edge 90+</p>
+                        </div>
+                        <div class="requirement-item">
+                            <h4>数据库</h4>
+                            <p>PostgreSQL 13+ 或 SQLite</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="installation-preview">
+                    <h2>快速安装</h2>
+                    <div class="install-steps">
+                        <div class="install-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>克隆项目</h4>
+                                <pre><code>git clone https://github.com/yourusername/webooks.git
+cd webooks</code></pre>
+                            </div>
+                        </div>
+                        <div class="install-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>安装依赖</h4>
+                                <pre><code>npm install
+# 或使用 pnpm
+pnpm install</code></pre>
+                            </div>
+                        </div>
+                        <div class="install-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>配置环境</h4>
+                                <pre><code>cp .env.example .env
+# 编辑 .env 文件，配置数据库连接等信息</code></pre>
+                            </div>
+                        </div>
+                        <div class="install-step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>初始化数据库</h4>
+                                <pre><code>npx prisma migrate dev
+npx prisma generate</code></pre>
+                            </div>
+                        </div>
+                        <div class="install-step">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <h4>启动服务</h4>
+                                <pre><code># 开发模式
+npm run dev
+
+# 生产模式
+npm run build
+npm start</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cta-section">
+                        <a href="quick-start.html" class="btn btn-primary">查看完整安装指南</a>
+                        <a href="deployment.html" class="btn btn-secondary">部署说明</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>文档</h4>
+                    <ul>
+                        <li><a href="quick-start.html">快速开始</a></li>
+                        <li><a href="api.html">API 文档</a></li>
+                        <li><a href="deployment.html">部署指南</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>资源</h4>
+                    <ul>
+                        <li><a href="../official-site/index.html">官方网站</a></li>
+                        <li><a href="faq.html">常见问题</a></li>
+                        <li><a href="https://github.com/yourusername/webooks">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Webooks 文档. 开源项目，遵循 MIT 许可证。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

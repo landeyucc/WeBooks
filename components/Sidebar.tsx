@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import CustomSelect from './ui/CustomSelect'
-import { ChevronDown, Folder, FolderOpen } from 'lucide-react'
+import { ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react'
 
 interface Space {
   id: string
@@ -30,17 +30,21 @@ interface Folder {
 }
 
 interface SidebarProps {
+  isOpen: boolean
   selectedSpaceId: string | null
   selectedFolderId: string | null
   onSelectSpace: (spaceId: string | null) => void
   onSelectFolder: (folderId: string | null) => void
+  onToggle: () => void
 }
 
 export default function Sidebar({
+  isOpen,
   selectedSpaceId,
   selectedFolderId,
   onSelectSpace,
-  onSelectFolder
+  onSelectFolder,
+  onToggle
 }: SidebarProps) {
   const { t, theme, toggleTheme, language, setLanguage, isAuthenticated, token, collapsedFolders, toggleFolderCollapse, setCollapsedFolders } = useApp()
   const [spaces, setSpaces] = useState<Space[]>([])

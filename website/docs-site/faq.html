@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常见问题 - Webooks 文档</title>
+    <meta name="description" content="Webooks 常见问题解答，包含安装、配置、使用等各个方面的问题和解决方案。">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/docs-site.css">
+</head>
+<body>
+    <header class="docs-header">
+        <nav class="docs-nav">
+            <div class="nav-brand">
+                <h1><a href="../official-site/index.html">Webooks</a></h1>
+                <span class="docs-badge">文档</span>
+            </div>
+            <ul class="docs-nav-menu">
+                <li><a href="index.html">首页</a></li>
+                <li><a href="quick-start.html">快速开始</a></li>
+                <li><a href="api.html">API 文档</a></li>
+                <li><a href="deployment.html">部署指南</a></li>
+                <li><a href="faq.html" class="active">常见问题</a></li>
+            </ul>
+            <div class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="docs-container">
+        <aside class="docs-sidebar">
+            <div class="sidebar-section">
+                <h3>快速链接</h3>
+                <ul>
+                    <li><a href="#general">通用问题</a></li>
+                    <li><a href="#installation">安装问题</a></li>
+                    <li><a href="#configuration">配置问题</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>使用相关</h3>
+                <ul>
+                    <li><a href="#import-export">导入导出</a></li>
+                    <li><a href="#sync">同步问题</a></li>
+                    <li><a href="#permissions">权限管理</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>技术问题</h3>
+                <ul>
+                    <li><a href="#database">数据库问题</a></li>
+                    <li><a href="#performance">性能问题</a></li>
+                    <li><a href="#security">安全问题</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>故障排除</h3>
+                <ul>
+                    <li><a href="#errors">错误处理</a></li>
+                    <li><a href="#troubleshooting">故障诊断</a></li>
+                    <li><a href="#debugging">调试方法</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>帮助资源</h3>
+                <ul>
+                    <li><a href="#getting-help">获取帮助</a></li>
+                    <li><a href="#community">社区支持</a></li>
+                    <li><a href="#contributing">贡献指南</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="docs-main">
+            <div class="docs-content">
+                <h1>常见问题</h1>
+                <p class="lead">以下是 Webooks 用户最常遇到的问题和解决方案。如果您没有找到需要的答案，请查看其他文档或联系社区。</p>
+
+                <div class="search-box">
+                    <input type="text" id="faq-search" placeholder="搜索问题..." class="search-input">
+                    <button type="button" class="search-btn">🔍</button>
+                </div>
+
+                <section id="general" class="faq-section">
+                    <h2>通用问题</h2>
+                    
+                    <div class="faq-item">
+                        <h3>什么是 Webooks？</h3>
+                        <div class="faq-answer">
+                            <p>Webooks 是一个现代化的书签管理工具，支持智能导入、分类管理、高级搜索等功能。您可以从各种浏览器导入书签，创建分类空间，快速查找所需网站。</p>
+                            <p>主要特性包括：</p>
+                            <ul>
+                                <li>智能书签导入和自动分类</li>
+                                <li>空间和文件夹管理</li>
+                                <li>全文搜索和高级筛选</li>
+                                <li>浏览器扩展支持</li>
+                                <li>RESTful API 支持</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>Webooks 是免费的吗？</h3>
+                        <div class="faq-answer">
+                            <p>是的，Webooks 是一个开源项目，完全免费使用。遵循 MIT 许可证，您可以自由使用、修改和分发。</p>
+                            <p>您可以：</p>
+                            <ul>
+                                <li>在个人项目中免费使用</li>
+                                <li>修改源代码以满足需求</li>
+                                <li>部署到自己的服务器</li>
+                                <li>贡献代码和改进建议</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>支持哪些浏览器？</h3>
+                        <div class="faq-answer">
+                            <p>Webooks 支持所有现代浏览器，包括：</p>
+                            <ul>
+                                <li><strong>Chrome/Chromium：</strong> 完全支持，包括扩展</li>
+                                <li><strong>Firefox：</strong> 完全支持，包括扩展</li>
+                                <li><strong>Safari：</strong> 基本支持（某些功能可能受限）</li>
+                                <li><strong>Edge：</strong> 完全支持</li>
+                                <li><strong>移动浏览器：</strong> 响应式设计支持</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>数据安全吗？</h3>
+                        <div class="faq-answer">
+                            <p>Webooks 非常重视数据安全：</p>
+                            <ul>
+                                <li><strong>本地部署：</strong> 数据完全存储在您的服务器上</li>
+                                <li><strong>加密传输：</strong> 所有 API 调用使用 HTTPS</li>
+                                <li><strong>身份认证：</strong> JWT 令牌机制</li>
+                                <li><strong>数据备份：</strong> 支持数据库备份和恢复</li>
+                            </ul>
+                            <div class="security-note">
+                                <strong>重要：</strong> 建议定期备份您的数据，并使用强密码保护账户。
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="installation" class="faq-section">
+                    <h2>安装问题</h2>
+
+                    <div class="faq-item">
+                        <h3>安装需要什么系统要求？</h3>
+                        <div class="faq-answer">
+                            <p>最低系统要求：</p>
+                            <ul>
+                                <li>Node.js 18.x 或更高版本</li>
+                                <li>PostgreSQL 13+ 或 SQLite（开发环境）</li>
+                                <li>1GB RAM</li>
+                                <li>5GB 磁盘空间</li>
+                            </ul>
+                            <p>推荐配置：</p>
+                            <ul>
+                                <li>Node.js 20.x LTS</li>
+                                <li>PostgreSQL 15+</li>
+                                <li>2GB+ RAM</li>
+                                <li>20GB+ SSD 存储</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>安装失败怎么办？</h3>
+                        <div class="faq-answer">
+                            <p>安装失败的常见原因和解决方案：</p>
+                            
+                            <h4>1. Node.js 版本问题</h4>
+                            <pre><code># 检查 Node.js 版本
+node --version
+
+# 如果版本过低，更新 Node.js
+nvm install 20
+nvm use 20</code></pre>
+
+                            <h4>2. 依赖安装失败</h4>
+                            <pre><code># 清理缓存后重新安装
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install</code></pre>
+
+                            <h4>3. 数据库连接问题</h4>
+                            <pre><code># 检查数据库是否运行
+sudo systemctl status postgresql
+
+# 启动数据库服务
+sudo systemctl start postgresql</code></pre>
+
+                            <h4>4. 权限问题</h4>
+                            <pre><code># 在 Linux/macOS 上
+sudo chown -R $USER:$USER .
+
+# 或使用管理员权限（Windows）
+# 右键点击命令提示符，选择"以管理员身份运行"</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>如何验证安装是否成功？</h3>
+                        <div class="faq-answer">
+                            <p>安装成功后，可以通过以下方式验证：</p>
+                            
+                            <h4>1. 启动开发服务器</h4>
+                            <pre><code>npm run dev</code></pre>
+                            <p>如果看到 "Local: http://localhost:3000" 则表示启动成功。</p>
+
+                            <h4>2. 访问应用</h4>
+                            <p>在浏览器中打开 http://localhost:3000，应该能看到 Webooks 登录页面。</p>
+
+                            <h4>3. 检查控制台</h4>
+                            <p>打开浏览器开发者工具，查看控制台是否有错误信息。</p>
+
+                            <h4>4. 数据库连接测试</h4>
+                            <pre><code># 测试数据库连接
+npx prisma db push
+
+# 如果没有错误信息，则连接正常</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="configuration" class="faq-section">
+                    <h2>配置问题</h2>
+
+                    <div class="faq-item">
+                        <h3>如何配置数据库？</h3>
+                        <div class="faq-answer">
+                            <p>Webooks 支持 PostgreSQL 和 SQLite。</p>
+                            
+                            <h4>PostgreSQL 配置（推荐）</h4>
+                            <pre><code># .env 文件
+DATABASE_URL="postgresql://username:password@localhost:5432/webooks"
+
+# 创建数据库（如果不存在）
+createdb webooks</code></pre>
+
+                            <h4>SQLite 配置（开发环境）</h4>
+                            <pre><code># .env 文件
+DATABASE_URL="file:./dev.db"</code></pre>
+
+                            <h4>数据库迁移</h4>
+                            <pre><code># 生成 Prisma 客户端
+npx prisma generate
+
+# 创建数据库表
+npx prisma db push
+
+# 查看数据库
+npx prisma studio</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>如何设置 JWT 密钥？</h3>
+                        <div class="faq-answer">
+                            <p>JWT 密钥用于用户身份认证，建议使用强密钥：</p>
+                            
+                            <h4>生成强密钥</h4>
+                            <pre><code># 使用 Node.js 生成
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+
+# 或使用在线工具
+# https://www.grc.com/passwords.htm</code></pre>
+
+                            <h4>配置 .env 文件</h4>
+                            <pre><code># .env 文件
+JWT_SECRET="your-super-secret-jwt-key-here"
+# 密钥至少 32 字符，建议 64+ 字符</code></pre>
+
+                            <div class="warning">
+                                <strong>警告：</strong> JWT_SECRET 绝对不能泄露或使用弱密钥，否则会影响账户安全。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>如何修改端口号？</h3>
+                        <div class="faq-answer">
+                            <p>默认情况下，Webooks 运行在 3000 端口。您可以通过环境变量修改：</p>
+                            
+                            <pre><code># .env 文件
+PORT=3001
+
+# 或在启动时指定
+PORT=3001 npm run dev</code></pre>
+
+                            <p>如果端口被占用，系统会自动选择下一个可用端口。</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="import-export" class="faq-section">
+                    <h2>导入导出问题</h2>
+
+                    <div class="faq-item">
+                        <h3>如何导入浏览器书签？</h3>
+                        <div class="faq-answer">
+                            <p>Webooks 支持多种导入方式：</p>
+                            
+                            <h4>1. HTML 文件导入</h4>
+                            <ol>
+                                <li>从浏览器导出书签为 HTML 文件</li>
+                                <li>在 Webooks 中进入"导入"页面</li>
+                                <li>选择 HTML 文件并上传</li>
+                                <li>选择目标空间和文件夹</li>
+                                <li>点击"开始导入"</li>
+                            </ol>
+
+                            <h4>2. 浏览器扩展导入</h4>
+                            <ol>
+                                <li>安装 Webooks 浏览器扩展</li>
+                                <li>点击扩展图标</li>
+                                <li>选择"导入当前标签页"</li>
+                                <li>或选择"导入所有书签"</li>
+                            </ol>
+
+                            <h4>3. API 导入</h4>
+                            <pre><code># 使用 curl 命令导入
+curl -X POST "http://localhost:3000/api/bookmarks/import" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@bookmarks.html" \
+  -F "spaceId=space_123"</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>导入失败怎么办？</h3>
+                        <div class="faq-answer">
+                            <p>导入失败的常见原因和解决方案：</p>
+                            
+                            <h4>文件格式问题</h4>
+                            <ul>
+                                <li>确保书签文件是浏览器导出的标准 HTML 格式</li>
+                                <li>检查文件编码是否为 UTF-8</li>
+                                <li>文件大小不超过 10MB</li>
+                            </ul>
+
+                            <h4>网络问题</h4>
+                            <ul>
+                                <li>检查网络连接是否正常</li>
+                                <li>确保防火墙没有阻止连接</li>
+                                <li>尝试刷新页面重试</li>
+                            </ul>
+
+                            <h4>权限问题</h4>
+                            <ul>
+                                <li>确保用户已登录</li>
+                                <li>检查目标空间权限</li>
+                                <li>尝试在其他浏览器中导入</li>
+                            </ul>
+
+                            <h4>重复书签处理</h4>
+                            <ul>
+                                <li>系统会自动检测重复书签</li>
+                                <li>可以在导入设置中选择重复处理策略</li>
+                                <li>重复书签不会被重复导入</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>如何导出书签？</h3>
+                        <div class="faq-answer">
+                            <p>Webooks 提供多种导出方式：</p>
+                            
+                            <h4>1. 通过网页界面导出</h4>
+                            <ol>
+                                <li>进入书签管理页面</li>
+                                <li>选择要导出的书签（可选）</li>
+                                <li>点击"导出"按钮</li>
+                                <li>选择导出格式（HTML/JSON）</li>
+                                <li>下载导出文件</li>
+                            </ol>
+
+                            <h4>2. API 导出</h4>
+                            <pre><code># 导出所有书签为 HTML
+curl -X GET "http://localhost:3000/api/bookmarks/export" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -o bookmarks_export.html
+
+# 导出特定空间的书签
+curl -X GET "http://localhost:3000/api/bookmarks/export?spaceId=space_123" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -o space_bookmarks.html</code></pre>
+
+                            <h4>3. 导出格式</h4>
+                            <ul>
+                                <li><strong>HTML 格式：</strong> 标准浏览器书签格式，可在所有浏览器中导入</li>
+                                <li><strong>JSON 格式：</strong> 结构化数据，适合程序处理</li>
+                                <li><strong>CSV 格式：</strong> 表格数据，可在 Excel 中打开</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sync" class="faq-section">
+                    <h2>同步问题</h2>
+
+                    <div class="faq-item">
+                        <h3>书签如何同步？</h3>
+                        <div class="faq-answer">
+                            <p>Webooks 支持实时同步功能：</p>
+                            
+                            <h4>自动同步</h4>
+                            <ul>
+                                <li>书签变更后会自动同步</li>
+                                <li>支持多设备数据一致性</li>
+                                <li>同步延迟通常在 1-3 秒内</li>
+                            </ul>
+
+                            <h4>手动同步</h4>
+                            <ul>
+                                <li>在设置中点击"强制同步"</li>
+                                <li>或按 F5 刷新页面</li>
+                            </ul>
+
+                            <h4>冲突处理</h4>
+                            <ul>
+                                <li>同时编辑冲突时，系统会保留最新更改</li>
+                                <li>可通过版本历史恢复历史版本</li>
+                                <li>重要操作前建议备份数据</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>同步失败怎么办？</h3>
+                        <div class="faq-answer">
+                            <p>同步问题的诊断和解决：</p>
+                            
+                            <h4>网络连接问题</h4>
+                            <ul>
+                                <li>检查网络连接是否正常</li>
+                                <li>尝试切换网络（如使用手机热点）</li>
+                                <li>检查防火墙设置</li>
+                            </ul>
+
+                            <h4>服务器问题</h4>
+                            <ul>
+                                <li>检查服务器是否正常运行</li>
+                                <li>查看服务器日志了解具体错误</li>
+                                <li>联系服务器管理员</li>
+                            </ul>
+
+                            <h4>客户端问题</h4>
+                            <ul>
+                                <li>清理浏览器缓存</li>
+                                <li>禁用浏览器扩展（可能是冲突源）</li>
+                                <li>尝试无痕/隐私模式</li>
+                            </ul>
+
+                            <h4>数据库问题</h4>
+                            <ul>
+                                <li>检查数据库连接是否正常</li>
+                                <li>验证数据库权限</li>
+                                <li>检查磁盘空间是否充足</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="permissions" class="faq-section">
+                    <h2>权限管理</h2>
+
+                    <div class="faq-item">
+                        <h3>如何设置用户权限？</h3>
+                        <div class="faq-answer">
+                            <p>Webooks 支持多用户权限管理：</p>
+                            
+                            <h4>用户角色</h4>
+                            <ul>
+                                <li><strong>管理员：</strong> 全部权限，可管理用户和系统设置</li>
+                                <li><strong>编辑者：</strong> 可创建、编辑、删除书签</li>
+                                <li><strong>查看者：</strong> 仅可查看书签，无法修改</li>
+                            </ul>
+
+                            <h4>设置用户权限</h4>
+                            <ol>
+                                <li>登录管理员账户</li>
+                                <li>进入用户管理页面</li>
+                                <li>选择目标用户</li>
+                                <li>修改角色和权限设置</li>
+                                <li>保存更改</li>
+                            </ol>
+
+                            <h4>空间权限</h4>
+                            <ul>
+                                <li>每个空间可设置独立的访问权限</li>
+                                <li>支持公开和私有空间</li>
+                                <li>可邀请特定用户访问私有空间</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="database" class="faq-section">
+                    <h2>数据库问题</h2>
+
+                    <div class="faq-item">
+                        <h3>如何备份数据库？</h3>
+                        <div class="faq-answer">
+                            <p>定期备份是保护数据的重要措施：</p>
+                            
+                            <h4>PostgreSQL 备份</h4>
+                            <pre><code># 备份整个数据库
+pg_dump webooks > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# 备份指定表
+pg_dump -t bookmarks webooks > bookmarks_backup.sql
+
+# 压缩备份
+pg_dump webooks | gzip > backup_$(date +%Y%m%d).sql.gz</code></pre>
+
+                            <h4>自动备份脚本</h4>
+                            <pre><code>#!/bin/bash
+BACKUP_DIR="/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+DB_NAME="webooks"
+DB_USER="webooks_user"
+
+# 创建备份目录
+mkdir -p $BACKUP_DIR
+
+# 执行备份
+pg_dump -U $DB_USER -h localhost $DB_NAME | gzip > "$BACKUP_DIR/webooks_$DATE.sql.gz"
+
+# 删除 7 天前的备份
+find $BACKUP_DIR -name "webooks_*.sql.gz" -mtime +7 -delete
+
+echo "备份完成: webooks_$DATE.sql.gz"</code></pre>
+
+                            <h4>SQLite 备份</h4>
+                            <pre><code># 简单的文件复制
+cp dev.db backup_$(date +%Y%m%d_%H%M%S).db
+
+# 或使用 SQLite 命令
+sqlite3 dev.db ".backup backup_$(date +%Y%m%d_%H%M%S).db"</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>如何恢复数据库？</h3>
+                        <div class="faq-answer">
+                            <p>数据库恢复步骤：</p>
+                            
+                            <h4>PostgreSQL 恢复</h4>
+                            <pre><code># 停止应用
+pm2 stop webooks
+
+# 创建新数据库（如果需要）
+createdb webooks_restored
+
+# 恢复数据
+psql webooks_restored < backup_20241201_120000.sql
+
+# 或从压缩文件恢复
+gunzip -c backup_20241201.sql.gz | psql webooks_restored
+
+# 更新 .env 文件中的数据库配置
+# DATABASE_URL="postgresql://user:pass@localhost:5432/webooks_restored"
+
+# 重启应用
+pm2 restart webooks</code></pre>
+
+                            <h4>SQLite 恢复</h4>
+                            <pre><code># 停止应用
+pm2 stop webooks
+
+# 恢复数据库文件
+cp backup_20241201_120000.db dev.db
+
+# 重启应用
+pm2 restart webooks</code></pre>
+
+                            <div class="warning">
+                                <strong>注意：</strong> 恢复前请确保应用程序已停止，避免数据不一致。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>数据库连接超时怎么办？</h3>
+                        <div class="faq-answer">
+                            <p>数据库连接超时的常见原因和解决方案：</p>
+                            
+                            <h4>连接字符串错误</h4>
+                            <pre><code># 检查 .env 文件中的数据库连接字符串
+DATABASE_URL="postgresql://username:password@localhost:5432/webooks"
+
+# 确保：
+# 1. 用户名和密码正确
+# 2. 主机地址正确（localhost/127.0.0.1/其他）
+# 3. 端口号正确（PostgreSQL 默认 5432）
+# 4. 数据库名称正确</code></pre>
+
+                            <h4>数据库服务未启动</h4>
+                            <pre><code># 检查 PostgreSQL 服务状态
+sudo systemctl status postgresql
+
+# 启动 PostgreSQL 服务
+sudo systemctl start postgresql
+
+# 设置开机自启
+sudo systemctl enable postgresql</code></pre>
+
+                            <h4>防火墙阻止连接</h4>
+                            <pre><code># 检查防火墙设置
+sudo ufw status
+
+# 允许 PostgreSQL 连接
+sudo ufw allow 5432/tcp</code></pre>
+
+                            <h4>连接数限制</h4>
+                            <pre><code># 检查 PostgreSQL 最大连接数
+sudo -u postgres psql -c "SHOW max_connections;"
+
+# 检查当前连接数
+sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity;"</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="performance" class="faq-section">
+                    <h2>性能问题</h2>
+
+                    <div class="faq-item">
+                        <h3>网站加载慢怎么办？</h3>
+                        <div class="faq-answer">
+                            <p>网站性能优化的建议：</p>
+                            
+                            <h4>服务器优化</h4>
+                            <ul>
+                                <li><strong>增加内存：</strong> 推荐至少 2GB RAM</li>
+                                <li><strong>使用 SSD：</strong> 提升磁盘 I/O 性能</li>
+                                <li><strong>启用压缩：</strong> 在 Nginx 中启用 gzip 压缩</li>
+                                <li><strong>CDN 加速：</strong> 静态资源使用 CDN</li>
+                            </ul>
+
+                            <h4>应用优化</h4>
+                            <ul>
+                                <li><strong>数据库优化：</strong> 添加适当的索引</li>
+                                <li><strong>缓存策略：</strong> 启用浏览器缓存</li>
+                                <li><strong>图片优化：</strong> 压缩图片，使用 WebP 格式</li>
+                                <li><strong>代码分割：</strong> Next.js 自动代码分割</li>
+                            </ul>
+
+                            <h4>Nginx 配置优化</h4>
+                            <pre><code># /etc/nginx/nginx.conf
+gzip on;
+gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+
+location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>数据库查询慢如何优化？</h3>
+                        <div class="faq-answer">
+                            <p>数据库性能优化建议：</p>
+                            
+                            <h4>添加索引</h4>
+                            <pre><code># 查看查询计划
+EXPLAIN SELECT * FROM bookmarks WHERE title LIKE '%keyword%';
+
+# 为常用搜索字段添加索引
+CREATE INDEX idx_bookmarks_title ON bookmarks(title);
+CREATE INDEX idx_bookmarks_url ON bookmarks(url);
+CREATE INDEX idx_bookmarks_space_id ON bookmarks(space_id);
+
+# 复合索引
+CREATE INDEX idx_bookmarks_space_folder ON bookmarks(space_id, folder_id);</code></pre>
+
+                            <h4>查询优化</h4>
+                            <pre><code># 避免使用 SELECT *
+SELECT id, title, url FROM bookmarks WHERE id = ?;
+
+# 使用 LIMIT 限制结果数量
+SELECT * FROM bookmarks ORDER BY created_at DESC LIMIT 20;
+
+# 使用分页
+SELECT * FROM bookmarks WHERE created_at < ? ORDER BY created_at DESC LIMIT 20;</code></pre>
+
+                            <h4>数据库维护</h4>
+                            <pre><code># 分析表统计信息
+ANALYZE;
+
+# 重建索引
+REINDEX DATABASE webooks;
+
+# 清理数据库
+VACUUM ANALYZE;</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="security" class="faq-section">
+                    <h2>安全问题</h2>
+
+                    <div class="faq-item">
+                        <h3>如何保护账户安全？</h3>
+                        <div class="faq-answer">
+                            <p>账户安全的最佳实践：</p>
+                            
+                            <h4>强密码策略</h4>
+                            <ul>
+                                <li>使用至少 12 位字符的复杂密码</li>
+                                <li>包含大小写字母、数字和特殊字符</li>
+                                <li>不同网站使用不同密码</li>
+                                <li>定期更换密码</li>
+                            </ul>
+
+                            <h4>双因子认证</h4>
+                            <ul>
+                                <li>启用 2FA（如果支持）</li>
+                                <li>使用身份验证器应用（如 Google Authenticator）</li>
+                                <li>保存备用恢复代码</li>
+                            </ul>
+
+                            <h4>会话管理</h4>
+                            <ul>
+                                <li>定期清除浏览器缓存和 Cookie</li>
+                                <li>使用完毕后及时退出登录</li>
+                                <li>不要在公共设备上保存密码</li>
+                            </ul>
+
+                            <h4>监控账户活动</h4>
+                            <ul>
+                                <li>定期检查登录历史</li>
+                                <li>关注异常登录通知</li>
+                                <li>及时更改可疑活动的密码</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>API 密钥泄露怎么办？</h3>
+                        <div class="faq-answer">
+                            <p>API 密钥泄露的应急处理：</p>
+                            
+                            <h4>立即采取的措施</h4>
+                            <ol>
+                                <li><strong>撤销密钥：</strong> 在管理后台撤销泄露的 API 密钥</li>
+                                <li><strong>重置密码：</strong> 修改相关账户的密码</li>
+                                <li><strong>检查日志：</strong> 查看 API 调用日志，确认是否有异常使用</li>
+                                <li><strong>监控账户：</strong> 在接下来的几天内密切关注账户活动</li>
+                            </ol>
+
+                            <h4>生成新密钥</h4>
+                            <pre><code># 生成新的强密钥
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+
+# 更新 .env 文件
+echo "JWT_SECRET=new_generated_secret_here" >> .env
+
+# 重启应用使更改生效
+pm2 restart webooks</code></pre>
+
+                            <h4>预防措施</h4>
+                            <ul>
+                                <li><strong>限制权限：</strong> API 密钥只授予必要权限</li>
+                                <li><strong>定期轮换：</strong> 每 3-6 个月更换一次密钥</li>
+                                <li><strong>环境变量：</strong> 永远不要在代码中硬编码密钥</li>
+                                <li><strong>访问控制：</strong> 限制 API 访问来源</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="errors" class="faq-section">
+                    <h2>错误处理</h2>
+
+                    <div class="faq-item">
+                        <h3>常见错误代码及解决方法</h3>
+                        <div class="faq-answer">
+                            <p>HTTP 错误代码说明：</p>
+                            
+                            <h4>400 Bad Request</h4>
+                            <p><strong>原因：</strong> 请求参数错误</p>
+                            <p><strong>解决：</strong> 检查请求参数格式和必填字段</p>
+                            <pre><code># 错误示例
+{
+  "error": "Invalid request parameters",
+  "details": "title is required"
+}</code></pre>
+
+                            <h4>401 Unauthorized</h4>
+                            <p><strong>原因：</strong> 未认证或令牌无效</p>
+                            <p><strong>解决：</strong> 检查 JWT 令牌是否有效，重新登录</p>
+                            <pre><code># 响应示例
+{
+  "error": "Authentication required",
+  "details": "Invalid or expired token"
+}</code></pre>
+
+                            <h4>403 Forbidden</h4>
+                            <p><strong>原因：</strong> 权限不足</p>
+                            <p><strong>解决：</strong> 检查用户权限，联系管理员</p>
+
+                            <h4>404 Not Found</h4>
+                            <p><strong>原因：</strong> 资源不存在</p>
+                            <p><strong>解决：</strong> 检查资源 ID 是否正确</p>
+
+                            <h4>500 Internal Server Error</h4>
+                            <p><strong>原因：</strong> 服务器内部错误</p>
+                            <p><strong>解决：</strong> 查看服务器日志，联系技术支持</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>数据库错误如何解决？</h3>
+                        <div class="faq-answer">
+                            <p>常见数据库错误及解决方法：</p>
+                            
+                            <h4>Connection refused</h4>
+                            <pre><code>Error: connect ECONNREFUSED 127.0.0.1:5432
+
+# 解决方案：
+# 1. 检查 PostgreSQL 服务是否启动
+sudo systemctl status postgresql
+
+# 2. 检查端口是否正确
+netstat -an | grep 5432
+
+# 3. 检查防火墙设置
+sudo ufw status</code></pre>
+
+                            <h4>Database does not exist</h4>
+                            <pre><code>Error: database "webooks" does not exist
+
+# 解决方案：
+# 1. 创建数据库
+createdb webooks
+
+# 2. 或使用 psql
+sudo -u postgres createdb webooks</code></pre>
+
+                            <h4>Permission denied</h4>
+                            <pre><code>Error: permission denied for table bookmarks
+
+# 解决方案：
+# 1. 授权用户访问数据库
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE webooks TO webooks_user;"
+
+# 2. 或修改数据库所有者
+sudo -u postgres psql -c "ALTER DATABASE webooks OWNER TO webooks_user;"</code></pre>
+
+                            <h4>Prisma 错误</h4>
+                            <pre><code>Error: Prisma Client could not locate the Query Engine for runtime
+
+# 解决方案：
+# 1. 重新生成 Prisma 客户端
+npx prisma generate
+
+# 2. 检查数据库迁移
+npx prisma db push</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="debugging" class="faq-section">
+                    <h2>调试方法</h2>
+
+                    <div class="faq-item">
+                        <h3>如何查看应用日志？</h3>
+                        <div class="faq-answer">
+                            <p>查看不同类型的日志信息：</p>
+                            
+                            <h4>应用日志</h4>
+                            <pre><code># 使用 PM2 查看日志
+pm2 logs webooks
+
+# 查看实时日志
+pm2 logs webooks --lines 100
+
+# 查看错误日志
+pm2 logs webooks --err
+
+# 日志文件位置
+~/.pm2/logs/</code></pre>
+
+                            <h4>系统日志</h4>
+                            <pre><code># Ubuntu/Debian 系统日志
+sudo journalctl -u webooks -f
+
+# 查看特定时间段的日志
+sudo journalctl --since "2024-01-01 10:00:00" --until "2024-01-01 11:00:00"</code></pre>
+
+                            <h4>Nginx 日志</h4>
+                            <pre><code># 访问日志
+sudo tail -f /var/log/nginx/access.log
+
+# 错误日志
+sudo tail -f /var/log/nginx/error.log</code></pre>
+
+                            <h4>数据库日志</h4>
+                            <pre><code># PostgreSQL 日志
+sudo tail -f /var/log/postgresql/postgresql-*.log
+
+# 或在 psql 中查看
+SELECT * FROM pg_stat_activity;</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>如何调试前端问题？</h3>
+                        <div class="faq-answer">
+                            <p>前端调试技巧：</p>
+                            
+                            <h4>浏览器开发者工具</h4>
+                            <ul>
+                                <li><strong>Console：</strong> 查看 JavaScript 错误和警告</li>
+                                <li><strong>Network：</strong> 检查 API 请求和响应</li>
+                                <li><strong>Elements：</strong> 检查 DOM 元素和样式</li>
+                                <li><strong>Application：</strong> 查看本地存储和缓存</li>
+                            </ul>
+
+                            <h4>常见调试命令</h4>
+                            <pre><code># 在浏览器控制台中执行
+localStorage.getItem('auth_token')  // 检查认证令牌
+console.log('Debug info:', data)    // 输出调试信息
+fetch('/api/bookmarks')            // 测试 API 调用</code></pre>
+
+                            <h4>启用调试模式</h4>
+                            <pre><code># 在开发环境中启用详细日志
+DEBUG=webooks:* npm run dev
+
+# 或设置环境变量
+export DEBUG=webooks:*
+npm run dev</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="getting-help" class="faq-section">
+                    <h2>获取帮助</h2>
+
+                    <div class="faq-item">
+                        <h3>如何获取技术支持？</h3>
+                        <div class="faq-answer">
+                            <p>多种方式获取帮助：</p>
+                            
+                            <h4>官方渠道</h4>
+                            <ul>
+                                <li><strong>文档：</strong> 完整的用户文档和 API 文档</li>
+                                <li><strong>GitHub Issues：</strong> 报告问题和功能请求</li>
+                                <li><strong>Wiki：</strong> 社区维护的指南和教程</li>
+                            </ul>
+
+                            <h4>社区支持</h4>
+                            <ul>
+                                <li><strong>讨论区：</strong> 用户交流和互助</li>
+                                <li><strong>Discord：</strong> 实时聊天支持</li>
+                                <li><strong>Reddit：</strong> r/webooks 社区</li>
+                            </ul>
+
+                            <h4>提交问题时请包含：</h4>
+                            <ul>
+                                <li>操作系统和版本</li>
+                                <li>Node.js 版本</li>
+                                <li>Webooks 版本</li>
+                                <li>详细的错误描述</li>
+                                <li>重现步骤</li>
+                                <li>相关日志信息</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>如何报告 Bug？</h3>
+                        <div class="faq-answer">
+                            <p>Bug 报告模板：</p>
+                            
+                            <h4>GitHub Issues 格式</h4>
+                            <pre><code>## Bug 描述
+简要描述问题
+
+## 重现步骤
+1. 打开...
+2. 点击...
+3. 滚动到...
+4. 看到错误
+
+## 预期行为
+描述预期会发生什么
+
+## 实际行为
+描述实际发生了什么
+
+## 屏幕截图
+如果适用，请添加屏幕截图
+
+## 环境信息
+- OS: [e.g. Ubuntu 20.04]
+- Node.js: [e.g. v18.17.0]
+- Webooks: [e.g. v1.2.3]
+- 浏览器: [e.g. Chrome 120.0]
+
+## 额外信息
+添加任何其他关于问题的信息</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="community" class="faq-section">
+                    <h2>社区支持</h2>
+
+                    <div class="faq-item">
+                        <h3>如何参与社区？</h3>
+                        <div class="faq-answer">
+                            <p>欢迎加入 Webooks 社区：</p>
+                            
+                            <h4>贡献方式</h4>
+                            <ul>
+                                <li><strong>代码贡献：</strong> 提交 Pull Request</li>
+                                <li><strong>文档改进：</strong> 完善文档和翻译</li>
+                                <li><strong>测试：</strong> 帮助测试新功能</li>
+                                <li><strong>反馈：</strong> 提供使用反馈和建议</li>
+                                <li><strong>分享：</strong> 向朋友推荐 Webooks</li>
+                            </ul>
+
+                            <h4>社区资源</h4>
+                            <ul>
+                                <li><strong>GitHub：</strong> https://github.com/yourusername/webooks</li>
+                                <li><strong>讨论区：</strong> 社区论坛和问答</li>
+                                <li><strong>博客：</strong> 开发博客和教程</li>
+                                <li><strong>视频：</strong> YouTube 频道和教程视频</li>
+                            </ul>
+
+                            <h4>成为贡献者</h4>
+                            <p>我们欢迎所有形式的贡献，即使是小的修复也有价值。查看 CONTRIBUTING.md 文件了解详细的贡献指南。</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="contributing" class="faq-section">
+                    <h2>贡献指南</h2>
+
+                    <div class="faq-item">
+                        <h3>如何为项目贡献代码？</h3>
+                        <div class="faq-answer">
+                            <p>贡献代码的步骤：</p>
+                            
+                            <h4>1. Fork 项目</h4>
+                            <p>在 GitHub 上 Fork 项目到您的账户</p>
+
+                            <h4>2. 克隆代码</h4>
+                            <pre><code>git clone https://github.com/yourusername/webooks.git
+cd webooks</code></pre>
+
+                            <h4>3. 创建开发分支</h4>
+                            <pre><code>git checkout -b feature/your-feature-name</code></pre>
+
+                            <h4>4. 设置开发环境</h4>
+                            <pre><code># 安装依赖
+npm install
+
+# 设置环境变量
+cp .env.example .env
+
+# 初始化数据库
+npx prisma db push</code></pre>
+
+                            <h4>5. 开发和测试</h4>
+                            <pre><code># 启动开发服务器
+npm run dev
+
+# 运行测试
+npm run test
+
+# 代码检查
+npm run lint</code></pre>
+
+                            <h4>6. 提交更改</h4>
+                            <pre><code>git add .
+git commit -m "feat: add new bookmark feature"
+git push origin feature/your-feature-name</code></pre>
+
+                            <h4>7. 创建 Pull Request</h4>
+                            <p>在 GitHub 上创建 Pull Request，等待代码审查</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>代码规范和标准</h3>
+                        <div class="faq-answer">
+                            <p>请遵循以下编码规范：</p>
+                            
+                            <h4>代码风格</h4>
+                            <ul>
+                                <li>使用 ESLint 和 Prettier 进行代码格式化</li>
+                                <li>遵循 TypeScript 严格模式</li>
+                                <li>使用有意义的变量和函数名</li>
+                                <li>添加必要的注释</li>
+                            </ul>
+
+                            <h4>提交信息格式</h4>
+                            <pre><code>type(scope): description
+
+# 例如：
+feat(auth): add JWT token validation
+fix(api): resolve bookmarks export issue
+docs(readme): update installation guide
+test(bookmarks): add unit tests for bookmark service</code></pre>
+
+                            <h4>类型规范</h4>
+                            <ul>
+                                <li><code>feat:</code> 新功能</li>
+                                <li><code>fix:</code> Bug 修复</li>
+                                <li><code>docs:</code> 文档更新</li>
+                                <li><code>style:</code> 代码格式调整</li>
+                                <li><code>refactor:</code> 代码重构</li>
+                                <li><code>test:</code> 测试相关</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="next-steps">
+                    <h2>需要更多帮助？</h2>
+                    <div class="next-steps-grid">
+                        <a href="quick-start.html" class="next-step">
+                            <div class="step-icon">🚀</div>
+                            <h3>快速开始</h3>
+                            <p>查看详细的使用指南</p>
+                        </a>
+                        <a href="api.html" class="next-step">
+                            <div class="step-icon">🔌</div>
+                            <h3>API 文档</h3>
+                            <p>了解完整的 API 参考</p>
+                        </a>
+                        <a href="deployment.html" class="next-step">
+                            <div class="step-icon">⚙️</div>
+                            <h3>部署指南</h3>
+                            <p>学习如何部署到生产环境</p>
+                        </a>
+                    </div>
+                </section>
+
+                <div class="contact-section">
+                    <h2>联系我们</h2>
+                    <p>如果以上内容没有解决您的问题，欢迎通过以下方式联系我们：</p>
+                    <div class="contact-links">
+                        <a href="https://github.com/yourusername/webooks/issues" target="_blank" class="contact-link">
+                            <span class="contact-icon">🐛</span>
+                            <span>报告问题</span>
+                        </a>
+                        <a href="https://github.com/yourusername/webooks/discussions" target="_blank" class="contact-link">
+                            <span class="contact-icon">💬</span>
+                            <span>社区讨论</span>
+                        </a>
+                        <a href="mailto:support@webooks.com" class="contact-link">
+                            <span class="contact-icon">📧</span>
+                            <span>邮件支持</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>文档</h4>
+                    <ul>
+                        <li><a href="quick-start.html">快速开始</a></li>
+                        <li><a href="api.html">API 文档</a></li>
+                        <li><a href="deployment.html">部署指南</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>资源</h4>
+                    <ul>
+                        <li><a href="../official-site/index.html">官方网站</a></li>
+                        <li><a href="faq.html">常见问题</a></li>
+                        <li><a href="https://github.com/yourusername/webooks">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Webooks 文档. 开源项目，遵循 MIT 许可证。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+    <script>
+        // FAQ 搜索功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('faq-search');
+            const faqItems = document.querySelectorAll('.faq-item');
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                faqItems.forEach(item => {
+                    const question = item.querySelector('h3').textContent.toLowerCase();
+                    const answer = item.querySelector('.faq-answer').textContent.toLowerCase();
+                    
+                    if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

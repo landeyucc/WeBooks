@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速开始 - Webooks 文档</title>
+    <meta name="description" content="Webooks 快速开始指南，包含详细的安装步骤、配置说明和首次使用指导。">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/docs-site.css">
+</head>
+<body>
+    <header class="docs-header">
+        <nav class="docs-nav">
+            <div class="nav-brand">
+                <h1><a href="../official-site/index.html">Webooks</a></h1>
+                <span class="docs-badge">文档</span>
+            </div>
+            <ul class="docs-nav-menu">
+                <li><a href="index.html">首页</a></li>
+                <li><a href="quick-start.html">快速开始</a></li>
+                <li><a href="api.html">API 文档</a></li>
+                <li><a href="deployment.html">部署指南</a></li>
+                <li><a href="faq.html">常见问题</a></li>
+            </ul>
+            <div class="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="docs-container">
+        <aside class="docs-sidebar">
+            <div class="sidebar-section">
+                <h3>快速入门</h3>
+                <ul>
+                    <li><a href="#installation">安装指南</a></li>
+                    <li><a href="#first-use">首次使用</a></li>
+                    <li><a href="#basic-operations">基础操作</a></li>
+                    <li><a href="#import-bookmarks">导入书签</a></li>
+                    <li><a href="#manage-bookmarks">管理书签</a></li>
+                    <li><a href="#admin-panel">管理后台</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>故障排除</h3>
+                <ul>
+                    <li><a href="faq.html#common-issues">常见问题</a></li>
+                    <li><a href="faq.html#database-errors">数据库问题</a></li>
+                    <li><a href="faq.html#port-conflicts">端口冲突</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="docs-main">
+            <div class="docs-content">
+                <h1>快速开始指南</h1>
+                <p class="lead">5分钟快速部署和使用 Webooks 现代化书签管理工具。</p>
+
+                <section id="installation" class="installation-section">
+                    <h2>环境要求</h2>
+                    <div class="requirements">
+                        <div class="requirement-card">
+                            <h4>Node.js</h4>
+                            <p>版本 18.0 或更高</p>
+                            <a href="https://nodejs.org/" target="_blank" class="link">下载 Node.js</a>
+                        </div>
+                        <div class="requirement-card">
+                            <h4>包管理器</h4>
+                            <p>npm 8.0+ 或 pnpm 7.0+</p>
+                            <p>npm 通常随 Node.js 自动安装</p>
+                        </div>
+                        <div class="requirement-card">
+                            <h4>数据库</h4>
+                            <p>PostgreSQL 13+ 或 SQLite</p>
+                            <p>SQLite 无需额外配置</p>
+                        </div>
+                        <div class="requirement-card">
+                            <h4>现代浏览器</h4>
+                            <p>Chrome 90+、Firefox 88+、Safari 14+、Edge 90+</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="installation-steps">
+                    <h2>安装步骤</h2>
+                    
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>克隆项目</h3>
+                            <p>从 GitHub 克隆 Webooks 项目到本地：</p>
+                            <pre><code>git clone https://github.com/yourusername/webooks.git
+cd webooks</code></pre>
+                            <div class="tip">
+                                <strong>提示：</strong> 如果没有 Git，可以从 GitHub 下载 ZIP 文件并解压。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>安装依赖</h3>
+                            <p>安装项目所需的依赖包：</p>
+                            <pre><code>npm install
+# 或使用 pnpm
+pnpm install</code></pre>
+                            <div class="note">
+                                <strong>注意：</strong> 安装过程可能需要几分钟，请耐心等待。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>配置环境变量</h3>
+                            <p>复制环境变量模板并编辑配置：</p>
+                            <pre><code>cp .env.example .env</code></pre>
+                            <p>编辑 <code>.env</code> 文件，配置以下关键参数：</p>
+                            <pre><code># 数据库配置
+DATABASE_URL="postgresql://username:password@localhost:5432/webooks"
+# 或使用 SQLite（推荐用于测试）
+DATABASE_URL="file:./dev.db"
+
+# 应用配置
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key-here"
+
+# JWT 密钥（使用随机字符串）
+JWT_SECRET="your-jwt-secret-key"</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>初始化数据库</h3>
+                            <p>运行数据库迁移和生成 Prisma 客户端：</p>
+                            <pre><code>npx prisma migrate dev --name init
+npx prisma generate</code></pre>
+                            <div class="tip">
+                                <strong>提示：</strong> 如果使用 SQLite，这一步会自动创建数据库文件。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>启动服务</h3>
+                            <p>启动开发服务器：</p>
+                            <pre><code>npm run dev</code></pre>
+                            <p>服务启动后，访问 <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> 查看应用。</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="first-use" class="first-use-section">
+                    <h2>首次使用</h2>
+                    <p>首次访问应用时，系统会自动检测并引导您完成初始化设置：</p>
+
+                    <div class="first-use-steps">
+                        <div class="init-step">
+                            <div class="step-icon">🚀</div>
+                            <h4>系统初始化</h4>
+                            <p>访问应用主页，系统会自动检测需要初始化</p>
+                        </div>
+                        <div class="init-step">
+                            <div class="step-icon">👤</div>
+                            <h4>创建管理员账户</h4>
+                            <p>设置管理员用户名和密码（测试密码：admin123）</p>
+                        </div>
+                        <div class="init-step">
+                            <div class="step-icon">📁</div>
+                            <h4>创建默认空间</h4>
+                            <p>系统会自动创建默认的书签空间和文件夹结构</p>
+                        </div>
+                        <div class="init-step">
+                            <div class="step-icon">✅</div>
+                            <h4>开始使用</h4>
+                            <p>初始化完成后，您可以开始添加和管理书签</p>
+                        </div>
+                    </div>
+
+                    <div class="warning">
+                        <strong>重要：</strong> 请妥善保管管理员账户信息，这是访问管理后台的唯一方式。
+                    </div>
+                </section>
+
+                <section id="basic-operations" class="basic-operations-section">
+                    <h2>基础操作</h2>
+                    
+                    <h3>书签管理</h3>
+                    <div class="operation-grid">
+                        <div class="operation-card">
+                            <h4>添加书签</h4>
+                            <ol>
+                                <li>点击"添加书签"按钮</li>
+                                <li>输入书签标题和 URL</li>
+                                <li>选择文件夹和标签</li>
+                                <li>保存书签</li>
+                            </ol>
+                        </div>
+                        <div class="operation-card">
+                            <h4>编辑书签</h4>
+                            <ol>
+                                <li>右键点击书签</li>
+                                <li>选择"编辑"选项</li>
+                                <li>修改信息并保存</li>
+                            </ol>
+                        </div>
+                        <div class="operation-card">
+                            <h4>删除书签</h4>
+                            <ol>
+                                <li>选择要删除的书签</li>
+                                <li>点击删除按钮</li>
+                                <li>确认删除操作</li>
+                            </ol>
+                        </div>
+                        <div class="operation-card">
+                            <h4>移动书签</h4>
+                            <ol>
+                                <li>拖拽书签到目标文件夹</li>
+                                <li>或使用右键菜单移动</li>
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="import-bookmarks" class="import-section">
+                    <h2>导入书签</h2>
+                    <p>Webooks 支持导入多种浏览器的书签格式：</p>
+
+                    <div class="browser-import">
+                        <h3>支持的浏览器</h3>
+                        <div class="browser-list">
+                            <div class="browser-item">
+                                <strong>Google Chrome</strong>
+                                <p>导出步骤：设置 → 书签 → 书签管理器 → 导出书签</p>
+                            </div>
+                            <div class="browser-item">
+                                <strong>Mozilla Firefox</strong>
+                                <p>导出步骤：库 → 书签 → 管理所有书签 → 导出书签到 HTML</p>
+                            </div>
+                            <div class="browser-item">
+                                <strong>Microsoft Edge</strong>
+                                <p>导出步骤：设置 → 收藏夹 → 导出收藏夹</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-steps">
+                        <h3>导入步骤</h3>
+                        <div class="step-card">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>准备书签文件</h4>
+                                <p>从浏览器导出书签为 HTML 文件（NETSCAPE-Bookmark-file-1 格式）</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>访问管理后台</h4>
+                                <p>访问 <a href="http://localhost:3000/admin" target="_blank">http://localhost:3000/admin</a></p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>上传书签文件</h4>
+                                <p>在书签管理页面选择"导入书签"，上传书签文件</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>选择导入选项</h4>
+                                <p>选择是否保留现有书签、是否创建文件夹结构等</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <h4>开始导入</h4>
+                                <p>点击导入按钮，系统会自动解析并分类书签</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="manage-bookmarks" class="manage-section">
+                    <h2>管理书签</h2>
+                    
+                    <h3>空间管理</h3>
+                    <div class="feature-explanation">
+                        <p><strong>空间（Space）</strong>是最高级别的分类单位，可以理解为不同用途或不同项目的书签集合。</p>
+                        <ul>
+                            <li>创建新的工作空间用于项目管理</li>
+                            <li>为不同主题创建专门的空间</li>
+                            <li>在不同空间之间切换浏览</li>
+                        </ul>
+                    </div>
+
+                    <h3>文件夹管理</h3>
+                    <div class="feature-explanation">
+                        <p><strong>文件夹（Folder）</strong>用于在空间内进一步组织书签。</p>
+                        <ul>
+                            <li>创建嵌套的文件夹结构</li>
+                            <li>拖拽移动文件夹到不同位置</li>
+                            <li>批量管理文件夹内的书签</li>
+                        </ul>
+                    </div>
+
+                    <h3>标签系统</h3>
+                    <div class="feature-explanation">
+                        <p><strong>标签</strong>为书签提供额外的分类维度，便于跨文件夹搜索和筛选。</p>
+                        <ul>
+                            <li>为书签添加多个标签</li>
+                            <li>使用标签快速筛选书签</li>
+                            <li>标签支持颜色分类</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="admin-panel" class="admin-section">
+                    <h2>管理后台</h2>
+                    <p>管理后台提供完整的系统管理功能：</p>
+
+                    <div class="admin-features">
+                        <div class="admin-card">
+                            <h3>书签管理</h3>
+                            <ul>
+                                <li>查看所有书签列表</li>
+                                <li>批量编辑和删除书签</li>
+                                <li>导入和导出书签</li>
+                                <li>检查重复书签</li>
+                            </ul>
+                        </div>
+                        <div class="admin-card">
+                            <h3>文件夹管理</h3>
+                            <ul>
+                                <li>创建和编辑文件夹</li>
+                                <li>调整文件夹层级结构</li>
+                                <li>批量移动书签</li>
+                                <li>删除空文件夹</li>
+                            </ul>
+                        </div>
+                        <div class="admin-card">
+                            <h3>空间管理</h3>
+                            <ul>
+                                <li>创建和管理多个空间</li>
+                                <li>设置空间访问权限</li>
+                                <li>空间统计信息</li>
+                                <li>备份和恢复空间</li>
+                            </ul>
+                        </div>
+                        <div class="admin-card">
+                            <h3>系统管理</h3>
+                            <ul>
+                                <li>用户账户管理</li>
+                                <li>系统配置设置</li>
+                                <li>数据库维护</li>
+                                <li>日志查看</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="warning">
+                        <strong>注意：</strong> 管理后台需要管理员权限，请使用初始化时创建的账户登录。
+                    </div>
+                </section>
+
+                <section class="next-steps">
+                    <h2>下一步</h2>
+                    <div class="next-steps-grid">
+                        <a href="api.html" class="next-step">
+                            <div class="step-icon">📚</div>
+                            <h3>API 文档</h3>
+                            <p>了解 RESTful API 的使用方法</p>
+                        </a>
+                        <a href="deployment.html" class="next-step">
+                            <div class="step-icon">🚀</div>
+                            <h3>部署指南</h3>
+                            <p>学习如何部署到生产环境</p>
+                        </a>
+                        <a href="faq.html" class="next-step">
+                            <div class="step-icon">❓</div>
+                            <h3>常见问题</h3>
+                            <p>查看常见问题解答</p>
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <footer class="docs-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>文档</h4>
+                    <ul>
+                        <li><a href="quick-start.html">快速开始</a></li>
+                        <li><a href="api.html">API 文档</a></li>
+                        <li><a href="deployment.html">部署指南</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>资源</h4>
+                    <ul>
+                        <li><a href="../official-site/index.html">官方网站</a></li>
+                        <li><a href="faq.html">常见问题</a></li>
+                        <li><a href="https://github.com/yourusername/webooks">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Webooks 文档. 开源项目，遵循 MIT 许可证。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>
