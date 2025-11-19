@@ -1,223 +1,287 @@
-# 书签管理器 - Bookmark Manager
+# Webooks - 现代化书签管理工具
 
-现代化的浏览器书签管理系统，功能完善，支持多空间管理、智能搜索和现代化界面。
+#### 文档语言：中文 | [English](./README_EN.md)
 
-## 功能特性
+一个功能强大的现代化书签管理工具，支持书签导入导出、分类管理、搜索和标签系统。专为提高浏览效率而设计，支持多种浏览器书签格式。
 
-- 完整的Next.js全栈应用
-- PostgreSQL数据库支持
-- 管理员认证系统（密码使用bcryptjs加密）
-- 公共前端界面（无需登录浏览）
-- 管理员后台界面（完整CRUD操作）
-- 多语言支持（中英文）
-- 深暗模式切换
-- 响应式设计
-- 智能搜索功能（Google/Bing引擎）
-- 自动抓取网站图标和描述
+## 1. 程序概述（Program Overview）
 
-## 技术栈
+### 核心特性
+- **智能书签导入**：支持 NETSCAPE-Bookmark-file-1 格式，自动识别 Chrome、Edge、Firefox 等浏览器导出的书签
+- **分类管理**：灵活的空间（Space）和文件夹（Folder）组织结构
+- **高级搜索**：全文搜索书签标题、描述和 URL
+- **标签系统**：多标签分类，支持快速筛选
+- **批量操作**：支持书签的批量编辑、移动和删除
+- **响应式设计**：完美适配桌面和移动设备
+- **多语言支持**：内置中英文双语界面
 
-- **前端**: Next.js 14 + TypeScript + Tailwind CSS
-- **后端**: Next.js API Routes + Prisma ORM
-- **数据库**: PostgreSQL
-- **认证**: bcryptjs + JWT tokens
-- **包管理**: npm
+## 2. 快速上手（Quick Start）
 
-## 数据库设计
+### 环境要求
+- Node.js 18.0+
+- npm 8.0+ 或 pnpm 7.0+
+- 现代浏览器（Chrome 90+、Firefox 88+、Safari 14+、Edge 90+）
 
-- `users`: 用户表（单用户系统）
-- `spaces`: 空间表（支持多空间切换）
-- `folders`: 文件夹表（支持嵌套文件夹）
-- `bookmarks`: 书签表
-
-## 安装部署
-
-### 1. 环境要求
-
-- Node.js 18+
-- PostgreSQL 数据库
-- npm
-
-### 2. 安装依赖
+### 安装步骤
 
 ```bash
+# 1. 克隆项目
+git clone https://github.com/yourusername/webooks.git
+cd webooks
+
+# 2. 安装依赖
 npm install
-```
+# 或使用 pnpm
+pnpm install
 
-### 3. 配置环境变量
+# 3. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，配置数据库连接等信息
 
-复制 `.env.example` 为 `.env` 并配置：
-
-```env
-DATABASE_URL="your_postgresql_connection_string"
-JWT_SECRET="your_jwt_secret_key"
-NEXTAUTH_SECRET="your_nextauth_secret"
-NEXTAUTH_URL="http://localhost:3000"
-```
-
-### 4. 初始化数据库
-
-```bash
-# 生成 Prisma Client
+# 4. 初始化数据库
+npx prisma migrate dev
 npx prisma generate
-
-# 推送数据库schema
-npx prisma db push
-
-# 或使用迁移
-npx prisma migrate dev --name init
 ```
 
-### 5. 启动开发服务器
+### 一键启动
 
 ```bash
+# 开发模式
 npm run dev
-```
 
-访问 http://localhost:3000
-
-### 6. 生产部署
-
-```bash
-# 构建
+# 生产模式
 npm run build
-
-# 启动生产服务器
 npm start
 ```
 
-## 使用说明
+### 验证安装
+启动成功后，访问 http://localhost:3000，若看到初始化页面则表示安装成功。
 
-### 首次使用
-
-1. 访问网站会提示系统初始化
-2. 设置管理员账户（用户名和密码）
-3. 默认测试密码：admin123
-4. 系统会自动创建默认空间
-
-### 公共前端
-
-- 左侧边栏：空间切换器和文件夹树形结构
-- 顶部搜索栏：支持Google/Bing搜索引擎切换
-- 主区域：书签卡片网格展示
-- 无需登录即可浏览所有书签
-
-### 管理员后台
-
-1. 点击侧边栏底部"管理后台"按钮
-2. 使用管理员账户登录
-3. 管理书签、空间、文件夹
-4. 支持完整的CRUD操作
+## 3. 核心功能（Core Features）
 
 ### 书签管理
+- **导入功能**：支持拖拽或选择 HTML 书签文件导入
+- **导出功能**：一键导出所有书签为标准格式
+- **分类管理**：创建和管理书签空间、文件夹结构
+- **搜索功能**：实时搜索书签内容
 
-- 创建书签时可选择自动抓取网站图标和描述
-- 支持手动输入图标链接
-- 可为书签分配空间和文件夹
-- 支持批量操作
+### 用户管理
+- **用户认证**：安全的登录注册系统
+- **管理员后台**：强大的管理界面
+- **权限控制**：基于角色的访问控制
 
-### 多语言和主题
+### 系统功能
+- **多语言支持**：中英文界面切换
+- **响应式设计**：适配各种设备尺寸
+- **性能优化**：快速加载和流畅操作
 
-- 左侧边栏底部可切换中英文
-- 支持浅色/深色主题切换
-- 设置会保存到浏览器本地存储
+## 4. 使用说明（Usage Guide）
 
-## 项目结构
+### 基础操作流程
 
+#### 首次使用
+1. 访问应用主页
+2. 完成系统初始化
+3. 创建第一个书签空间
+
+#### 导入书签
+1. 进入管理后台
+2. 选择"导入书签"功能
+3. 拖拽或选择浏览器导出的书签文件
+4. 系统自动解析并分类书签
+
+#### 管理书签
+- **创建文件夹**：右键或使用管理面板
+- **移动书签**：拖拽到目标文件夹
+- **添加标签**：为书签分配多个标签
+- **搜索书签**：使用搜索框实时查找
+
+
+## 5. 详细配置（Configuration Details）
+
+### 配置文件路径
+- **环境配置**：`.env` 文件
+- **应用配置**：`lib/server-config.ts`
+- **数据库配置**：`prisma/schema.prisma`
+
+### 主要配置项
+
+#### 数据库配置
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/webooks"
 ```
-bookmark-manager/
-├── app/
-│   ├── api/              # API 路由
-│   │   ├── auth/         # 认证相关
-│   │   ├── spaces/       # 空间管理
-│   │   ├── folders/      # 文件夹管理
-│   │   └── bookmarks/    # 书签管理
-│   ├── admin/            # 管理员页面
-│   ├── layout.tsx        # 根布局
-│   ├── page.tsx          # 首页
-│   └── globals.css       # 全局样式
-├── components/
-│   ├── admin/            # 管理员组件
-│   │   ├── AdminDashboard.tsx
-│   │   ├── BookmarkManager.tsx
-│   │   ├── SpaceManager.tsx
-│   │   └── FolderManager.tsx
-│   ├── HomePage.tsx      # 主页组件
-│   ├── Sidebar.tsx       # 侧边栏
-│   ├── Header.tsx        # 顶部导航
-│   ├── BookmarkGrid.tsx  # 书签网格
-│   └── InitModal.tsx     # 初始化弹窗
-├── contexts/
-│   └── AppContext.tsx    # 全局状态管理
-├── lib/
-│   ├── prisma.ts         # Prisma 客户端
-│   ├── auth.ts           # 认证工具
-│   ├── scraper.ts        # 网站抓取
-│   └── i18n.ts           # 多语言配置
-├── prisma/
-│   └── schema.prisma     # 数据库模型
-├── .env                  # 环境变量（不提交到git）
-├── .env.example          # 环境变量示例
-└── package.json          # 项目配置
+
+#### 应用配置
+```env
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key"
 ```
 
-## API 接口
+## 6. 接口文档（API Documentation）
 
-### 认证
+### RESTful API
 
-- `GET /api/auth/init` - 检查初始化状态
-- `POST /api/auth/init` - 初始化系统
-- `POST /api/auth/login` - 管理员登录
+#### 认证相关
+- `POST /api/auth/login` - 用户登录
+- `POST /api/auth/register` - 用户注册
+- `POST /api/auth/logout` - 用户登出
 
-### 空间
+#### 书签管理
+- `GET /api/bookmarks` - 获取书签列表
+- `POST /api/bookmarks` - 创建书签
+- `PUT /api/bookmarks/:id` - 更新书签
+- `DELETE /api/bookmarks/:id` - 删除书签
+- `POST /api/bookmarks/import` - 导入书签
+- `GET /api/bookmarks/export` - 导出书签
 
-- `GET /api/spaces` - 获取所有空间
-- `POST /api/spaces` - 创建空间（需认证）
-- `PUT /api/spaces/[id]` - 更新空间（需认证）
-- `DELETE /api/spaces/[id]` - 删除空间（需认证）
+#### 文件夹管理
+- `GET /api/folders` - 获取文件夹列表
+- `POST /api/folders` - 创建文件夹
+- `PUT /api/folders/:id` - 更新文件夹
+- `DELETE /api/folders/:id` - 删除文件夹
 
-### 文件夹
+#### 空间管理
+- `GET /api/spaces` - 获取空间列表
+- `POST /api/spaces` - 创建空间
+- `PUT /api/spaces/:id` - 更新空间
+- `DELETE /api/spaces/:id` - 删除空间
 
-- `GET /api/folders` - 获取文件夹
-- `POST /api/folders` - 创建文件夹（需认证）
-- `PUT /api/folders/[id]` - 更新文件夹（需认证）
-- `DELETE /api/folders/[id]` - 删除文件夹（需认证）
+### 请求格式示例
 
-### 书签
+#### 创建书签
+```json
+POST /api/bookmarks
+{
+  "title": "示例网站",
+  "url": "https://example.com",
+  "description": "这是一个示例网站",
+  "tags": ["开发", "工具"],
+  "folderId": "folder-123",
+  "spaceId": "space-456"
+}
+```
 
-- `GET /api/bookmarks` - 获取书签
-- `POST /api/bookmarks` - 创建书签（需认证）
-- `PUT /api/bookmarks/[id]` - 更新书签（需认证）
-- `DELETE /api/bookmarks/[id]` - 删除书签（需认证）
+#### 响应格式
+```json
+{
+  "success": true,
+  "data": {
+    "id": "bookmark-789",
+    "title": "示例网站",
+    "url": "https://example.com",
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
 
-## 开发说明
+## 7. 部署与运维（Deployment & Ops）
 
-### 技术特点
+### 部署环境要求
+- **操作系统**：Linux/macOS/Windows
+- **Node.js**：18.0 或更高版本
+- **数据库**：PostgreSQL 13+ 或 SQLite
+- **内存**：最小 512MB，推荐 2GB+
+- **磁盘空间**：最小 1GB
 
-- 使用 TypeScript 确保类型安全
-- Tailwind CSS 实现响应式设计
-- Context API 管理全局状态
-- Prisma ORM 简化数据库操作
-- bcryptjs 加密密码
-- JWT 实现无状态认证
-- Cheerio 解析HTML抓取元数据
+### 部署步骤
 
-### 最佳实践
+#### 使用 Vercel（推荐）
+1. Fork 项目到 GitHub
+2. 连接 Vercel 账户
+3. 导入项目并配置环境变量
+4. 自动部署
 
-- 所有密码使用bcrypt加密存储
-- JWT token有效期7天
-- 支持级联删除保持数据一致性
-- 使用 Context 避免 prop drilling
-- 响应式设计适配所有设备
+#### 自定义服务器部署
+```bash
+# 1. 构建应用
+npm run build
 
-## 许可证
+# 2. 启动生产服务
+npm start
 
-ISC
+# 3. 使用 PM2 管理进程（可选）
+npm install -g pm2
+pm2 start npm --name "webooks" -- start
+```
 
-## 作者
+## 8. 开发指南（Development Guide）
 
-MiniMax Agent
+### 开发环境搭建
+```bash
+# 1. 克隆项目
+git clone https://github.com/yourusername/webooks.git
 
----
+# 2. 安装依赖
+npm install
 
-**享受使用书签管理器！**
+# 3. 启动开发服务
+npm run dev
+```
+
+### 代码目录结构
+```
+webooks/
+├── app/                    # Next.js 应用目录
+│   ├── admin/             # 管理后台页面
+│   ├── api/               # API 路由
+│   └── page.tsx           # 主页
+├── components/             # React 组件
+│   ├── admin/             # 管理组件
+│   ├── ui/                # UI 组件
+│   └── HomePage.tsx       # 主页组件
+├── lib/                   # 工具库
+│   ├── auth.ts            # 认证逻辑
+│   ├── i18n.ts            # 国际化
+│   └── prisma.ts          # 数据库连接
+├── prisma/                # 数据库相关
+│   ├── schema.prisma      # 数据库模式
+│   └── migrations/        # 数据库迁移
+└── chrome-extension/      # Chrome 扩展
+```
+
+### 编码规范
+- **TypeScript**：严格模式
+- **ESLint**：使用 Next.js 推荐配置
+- **Prettier**：代码格式化
+- **命名规范**：使用驼峰命名法
+
+### 构建命令
+```bash
+npm run build              # 构建生产版本
+npm run dev                # 开发模式
+npm run lint               # 代码检查
+npm run type-check         # 类型检查
+```
+
+### 本地调试
+1. 使用 VS Code 调试配置
+2. 设置断点调试 TypeScript 代码
+3. 使用浏览器开发者工具调试前端
+4. 使用 Prisma Studio 查看数据库
+
+## 9. 依赖说明（Dependencies）
+
+### 主要依赖
+- **Next.js 14**：React 框架
+- **React 18**：前端库
+- **TypeScript**：类型安全
+- **Prisma**：数据库 ORM
+- **NextAuth.js**：认证系统
+- **Tailwind CSS**：样式框架
+
+### 开发依赖
+- **ESLint**：代码检查
+- **Prettier**：代码格式化
+- **@types/node**：Node.js 类型定义
+
+### 依赖安装
+```bash
+# 安装生产依赖
+npm install
+
+# 安装开发依赖
+npm install --save-dev
+
+# 依赖更新
+npm update
+```
