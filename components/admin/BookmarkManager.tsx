@@ -494,7 +494,19 @@ export default function BookmarkManager() {
               <div className="px-6 py-4 border-b border-gray-200/50">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">
-                    {groupKey === '无文件夹' ? t('uncategorizedBookmarks') : folderPath.join(' / ')}
+                    {groupKey === t('noFolder') ? (
+                      <>
+                        <i className="fas fa-folder-open text-red-500 dark:text-red-400 mr-2"></i>
+                        <span className="text-red-500 dark:text-red-400 font-bold">
+                          {t('uncategorizedBookmarks')}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-folder text-blue-500 dark:text-blue-400 mr-2"></i>
+                        {folderPath.join(' / ')}
+                      </>
+                    )}
                     <span className="ml-2 text-sm text-gray-500">
                       ({groupBookmarks.length})
                     </span>

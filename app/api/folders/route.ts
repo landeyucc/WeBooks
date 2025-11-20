@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserIdFromRequest } from '@/lib/auth'
 import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
 
 // 获取文件夹
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
 
-    const where: any = { userId: targetUserId }
+    const where: Record<string, unknown> = { userId: targetUserId }
     if (spaceId) {
       where.spaceId = spaceId
     }

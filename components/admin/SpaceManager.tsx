@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useApp } from '@/contexts/AppContext'
 
 interface Space {
@@ -25,7 +25,17 @@ export default function SpaceManager() {
     systemCardUrl: ''
   })
 
+  // 优化：添加请求去重缓存ref，避免重复API调用
+  const lastRequestRef = useRef<string>('')
+
   const fetchSpaces = useCallback(async () => {
+    // 优化：添加请求去重逻辑，避免重复API调用
+    const requestKey = `space-manager-${isAuthenticated}-${token}`
+    if (lastRequestRef.current === requestKey) {
+      return
+    }
+    lastRequestRef.current = requestKey
+
     setLoading(true)
     try {
       const response = await fetch('/api/spaces', {
@@ -38,7 +48,7 @@ export default function SpaceManager() {
     } finally {
       setLoading(false)
     }
-  }, [token, t])
+  }, [token, t, isAuthenticated])
 
   useEffect(() => {
     // 只有在用户已认证的情况下才获取空间

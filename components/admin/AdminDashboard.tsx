@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import CustomSelect from '../ui/CustomSelect'
 import BookmarkManager from './BookmarkManager'
 import FolderManager from './FolderManager'
 import SpaceManager from './SpaceManager'
+import RobustImage from '../RobustImage'
 import { useApp } from '../../contexts/AppContext'
 
 interface ApiKeyState {
@@ -65,13 +66,13 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('spaces')
   
   // 从URL参数获取当前选项卡
-  const getTabFromUrl = (): TabType => {
+  const getTabFromUrl = useCallback((): TabType => {
     const tabParam = searchParams.get('tab')
     if (tabParam && TABS.some(tab => tab.key === tabParam)) {
       return tabParam as TabType
     }
     return 'spaces' // 默认选项卡
-  }
+  }, [searchParams])
 
   // 设置选项卡并更新URL
   const setActiveTabWithUrl = (tab: TabType) => {
@@ -96,7 +97,6 @@ export default function AdminDashboard() {
   const [seoDescription, setSeoDescription] = useState<string>('')
   const [keywords, setKeywords] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
-  const [dataLoaded, setDataLoaded] = useState(false) // 跟踪数据是否已加载
   
   // 书签导入导出相关状态
   const [exportScope, setExportScope] = useState<'all' | 'space' | 'folder'>('all')
@@ -113,8 +113,11 @@ export default function AdminDashboard() {
   const [apiKeyState, setApiKeyState] = useState<ApiKeyState>({ current: '', isLoading: false })
   const [showApiKey, setShowApiKey] = useState(false)
 
+  // 优化：添加请求去重缓存ref，避免重复API调用
+  const lastRequestRef = useRef<string>('')
+
   // 获取浏览器扩展API Key
-  const fetchApiKey = async () => {
+  const fetchApiKey = useCallback(async () => {
     try {
       const response = await fetch('/api/extension/api-key', {
         headers: { Authorization: `Bearer ${token}` }
@@ -127,7 +130,7 @@ export default function AdminDashboard() {
       console.error('获取API Key失败:', error)
       setApiKeyState(prev => ({ ...prev, isLoading: false }))
     }
-  }
+  }, [token])
 
   // 生成新的浏览器扩展API Key
   const generateApiKey = async () => {
@@ -168,15 +171,22 @@ export default function AdminDashboard() {
   }, [activeTab, isAuthenticated, fetchApiKey])
 
   // 获取空间数据
-  const fetchSpaces = async () => {
+  const fetchSpaces = useCallback(async () => {
+    // 优化：添加请求去重逻辑，避免重复API调用
+    const requestKey = `spaces-${isAuthenticated}-${token}`
+    if (lastRequestRef.current === requestKey) {
+      return
+    }
+    lastRequestRef.current = requestKey
+
     try {
-      console.log(t('adminFetchingSpacesData'))
+      // 优化：移除调试日志
       const response = await fetch('/api/spaces', {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
         const data = await response.json()
-        console.log(data)
+        // 优化：移除调试日志
         
         // 处理API返回的格式 {spaces: [...]} 或直接数组格式
         let spacesData = []
@@ -194,7 +204,6 @@ export default function AdminDashboard() {
         }
         
         setSpaces(spacesData)
-        setDataLoaded(true)
         
         // 如果没有选中的空间，默认选择第一个
         if (spacesData.length > 0) {
@@ -205,17 +214,15 @@ export default function AdminDashboard() {
       } else {
         console.error(t('adminSpacesDataFetchFailed'), response.status)
         setSpaces([])
-        setDataLoaded(true)
       }
     } catch (error) {
       console.error(t('adminFetchingSpacesDataFailed'), error)
       setSpaces([])
-      setDataLoaded(true)
     }
-  }
+  }, [t, token, selectedSpaceId, isAuthenticated])
 
   // 获取系统配置
-  const fetchSystemConfig = async () => {
+  const fetchSystemConfig = useCallback(async () => {
     try {
       const response = await fetch('/api/system-config', {
         headers: { Authorization: `Bearer ${token}` }
@@ -233,40 +240,35 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(t('adminFetchSystemConfigFailed'), error)
     }
-  }
+  }, [token, t])
 
   // 组件首次加载时获取空间数据和系统配置
   useEffect(() => {
     if (isAuthenticated && token) {
-      console.log(t('adminLoadingSystemConfig'))
+      // 优化：移除调试日志，减少控制台输出导致的性能问题
       Promise.all([fetchSpaces(), fetchSystemConfig()])
         .then(() => {
-          console.log(t('adminSystemConfigLoaded'))
+          // 优化：移除调试日志
         })
         .catch((error) => {
           console.error(t('adminConfigLoadFailed'), error)
         })
     }
-  }, [isAuthenticated, token, fetchSpaces, fetchSystemConfig, t])
+  }, [isAuthenticated, token, fetchSpaces, fetchSystemConfig, t]) // 修复依赖数组，添加缺少的函数依赖
 
   // 当选择的空间改变时，更新systemCardUrl
   useEffect(() => {
     if (selectedSpaceId && spaces.length > 0) {
       const selectedSpace = spaces.find(s => s.id === selectedSpaceId)
       setSystemCardUrl(selectedSpace?.systemCardUrl || '')
-      console.log(t('adminUpdateSystemCardUrl'), selectedSpace?.systemCardUrl || '')
+      // 优化：移除调试日志，减少频繁console输出
     }
-  }, [selectedSpaceId, spaces])
+  }, [selectedSpaceId, spaces]) // 优化：移除t函数依赖
 
   // 处理标签页切换并更新URL
   const handleTabChange = (tab: TabType) => {
     setActiveTabWithUrl(tab)
-    // 如果切换到系统设置且数据未加载，则加载数据
-    if (tab === 'settings' && !dataLoaded) {
-      console.log(t('adminSwitchSettingsReload'))
-      fetchSpaces()
-    }
-    // 如果切换到导入导出页面，加载文件夹数据
+    // 优化：移除重复的fetchSpaces调用，避免在数据已加载时重复请求
     if (tab === 'import' && folders.length === 0) {
       fetchFolders()
     }
@@ -1011,10 +1013,19 @@ export default function AdminDashboard() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {t('systemCardPreview')}
                       </label>
-                      <div className="relative w-full overflow-hidden rounded-lg shadow-lg" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
-                        <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
+                      <div className="relative w-full overflow-hidden rounded-lg" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
+                        {systemCardUrl ? (
+                          <RobustImage
+                            src={systemCardUrl}
+                            alt={t('systemCardImage')}
+                            className="w-full h-full object-cover"
+                            fallbackSrc="/images/default-card.png"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
                             <span className="text-white font-bold text-xl">webooks</span>
                           </div>
+                        )}
                       </div>
                     </div>
                   )}

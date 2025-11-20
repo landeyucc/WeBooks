@@ -36,6 +36,25 @@ interface AppContextType {
   setCollapsedFolders: (folders: Set<string>) => void
 }
 
+// 默认值定义，确保在任何环境下都有有效值
+const defaultContextValue: AppContextType = {
+  user: null,
+  token: null,
+  login: () => {},
+  logout: () => {},
+  isAuthenticated: false,
+  theme: 'light',
+  toggleTheme: () => {},
+  language: 'zh',
+  setLanguage: () => {},
+  t: (key: string) => key,
+  loading: true,
+  setLoading: () => {},
+  collapsedFolders: new Set<string>(),
+  toggleFolderCollapse: () => {},
+  setCollapsedFolders: () => {}
+}
+
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -43,11 +62,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [language, setLanguageState] = useState<Language>('zh')
-  const [loading, setLoading] = useState(true) // 修改为true，初始加载状态
+  const [loading, setLoading] = useState(true)
   const [collapsedFolders, setCollapsedFoldersState] = useState<Set<string>>(new Set())
+  const [isClient, setIsClient] = useState(false)
+
+  // 确保只在客户端运行localStorage相关操作
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // 初始化
   useEffect(() => {
+    if (!isClient) return
+    
     const initializeApp = async () => {
       try {
         // 加载token
@@ -57,10 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           try {
             setToken(savedToken)
             setUser(JSON.parse(savedUser))
-            console.log('从localStorage恢复认证状态:', { 
-              hasToken: !!savedToken, 
-              hasUser: !!savedUser 
-            })
+            // 优化：移除调试日志
           } catch (error) {
             console.error('解析用户信息失败:', error)
             // 清除无效数据
@@ -82,13 +106,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setLanguageState(savedLanguage)
         }
 
-        // 不直接恢复折叠状态，让组件根据当前空间重新计算
-        // 初始状态为空集合，所有文件夹都默认展开
+        // 加载折叠状态
+        const savedCollapsedFolders = localStorage.getItem('collapsedFolders')
+        if (savedCollapsedFolders) {
+          try {
+            const folders = JSON.parse(savedCollapsedFolders)
+            setCollapsedFoldersState(new Set(folders))
+          } catch (error) {
+            console.error('解析折叠状态失败:', error)
+            localStorage.removeItem('collapsedFolders')
+          }
+        }
         
-        console.log('AppContext初始化完成', { 
-          hasToken: !!savedToken, 
-          hasUser: !!savedUser 
-        })
+        // 优化：移除调试日志
       } catch (error) {
         console.error('AppContext初始化失败:', error)
       } finally {
@@ -98,7 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     initializeApp()
-  }, [])
+  }, [isClient])
 
   // 保存折叠状态到localStorage
   useEffect(() => {
@@ -185,7 +215,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 export function useApp() {
   const context = useContext(AppContext)
   if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider')
+    // 在开发环境中记录错误，但返回默认值防止应用崩溃
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('useApp must be used within an AppProvider. Returning default values.')
+    }
+    return defaultContextValue
   }
   return context
 }

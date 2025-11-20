@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
+import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
 // 导出书签
 export async function GET(request: NextRequest) {
@@ -24,9 +24,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
     const folderId = searchParams.get('folderId')
-    const format = searchParams.get('format') || 'html'
 
-    const where: any = { userId }
+    const where: { userId: string; spaceId?: string; folderId?: string } = { userId }
     
     if (spaceId) {
       where.spaceId = spaceId
@@ -82,7 +81,14 @@ export async function GET(request: NextRequest) {
 }
 
 // 生成HTML书签文件内容
-function generateBookmarkHtml(bookmarks: any[]): string {
+function generateBookmarkHtml(bookmarks: {
+  title: string | null
+  url: string
+  iconUrl: string | null
+  createdAt: Date | null
+  folderId: string | null
+  folder: { name: string } | null
+}[]): string {
   const now = Math.floor(Date.now() / 1000)
   
   let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
@@ -96,8 +102,22 @@ function generateBookmarkHtml(bookmarks: any[]): string {
 `
 
   // 按文件夹分组
-  const folders = new Map<string, any[]>()
-  const rootBookmarks: any[] = []
+  const folders = new Map<string, {
+    title: string | null
+    url: string
+    iconUrl: string | null
+    createdAt: Date | null
+    folderId: string | null
+    folder: { name: string } | null
+  }[]>()
+  const rootBookmarks: {
+    title: string | null
+    url: string
+    iconUrl: string | null
+    createdAt: Date | null
+    folderId: string | null
+    folder: { name: string } | null
+  }[] = []
   
   bookmarks.forEach(bookmark => {
     if (bookmark.folderId && bookmark.folder) {
@@ -141,7 +161,12 @@ function generateBookmarkHtml(bookmarks: any[]): string {
 }
 
 // 生成单个书签条目
-function generateBookmarkEntry(bookmark: any, timestamp: number): string {
+function generateBookmarkEntry(bookmark: {
+  title: string | null
+  url: string
+  iconUrl: string | null
+  createdAt: Date | null
+}, timestamp: number): string {
   const title = escapeHtml(bookmark.title || '未命名书签')
   const url = escapeHtml(bookmark.url)
   const addDate = bookmark.createdAt ? Math.floor(new Date(bookmark.createdAt).getTime() / 1000) : timestamp

@@ -35,7 +35,7 @@ export default function InitModal({ onComplete }: InitModalProps) {
       } else {
         setError(data.error || t('initFailed'))
       }
-    } catch (error) {
+    } catch {
       setError(t('initFailedRetry'))
     } finally {
       setLoading(false)

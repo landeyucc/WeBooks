@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { useApp } from '@/contexts/AppContext'
 import CustomSelect from './ui/CustomSelect'
-import { ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react'
+import { ChevronDown, Folder, FolderOpen } from 'lucide-react'
 
 interface Space {
   id: string
@@ -30,31 +31,60 @@ interface Folder {
 }
 
 interface SidebarProps {
-  isOpen: boolean
   selectedSpaceId: string | null
   selectedFolderId: string | null
   onSelectSpace: (spaceId: string | null) => void
   onSelectFolder: (folderId: string | null) => void
-  onToggle: () => void
 }
 
 export default function Sidebar({
-  isOpen,
   selectedSpaceId,
   selectedFolderId,
   onSelectSpace,
-  onSelectFolder,
-  onToggle
+  onSelectFolder
 }: SidebarProps) {
   const { t, theme, toggleTheme, language, setLanguage, isAuthenticated, token, collapsedFolders, toggleFolderCollapse, setCollapsedFolders } = useApp()
   const [spaces, setSpaces] = useState<Space[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
 
+  // 跟踪是否已经为当前空间设置了默认折叠状态
+  const [isInitialCollapsedSet, setIsInitialCollapsedSet] = useState(false)
+
+  const fetchSpaces = useCallback(async () => {
+    try {
+      const response = await fetch('/api/spaces', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await response.json()
+      const spacesData = data.spaces || data || []
+      setSpaces(spacesData)
+      
+      // 移除自动选择第一个空间的逻辑，避免与HomePage的默认空间逻辑冲突
+      // 让HomePage组件决定默认选择哪个空间
+      // if (spacesData.length > 0 && !selectedSpaceId) {
+      //   onSelectSpace(spacesData[0].id)
+      // }
+    } catch (error) {
+      console.error(t('fetchSpacesFailed'), error)
+    }
+  }, [token, t])
+
+  const fetchFolders = useCallback(async (spaceId: string) => {
+    try {
+      const response = await fetch(`/api/folders?spaceId=${spaceId}`)
+      const data = await response.json()
+      const foldersData = data.folders || []
+      setFolders(foldersData)
+    } catch (error) {
+      console.error(t('fetchFoldersFailedSide'), error)
+    }
+  }, [t])
+
   useEffect(() => {
     if (isAuthenticated && token) {
       fetchSpaces()
     }
-  }, [isAuthenticated, token])
+  }, [isAuthenticated, token, fetchSpaces])
 
   useEffect(() => {
     if (selectedSpaceId) {
@@ -62,10 +92,7 @@ export default function Sidebar({
     } else {
       setFolders([])
     }
-  }, [selectedSpaceId])
-
-  // 跟踪是否已经为当前空间设置了默认折叠状态
-  const [isInitialCollapsedSet, setIsInitialCollapsedSet] = useState(false)
+  }, [selectedSpaceId, fetchFolders])
 
   useEffect(() => {
     if (selectedSpaceId) {
@@ -89,37 +116,7 @@ export default function Sidebar({
       setCollapsedFolders(newCollapsedIds)
       setIsInitialCollapsedSet(true)
     }
-  }, [folders, isInitialCollapsedSet])
-
-  const fetchSpaces = async () => {
-    try {
-      const response = await fetch('/api/spaces', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      const data = await response.json()
-      const spacesData = data.spaces || data || []
-      setSpaces(spacesData)
-      
-      // 移除自动选择第一个空间的逻辑，避免与HomePage的默认空间逻辑冲突
-      // 让HomePage组件决定默认选择哪个空间
-      // if (spacesData.length > 0 && !selectedSpaceId) {
-      //   onSelectSpace(spacesData[0].id)
-      // }
-    } catch (error) {
-      console.error(t('fetchSpacesFailed'), error)
-    }
-  }
-
-  const fetchFolders = async (spaceId: string) => {
-    try {
-      const response = await fetch(`/api/folders?spaceId=${spaceId}`)
-      const data = await response.json()
-      const foldersData = data.folders || []
-      setFolders(foldersData)
-    } catch (error) {
-      console.error(t('fetchFoldersFailedSide'), error)
-    }
-  }
+  }, [folders, isInitialCollapsedSet, setCollapsedFolders])
 
   // 构建文件夹树
   const buildFolderTree = (folders: Folder[]) => {
@@ -158,20 +155,24 @@ export default function Sidebar({
       const target = e.target as HTMLElement
       const isToggleButton = target.closest('.folder-toggle')
       
+      // 如果点击的是折叠按钮，执行折叠操作
       if (isToggleButton) {
-        // 如果点击的是折叠按钮，执行折叠操作
         e.stopPropagation()
         toggleFolderCollapse(folder.id)
+        return
+      }
+      
+      // 如果点击的是整个文件夹块
+      e.stopPropagation()
+      if (canCollapse && isCollapsed) {
+        // 如果可以折叠且当前是折叠状态，则展开
+        toggleFolderCollapse(folder.id)
+      } else if (canCollapse && !isCollapsed) {
+        // 如果可以折叠且当前是展开状态，选择文件夹
+        onSelectFolder(folder.id)
       } else {
-        // 如果点击的是整个文件夹块
-        e.stopPropagation()
-        if (canCollapse && isCollapsed) {
-          // 如果可以折叠且当前是折叠状态，则展开
-          toggleFolderCollapse(folder.id)
-        } else {
-          // 否则选择文件夹
-          onSelectFolder(folder.id)
-        }
+        // 如果不能折叠，直接选择文件夹
+        onSelectFolder(folder.id)
       }
     }
 
@@ -263,30 +264,21 @@ export default function Sidebar({
     <aside className="neu-base flex flex-col h-full transition-opacity duration-300 ease-in-out" style={{ width: 'calc(100% - 10px)', marginRight: '10px' }}>
       {/* 系统卡图展示 - 移动到最顶部 */}
       <div className="px-6 pt-6 pb-4 flex-shrink-0">
-        <div className="relative overflow-hidden rounded-lg shadow-lg" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
+        <div className="relative overflow-hidden rounded-lg" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
           {(() => {
             const currentSpace = spaces.find(s => s.id === selectedSpaceId)
             if (currentSpace?.systemCardUrl) {
-              return (
-                <img
-                  src={currentSpace.systemCardUrl}
-                  alt={t('systemCardImage')}
-                  className="w-full h-full object-cover"
-                  style={{ width: '520px', height: '120px', maxWidth: '100%' }}
-                  onError={(e) => {
-                    // 如果图片加载失败，显示默认标题
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
-                    const parent = target.parentElement
-                    if (parent) {
-                      const fallbackDiv = document.createElement('div')
-                      fallbackDiv.className = 'w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center'
-                      fallbackDiv.innerHTML = '<span class="text-white font-bold text-xl">webooks</span>'
-                      parent.appendChild(fallbackDiv)
-                    }
-                  }}
-                />
-              )
+                return (
+                  <Image
+                    src={currentSpace.systemCardUrl}
+                    alt={t('systemCardImage')}
+                    className="w-full h-full object-cover"
+                    style={{ width: '520px', height: '120px', maxWidth: '100%' }}
+                    unoptimized
+                    width={520}
+                    height={120}
+                  />
+                )
             } else {
               return (
                 <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>

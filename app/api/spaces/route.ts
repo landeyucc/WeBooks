@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserIdFromRequest } from '@/lib/auth'
 import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
 
 // 获取所有空间

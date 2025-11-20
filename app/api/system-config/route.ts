@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 // 获取系统配置（单用户模式）
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 在单用户模式下，先确保存在一个用户
-    let user = await prisma.user.findFirst()
+    const user = await prisma.user.findFirst()
     if (!user) {
       // 如果没有用户，返回空的配置
       return NextResponse.json({
@@ -156,19 +156,24 @@ export async function PUT(request: NextRequest) {
       createdAt: config.createdAt,
       updatedAt: config.updatedAt
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('更新系统配置错误:', error)
     
     // 如果是外键约束错误，返回更详细的错误信息
-    if (error.code === 'P2003') {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2003') {
       return NextResponse.json(
         { error: '外键约束违反，请检查空间ID是否正确' },
         { status: 400 }
       )
     }
     
+    // 获取错误消息
+    const errorMessage = typeof error === 'object' && error !== null && 'message' in error 
+      ? String(error.message) 
+      : '未知错误'
+    
     return NextResponse.json(
-      { error: '更新系统配置失败', details: error.message },
+      { error: '更新系统配置失败', details: errorMessage },
       { status: 500 }
     )
   }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserIdFromRequest } from '@/lib/auth'
-import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
+import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
 // 更新书签
 export async function PUT(

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
@@ -16,7 +16,7 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMode, setSearchMode] = useState<'bookmarks' | 'engine'>('bookmarks')
   // 控制侧边栏显示状态 - 移动端默认关闭，桌面端默认开启
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true) // 桌面端默认展开
 
   // 控制搜索栏显示状态 - 移动端默认关闭
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -28,17 +28,17 @@ export default function HomePage() {
   const defaultSpaceInit = useRef(false)
 
   // 检测屏幕尺寸变化
-  useEffect(() => {
-    const checkScreenSize = () => {
-      const mobile = window.innerWidth < 768
-      setIsMobile(mobile)
-      
-      // 在桌面端，默认打开侧边栏
-      if (!mobile && !isSidebarOpen) {
-        setIsSidebarOpen(true)
-      }
+  const checkScreenSize = useCallback(() => {
+    const mobile = window.innerWidth < 768
+    setIsMobile(mobile)
+    
+    // 在桌面端，确保侧边栏状态正确
+    if (!mobile) {
+      setIsSidebarOpen(true)
     }
+  }, [])
 
+  useEffect(() => {
     // 初始检查
     checkScreenSize()
 
@@ -46,133 +46,9 @@ export default function HomePage() {
     window.addEventListener('resize', checkScreenSize)
     
     return () => window.removeEventListener('resize', checkScreenSize)
-  }, [])
+  }, [checkScreenSize])
 
-  useEffect(() => {
-    checkInitStatus()
-  }, [])
-
-  // 设置默认空间逻辑 - 优先使用系统配置的默认空间
-  useEffect(() => {
-    let isMounted = true // 添加组件挂载状态检查
-    
-    const setDefaultSpace = async () => {
-      // 重置挂载状态，允许重新执行
-      const mounted = { current: true }
-      
-      try {
-        console.log('开始设置默认空间，认证状态:', { 
-          isAuthenticated, 
-          token: !!token, 
-          user: !!user 
-        })
-        
-        // 确保用户完全认证（token和user都存在）
-        if (!isAuthenticated || !token || !user) {
-          console.log('用户未完全认证，等待认证完成:', { 
-            isAuthenticated, 
-            hasToken: !!token, 
-            hasUser: !!user 
-          })
-          return
-        }
-        
-        // 确保还没有设置默认空间
-        if (selectedSpaceId) {
-          console.log('默认空间已设置，跳过设置:', selectedSpaceId)
-          return
-        }
-        
-        console.log('开始获取默认空间设置...')
-        
-        // 优先从系统配置获取默认空间
-        const configResponse = await fetch('/api/system-config', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        })
-
-        if (configResponse.ok) {
-          const config = await configResponse.json()
-          console.log('获取到的系统配置:', config)
-          if (config.defaultSpaceId && mounted.current) {
-            console.log('使用系统默认空间:', config.defaultSpaceId)
-            setSelectedSpaceId(config.defaultSpaceId)
-            return
-          } else {
-            console.log('未找到系统默认空间，将选择第一个可用空间')
-          }
-        } else {
-          console.log('获取系统配置失败，状态码:', configResponse.status)
-        }
-
-        // 如果没有默认空间或系统配置获取失败，获取第一个可用空间作为备用
-        if (!selectedSpaceId && mounted.current) {
-          console.log('开始获取第一个可用空间...')
-          const spacesResponse = await fetch('/api/spaces', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          })
-
-          if (spacesResponse.ok) {
-            const spacesData = await spacesResponse.json()
-            // 处理API返回的格式 {spaces: [...]} 或直接数组格式
-            let spaces = []
-            if (Array.isArray(spacesData)) {
-              spaces = spacesData
-            } else if (spacesData.spaces && Array.isArray(spacesData.spaces)) {
-              spaces = spacesData.spaces
-            } else if (spacesData.data && Array.isArray(spacesData.data)) {
-              spaces = spacesData.data
-            }
-            
-            console.log('获取到的空间数据:', spaces)
-            if (spaces.length > 0 && mounted.current) {
-              console.log('使用第一个可用空间作为默认空间:', spaces[0].id)
-              setSelectedSpaceId(spaces[0].id)
-            }
-          } else {
-            console.log('获取空间数据失败，状态码:', spacesResponse.status)
-          }
-        }
-      } catch (error) {
-        if (mounted.current) {
-          console.error(t('setDefaultSpaceFailed'), error)
-        }
-      }
-    }
-
-    // 只有在用户完全认证完成且未初始化的情况下才设置默认空间
-    console.log('HomePage useEffect:', { 
-      checkingInit, 
-      loading, 
-      needsInit, 
-      isAuthenticated, 
-      hasToken: !!token, 
-      hasUser: !!user,
-      selectedSpaceId,
-      defaultSpaceInit: defaultSpaceInit.current // 添加初始化状态检查
-    })
-    
-    // 等待所有初始状态都完成后再设置默认空间，且只执行一次
-    if (!checkingInit && !loading && !needsInit && isAuthenticated && token && user && !selectedSpaceId && !defaultSpaceInit.current) {
-      console.log('开始执行默认空间设置...')
-      defaultSpaceInit.current = true // 标记已开始初始化
-      // 添加一个小延迟，确保AppContext完全恢复状态
-      const timeoutId = setTimeout(() => {
-        if (isMounted) {
-          setDefaultSpace()
-        }
-      }, 200)
-      return () => {
-        isMounted = false
-        clearTimeout(timeoutId)
-      }
-    }
-  }, [checkingInit, loading, needsInit, isAuthenticated, token, user])
-
-  const checkInitStatus = async () => {
+  const checkInitStatus = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/init')
       const data = await response.json()
@@ -182,7 +58,105 @@ export default function HomePage() {
     } finally {
       setCheckingInit(false)
     }
-  }
+  }, [t])
+
+  useEffect(() => {
+    checkInitStatus()
+  }, [checkInitStatus])
+
+  // 设置默认空间逻辑 - 优先使用系统配置的默认空间
+  const setDefaultSpace = useCallback(async () => {
+    const isMounted = true // 添加组件挂载状态检查
+    
+    try {
+      // 优化：减少频繁的console.log，只在关键节点输出
+      console.log('设置默认空间...')
+      
+      // 确保用户完全认证（token和user都存在）
+      if (!isAuthenticated || !token || !user) {
+        console.log('等待认证完成')
+        return
+      }
+      
+      // 确保还没有设置默认空间
+      if (selectedSpaceId) {
+        console.log('默认空间已设置')
+        return
+      }
+      
+      console.log('开始获取默认空间设置...')
+      
+      // 优先从系统配置获取默认空间
+      const configResponse = await fetch('/api/system-config', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (configResponse.ok) {
+        const config = await configResponse.json()
+        if (config.defaultSpaceId && isMounted) {
+          console.log('使用系统默认空间:', config.defaultSpaceId)
+          setSelectedSpaceId(config.defaultSpaceId)
+          return
+        } else {
+          console.log('未找到系统默认空间，将选择第一个可用空间')
+        }
+      } else {
+        console.log('获取系统配置失败，状态码:', configResponse.status)
+      }
+
+      // 如果没有默认空间或系统配置获取失败，获取第一个可用空间作为备用
+      if (!selectedSpaceId && isMounted) {
+        console.log('开始获取第一个可用空间...')
+        const spacesResponse = await fetch('/api/spaces', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        })
+
+        if (spacesResponse.ok) {
+          const spacesData = await spacesResponse.json()
+          // 处理API返回的格式 {spaces: [...]} 或直接数组格式
+          let spaces = []
+          if (Array.isArray(spacesData)) {
+            spaces = spacesData
+          } else if (spacesData.spaces && Array.isArray(spacesData.spaces)) {
+            spaces = spacesData.spaces
+          } else if (spacesData.data && Array.isArray(spacesData.data)) {
+            spaces = spacesData.data
+          }
+          
+          console.log('获取空间数据:', spaces.length)
+          if (spaces.length > 0 && isMounted) {
+            console.log('使用第一个可用空间作为默认空间:', spaces[0].id)
+            setSelectedSpaceId(spaces[0].id)
+          }
+        } else {
+          console.log('获取空间数据失败，状态码:', spacesResponse.status)
+        }
+      }
+    } catch (error) {
+      if (isMounted) {
+        console.error('设置默认空间失败:', error)
+      }
+    }
+  }, [isAuthenticated, token, user, selectedSpaceId]) // 移除t依赖
+
+  useEffect(() => {
+    // 优化：移除频繁的console.log，只在必要的时候输出
+    // 等待所有初始状态都完成后再设置默认空间，且只执行一次
+    if (!checkingInit && !loading && !needsInit && isAuthenticated && token && user && !selectedSpaceId && !defaultSpaceInit.current) {
+      defaultSpaceInit.current = true // 标记已开始初始化
+      // 减少延迟时间，减少频繁的状态检查
+      const timeoutId = setTimeout(() => {
+        setDefaultSpace()
+      }, 100) // 从200ms减少到100ms
+      return () => {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [checkingInit, loading, needsInit, isAuthenticated, token, user, selectedSpaceId, setDefaultSpace]) // 添加setDefaultSpace依赖以修复ESLint警告
 
   if (checkingInit || loading) {
     return (
@@ -208,12 +182,10 @@ export default function HomePage() {
         }
       `}>
         <Sidebar
-          isOpen={isMobile ? true : isSidebarOpen}
           selectedSpaceId={selectedSpaceId}
           selectedFolderId={selectedFolderId}
           onSelectSpace={setSelectedSpaceId}
           onSelectFolder={setSelectedFolderId}
-          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         />
       </div>
 

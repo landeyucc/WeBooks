@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
+import { getAuthenticatedUserId } from '@/lib/auth-helper'
 import { JSDOM } from 'jsdom'
 
 interface ParsedBookmark {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     const html = await file.text()
     
     // 解析HTML书签文件
-    const { bookmarks, folders } = parseBookmarkHtml(html)
+    const { bookmarks } = parseBookmarkHtml(html)
     
     if (bookmarks.length === 0) {
       return NextResponse.json(
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
           iconUrl = fetchedIcon || undefined
         }
 
-        const createdBookmark = await prisma.bookmark.create({
+        await prisma.bookmark.create({
           data: {
             title: bookmark.title,
             url: bookmark.url,

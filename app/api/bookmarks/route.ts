@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserIdFromRequest } from '@/lib/auth'
 import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
 
 // 获取书签
@@ -14,7 +13,7 @@ export async function GET(request: NextRequest) {
     const targetUserId = await getPublicUserId(request)
     console.log('GET bookmarks - User ID:', targetUserId)
 
-    const where: any = { userId: targetUserId }
+    const where: Record<string, unknown> = { userId: targetUserId }
     
     if (spaceId) {
       where.spaceId = spaceId
