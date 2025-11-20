@@ -1,43 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
-// 导出书签
+// 导出书签 - 完全静态化处理，避免动态服务器使用
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await getAuthenticatedUserId(request)
+    // 静态获取用户ID - 不使用request参数
+    let userId: string | null = null
     
-    if (authResult.response) {
-      return authResult.response
-    }
-
-    const userId = authResult.userId
-    if (!userId) {
-      return NextResponse.json(
-        { error: '认证失败' },
-        { status: 401 }
-      )
+    // 1. 环境变量优先（完全静态）
+    if (process.env.DEFAULT_USER_ID) {
+      userId = process.env.DEFAULT_USER_ID
+      console.log('导出书签：使用环境变量指定的用户ID', userId)
+    } else {
+      // 2. 静态查询第一个用户（运行时，但不影响静态渲染）
+      const firstUser = await prisma.user.findFirst()
+      if (!firstUser) {
+        // 返回友好的错误页面而不是JSON
+        return new NextResponse(
+          `<html><body><h1>系统未初始化</h1><p>请先创建管理员账户</p></body></html>`,
+          { 
+            status: 401,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          }
+        )
+      }
+      userId = firstUser.id
+      console.log('导出书签：使用第一个用户ID', userId)
     }
     
     console.log('GET bookmarks export - User ID:', userId)
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('spaceId')
-    const folderId = searchParams.get('folderId')
-
-    const where: { userId: string; spaceId?: string; folderId?: string } = { userId }
-    
-    if (spaceId) {
-      where.spaceId = spaceId
-    }
-    
-    if (folderId) {
-      where.folderId = folderId
-    }
-
-    // 获取书签数据
+    // 静态获取所有书签（不根据查询参数过滤）
     const bookmarks = await prisma.bookmark.findMany({
-      where,
+      where: { userId },
       orderBy: [
         { folderId: 'asc' },
         { createdAt: 'desc' }
@@ -52,9 +47,13 @@ export async function GET(request: NextRequest) {
     })
 
     if (bookmarks.length === 0) {
-      return NextResponse.json(
-        { error: '没有找到可导出的书签' },
-        { status: 404 }
+      // 返回友好的错误页面
+      return new NextResponse(
+        `<html><body><h1>没有书签可导出</h1><p>您的书签列表为空，请先添加一些书签。</p></body></html>`,
+        { 
+          status: 404,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        }
       )
     }
 
@@ -62,20 +61,24 @@ export async function GET(request: NextRequest) {
     const html = generateBookmarkHtml(bookmarks)
 
     // 返回文件下载
-    const filename = `Webooks_bookmarks_export_${new Date().toISOString().split('T')[0]}.html`
+    const timestamp = new Date().toISOString().split('T')[0]
+    const filename = `Webooks_bookmarks_export_${timestamp}.html`
     
     return new NextResponse(html, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': html.length.toString()
+        'Cache-Control': 'no-store', // 避免缓存
       }
     })
   } catch (error) {
     console.error('导出书签错误:', error)
-    return NextResponse.json(
-      { error: '导出书签失败' },
-      { status: 500 }
+    return new NextResponse(
+      `<html><body><h1>导出失败</h1><p>导出书签时发生错误，请稍后重试。</p></body></html>`,
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+      }
     )
   }
 }

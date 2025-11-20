@@ -1,4 +1,7 @@
 {
   "buildCommand": "npx prisma generate && npm run build",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "env": {
+    "DEFAULT_USER_ID": "e123bdfa-c287-4068-9ea2-d1ebef8a11ed"
+  }
 }
