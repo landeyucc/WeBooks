@@ -7,7 +7,10 @@ import BookmarkManager from './BookmarkManager'
 import FolderManager from './FolderManager'
 import SpaceManager from './SpaceManager'
 import RobustImage from '../RobustImage'
+import { ConfirmModal } from '../CustomModal'
 import { useApp } from '../../contexts/AppContext'
+import { useNotifications } from '../NotificationSystem'
+import NotificationSystem from '../NotificationSystem'
 
 interface ApiKeyState {
   current: string
@@ -63,6 +66,7 @@ export default function AdminDashboard() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { logout, user, t, token, isAuthenticated } = useApp()
+  const { showSuccess, showError, showWarning, notifications } = useNotifications()
   const [activeTab, setActiveTab] = useState<TabType>('spaces')
   
   // 从URL参数获取当前选项卡
@@ -112,6 +116,14 @@ export default function AdminDashboard() {
   // 浏览器扩展API Key相关状态
   const [apiKeyState, setApiKeyState] = useState<ApiKeyState>({ current: '', isLoading: false })
   const [showApiKey, setShowApiKey] = useState(false)
+  const [showUserTooltip, setShowUserTooltip] = useState(false)
+  const [isResettingPassword, setIsResettingPassword] = useState(false)
+  const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // 密码重置相关状态
+  const [showPasswordResetDialog, setShowPasswordResetDialog] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   // 优化：添加请求去重缓存ref，避免重复API调用
   const lastRequestRef = useRef<string>('')
@@ -146,14 +158,14 @@ export default function AdminDashboard() {
       if (response.ok) {
         const data = await response.json()
         setApiKeyState(prev => ({ ...prev, current: data.apiKey, isLoading: false }))
-        alert('新API Key生成成功！')
+        showSuccess('新API Key生成成功！')
       } else {
-        alert('生成API Key失败')
+        showError('生成API Key失败')
         setApiKeyState(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
       console.error('生成API Key失败:', error)
-      alert('生成API Key失败')
+      showError('生成API Key失败')
       setApiKeyState(prev => ({ ...prev, isLoading: false }))
     }
   }
@@ -163,12 +175,36 @@ export default function AdminDashboard() {
     await generateApiKey()
   }
 
+  // 用户名悬浮提示处理
+  const handleUserTooltipEnter = useCallback(() => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current)
+      tooltipTimeoutRef.current = null
+    }
+    setShowUserTooltip(true)
+  }, [])
+
+  const handleUserTooltipLeave = useCallback(() => {
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setShowUserTooltip(false)
+    }, 200) // 200ms延迟，让用户有时间点击按钮
+  }, [])
+
   // 在组件加载时获取API Key
   useEffect(() => {
     if (activeTab === 'settings' && isAuthenticated) {
       fetchApiKey()
     }
   }, [activeTab, isAuthenticated, fetchApiKey])
+
+  // 清理定时器，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // 获取空间数据
   const fetchSpaces = useCallback(async () => {
@@ -296,15 +332,15 @@ export default function AdminDashboard() {
         if (selectedSpaceId === defaultSpaceId) {
           await saveDefaultSpaceId(selectedSpaceId)
         }
-        alert(t('configSaveSuccess'))
+        showSuccess(t('configSaveSuccess'))
         // 重新获取空间数据
         fetchSpaces()
       } else {
-        alert(t('saveFailed'))
+        showError(t('saveFailed'))
       }
     } catch (error) {
       console.error(t('adminSaveConfigFailed'), error)
-      alert(t('saveFailed'))
+      showError(t('saveFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -351,13 +387,13 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(t('configSaveSuccess'))
+        showSuccess(t('configSaveSuccess'))
       } else {
-        alert(t('saveFailed'))
+        showError(t('saveFailed'))
       }
     } catch (error) {
       console.error(t('adminSaveSiteSettingsFailed'), error)
-      alert(t('saveFailed'))
+      showError(t('saveFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -366,6 +402,72 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     logout()
     router.push('/')
+  }
+
+  // 重置管理员密码
+  const handleResetPassword = async (inputPassword?: string) => {
+    if (!user) return
+
+    // 如果提供了密码，说明是确认重置
+    if (inputPassword) {
+      setIsResettingPassword(true)
+      try {
+        const response = await fetch('/api/system-config/reset-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ newPassword: inputPassword })
+        })
+
+        if (response.ok) {
+          showSuccess(t('passwordResetSuccess', { password: inputPassword }))
+          setShowPasswordResetDialog(false)
+          setNewPassword('')
+          setConfirmPassword('')
+        } else {
+          const errorData = await response.json()
+          showError(errorData.message || t('passwordResetFailedMessage'))
+        }
+      } catch (error) {
+        console.error('重置密码失败:', error)
+        showError(t('passwordResetFailedNetwork'))
+      } finally {
+        setIsResettingPassword(false)
+      }
+      return
+    }
+
+    // 没有密码参数，显示密码输入对话框
+    setShowPasswordResetDialog(true)
+  }
+
+  // 处理密码确认
+  const handlePasswordConfirm = () => {
+    if (!newPassword) {
+      showWarning(t('passwordRequired'))
+      return
+    }
+
+    if (newPassword.length < 6) {
+      showWarning(t('passwordLengthMin'))
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      showWarning(t('passwordMismatch'))
+      return
+    }
+
+    handleResetPassword(newPassword)
+  }
+
+  // 处理密码对话框取消
+  const handlePasswordCancel = () => {
+    setShowPasswordResetDialog(false)
+    setNewPassword('')
+    setConfirmPassword('')
   }
 
   // 获取所有文件夹数据（用于导出时按空间分组显示）
@@ -454,7 +556,7 @@ export default function AdminDashboard() {
   // 处理实际导入（点击导入按钮时）
   const handleImportBookmarks = async () => {
     if (!selectedFile) {
-      alert('请先选择一个书签文件')
+      showWarning('请先选择一个书签文件')
       return
     }
 
@@ -565,11 +667,11 @@ export default function AdminDashboard() {
         window.URL.revokeObjectURL(url)
       } else {
         const errorData = await response.json()
-        alert(errorData.message || '导出失败')
+        showError(errorData.message || '导出失败')
       }
     } catch (error) {
       console.error('导出书签时出错:', error)
-      alert('导出失败：网络错误')
+      showError('导出失败：网络错误')
     } finally {
       setIsLoading(false)
     }
@@ -577,6 +679,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* 通知系统 */}
+      <NotificationSystem notifications={notifications} />
+      
       {/* 顶部导航 */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -646,9 +751,57 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {user?.username}
-              </span>
+              {/* 用户名悬浮显示 */}
+              <div className="relative">
+                <span 
+                  className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  onMouseEnter={handleUserTooltipEnter}
+                  onMouseLeave={handleUserTooltipLeave}
+                >
+                  {user?.username}
+                </span>
+                
+                {/* 悬浮工具提示 */}
+                {showUserTooltip && user && (
+                  <div 
+                    className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 z-50"
+                    onMouseEnter={handleUserTooltipEnter}
+                    onMouseLeave={handleUserTooltipLeave}
+                  >
+                    <div className="space-y-3">
+                      <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100">{t('userInformation')}</h3>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{t('username')}:</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.username}</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{t('userId')}:</span>
+                          <span className="text-sm font-mono text-gray-900 dark:text-gray-100">{user.id}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
+                        <button
+                          onClick={() => {
+                            setShowUserTooltip(false)
+                            handleResetPassword()
+                          }}
+                          disabled={isResettingPassword}
+                          className="w-full px-3 py-2 text-sm bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isResettingPassword ? t('resettingPassword') : t('resetAdminPassword')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               <button
                 onClick={() => router.push('/')}
                 className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
@@ -960,9 +1113,9 @@ export default function AdminDashboard() {
                       onClick={async () => {
                         if (defaultSpaceId) {
                           await saveDefaultSpaceId(defaultSpaceId)
-                          alert(t('defaultSpaceSaveSuccess'))
+                          showSuccess(t('defaultSpaceSaveSuccess'))
                         } else {
-                          alert(t('selectDefaultSpaceRequired'))
+                          showWarning(t('selectDefaultSpaceRequired'))
                         }
                       }}
                       className="btn-primary"
@@ -1215,7 +1368,7 @@ export default function AdminDashboard() {
                               type="button"
                               onClick={() => {
                                 navigator.clipboard.writeText(apiKeyState.current)
-                                alert(t('apiKeyCopiedSuccess'))
+                                showSuccess(t('apiKeyCopiedSuccess'))
                               }}
                               className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                             >
@@ -1248,9 +1401,8 @@ export default function AdminDashboard() {
                     {apiKeyState.current && (
                       <button
                         onClick={() => {
-                          if (confirm(t('confirmRegenerateApiKey'))) {
-                            updateApiKey()
-                          }
+                          showWarning(t('confirmRegenerateApiKey'))
+                          updateApiKey()
                         }}
                         disabled={apiKeyState.isLoading}
                         className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1276,6 +1428,65 @@ export default function AdminDashboard() {
           </div>
         )}
       </main>
+      
+      {/* 密码重置对话框 */}
+      <ConfirmModal
+        isOpen={showPasswordResetDialog}
+        onClose={handlePasswordCancel}
+        onConfirm={handlePasswordConfirm}
+        title={t('resetAdminPassword')}
+        confirmText={t('confirmReset')}
+        cancelText={t('cancel')}
+        type="warning"
+        danger={true}
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200"
+              dangerouslySetInnerHTML={{ __html: t('resetPasswordQuestion', { username: user?.username || '' }) }}
+            />
+
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('newPassword')} *
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder={t('newPasswordPlaceholder')}
+                className="neu-input border border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none"
+                disabled={isResettingPassword}
+                style={{ background: 'var(--card-bg)', color: 'var(--foreground)' }}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('confirmNewPassword')} *
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder={t('confirmNewPasswordPlaceholder')}
+                className="neu-input border border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none"
+                disabled={isResettingPassword}
+                style={{ background: 'var(--card-bg)', color: 'var(--foreground)' }}
+              />
+            </div>
+            
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-xs text-blue-800 dark:text-blue-200">
+                {t('passwordRequirementsText')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </ConfirmModal>
     </div>
   )
 }

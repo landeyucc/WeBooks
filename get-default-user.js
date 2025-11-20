@@ -5,7 +5,7 @@
  * 用于在Vercel部署时配置DEFAULT_USER_ID环境变量
  */
 
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 async function getDefaultUserId() {
   const prisma = new PrismaClient();

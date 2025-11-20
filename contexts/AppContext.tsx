@@ -24,7 +24,7 @@ interface AppContextType {
   // Language
   language: Language
   setLanguage: (lang: Language) => void
-  t: (key: TranslationKey, ...args: (string | number)[]) => string
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
   
   // Loading
   loading: boolean
@@ -47,7 +47,20 @@ const defaultContextValue: AppContextType = {
   toggleTheme: () => {},
   language: 'zh',
   setLanguage: () => {},
-  t: (key: string) => key,
+  t: (key: string, params?: Record<string, string | number>) => {
+    // 简单的默认实现，支持参数替换
+    if (params) {
+      // 在默认实现中也进行参数替换，防止ESLint警告
+      let result = key
+      Object.keys(params).forEach(paramKey => {
+        const placeholder = `{${paramKey}}`
+        const value = params[paramKey]
+        result = result.replace(new RegExp(placeholder, 'g'), value.toString())
+      })
+      return result
+    }
+    return key
+  },
   loading: true,
   setLoading: () => {},
   collapsedFolders: new Set<string>(),
@@ -55,7 +68,7 @@ const defaultContextValue: AppContextType = {
   setCollapsedFolders: () => {}
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined)
+export const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -177,14 +190,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCollapsedFoldersState(folders)
   }
 
-  const t = (key: TranslationKey, ...args: (string | number)[]): string => {
+  const t = (key: TranslationKey, params?: Record<string, string | number>): string => {
     let translation = translations[language][key] || key
     
-    // 如果有参数，进行简单的字符串替换
-    if (args.length > 0) {
-      args.forEach((arg, index) => {
-        const placeholder = `%${index + 1}`
-        translation = translation.replace(new RegExp(`%d|${placeholder}`, 'g'), arg.toString())
+    // 如果有参数，进行对象替换
+    if (params) {
+      Object.keys(params).forEach(paramKey => {
+        const placeholder = `{${paramKey}}`
+        const value = params[paramKey]
+        translation = translation.replace(new RegExp(placeholder, 'g'), value.toString())
       })
     }
     

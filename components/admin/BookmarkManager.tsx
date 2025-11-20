@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useApp } from '@/contexts/AppContext'
+import { useApp } from '../../contexts/AppContext'
+import { useNotifications } from '../NotificationSystem'
+import NotificationSystem from '../NotificationSystem'
 import CustomSelect from '../ui/CustomSelect'
 import Image from 'next/image'
 
@@ -31,6 +33,7 @@ interface Folder {
 
 export default function BookmarkManager() {
   const { token, t, isAuthenticated } = useApp()
+  const { showError, showSuccess, showWarning, notifications } = useNotifications()
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const [spaces, setSpaces] = useState<Space[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
@@ -105,10 +108,10 @@ export default function BookmarkManager() {
       
       await fetchData()
       setSelectedBookmarks(new Set())
-      alert(`已删除 ${selectedBookmarks.size} 个书签`)
+      showSuccess(`已删除 ${selectedBookmarks.size} 个书签`)
     } catch (error) {
       console.error('批量删除失败:', error)
-      alert('批量删除失败')
+      showError('批量删除失败')
     }
   }
 
@@ -140,10 +143,10 @@ export default function BookmarkManager() {
       setShowMoveModal(false)
       setMoveTargetSpace('')
       setMoveTargetFolder('')
-      alert(`已移动 ${selectedBookmarks.size} 个书签`)
+      showSuccess(`已移动 ${selectedBookmarks.size} 个书签`)
     } catch (error) {
       console.error('批量移动失败:', error)
-      alert('批量移动失败')
+      showError('批量移动失败')
     }
   }
 
@@ -238,16 +241,16 @@ export default function BookmarkManager() {
         handleCloseModal()
       } else {
         const data = await response.json()
-        alert(data.error || t('operationFailed'))
+        showError(data.error || t('operationFailed'))
       }
     } catch {
-      alert(t('operationFailed'))
+      showError(t('operationFailed'))
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('deleteConfirm'))) return
-
+    showWarning(t('deleteConfirm'))
+    // 直接执行删除操作，移除确认对话框
     try {
       const response = await fetch(`/api/bookmarks/${id}`, {
         method: 'DELETE',
@@ -257,10 +260,10 @@ export default function BookmarkManager() {
       if (response.ok) {
         await fetchData()
       } else {
-        alert(t('deleteFailed'))
+        showError(t('deleteFailed'))
       }
     } catch {
-      alert(t('deleteFailed'))
+      showError(t('deleteFailed'))
     }
   }
 
@@ -306,7 +309,7 @@ export default function BookmarkManager() {
 
   const handleFetchInfo = async () => {
     if (!formData.url) {
-      alert(t('bookmarkUrl') + ' ' + t('required'))
+      showWarning(t('bookmarkUrl') + ' ' + t('required'))
       return
     }
 
@@ -336,12 +339,12 @@ export default function BookmarkManager() {
         setTimeout(() => setFetchStatus('idle'), 3000)
       } else {
         setFetchStatus('error')
-        alert(t('fetchFailed'))
+        showError(t('fetchFailed'))
       }
     } catch (error) {
       console.error('Fetch error:', error)
       setFetchStatus('error')
-      alert(t('operationFailedNetwork'))
+      showError(t('operationFailedNetwork'))
     }
   }
 
@@ -447,6 +450,9 @@ export default function BookmarkManager() {
 
   return (
     <div>
+      {/* 通知系统 */}
+      <NotificationSystem notifications={notifications} />
+      
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           {t('bookmarks')} ({getFilteredBookmarksCount()})
@@ -628,7 +634,7 @@ export default function BookmarkManager() {
           <div className="neu-card px-6 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('selectedCountBookmarks', selectedBookmarks.size)}
+                {t('selectedCountBookmarks', { count: selectedBookmarks.size })}
               </span>
               
               <div className="flex gap-2">

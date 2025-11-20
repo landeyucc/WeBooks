@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useApp } from '@/contexts/AppContext'
+import { useApp } from '../../contexts/AppContext'
+import { useNotifications } from '../NotificationSystem'
+import NotificationSystem from '../NotificationSystem'
 
 interface Space {
   id: string
@@ -14,6 +16,7 @@ interface Space {
 
 export default function SpaceManager() {
   const { token, t, isAuthenticated } = useApp()
+  const { showError, showWarning, notifications } = useNotifications()
   const [spaces, setSpaces] = useState<Space[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -64,7 +67,7 @@ export default function SpaceManager() {
     
     // 检查认证状态
     if (!token) {
-      alert(t('needLoginToCreateSpace'))
+      showWarning(t('needLoginToCreateSpace'))
       return
     }
     
@@ -95,28 +98,28 @@ export default function SpaceManager() {
         console.error(t('operationFailed'), errorData)
         
         // 根据错误类型显示更友好的消息
-        let errorMessage = `${t('operationFailed')}: ${response.status}`
+        const errorMessage = `${t('operationFailed')}: ${response.status}`
         if (errorData.error) {
           if (errorData.error.includes('用户不存在')) {
-            errorMessage = t('loginExpired')
+            showError(t('loginExpired'))
           } else if (errorData.error.includes('未授权')) {
-            errorMessage = t('pleaseLogin')
+            showError(t('pleaseLogin'))
           } else {
-            errorMessage = errorData.error
+            showError(errorData.error)
           }
+        } else {
+          showError(errorMessage)
         }
-        
-        alert(errorMessage)
       }
     } catch {
       console.error(t('operationFailed'))
-      alert(t('operationFailedNetwork'))
+      showError(t('operationFailedNetwork'))
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('deleteConfirm'))) return
-
+    showWarning(t('deleteConfirm'))
+    // 直接执行删除操作，移除确认对话框
     try {
       const response = await fetch(`/api/spaces/${id}`, {
         method: 'DELETE',
@@ -126,10 +129,10 @@ export default function SpaceManager() {
       if (response.ok) {
         await fetchSpaces()
       } else {
-        alert(t('deleteFailed'))
+        showError(t('deleteFailed'))
       }
     } catch {
-      alert(t('deleteFailed'))
+      showError(t('deleteFailed'))
     }
   }
 
@@ -171,6 +174,9 @@ export default function SpaceManager() {
 
   return (
     <div>
+      {/* 通知系统 */}
+      <NotificationSystem notifications={notifications} />
+      
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           {t('spaces')} ({spaces.length})

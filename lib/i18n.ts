@@ -140,6 +140,19 @@ export const translations = {
     pleaseLogin: '请先登录系统',
     noDescription: '暂无描述',
     
+    // 消息框
+    alertTitle: '提示',
+    confirmTitle: '确认操作',
+    alertConfirm: '确定',
+    confirmCancel: '取消',
+
+    // 通知图标
+    iconSuccess: '✅',
+    iconError: '❌',
+    iconWarning: '⚠️',
+    iconInfo: 'ℹ️',
+    iconQuestion: '❓',
+    
     // 系统卡图
     systemCardUrlLabel: '系统卡图URL (9:16比例)',
     spaceCardImageUrl: 'https://example.com/card-image.jpg',
@@ -266,6 +279,33 @@ export const translations = {
     
     // 系统卡图说明
     systemCardDesc: '设置空间的系统卡图，将显示在侧边栏顶部。推荐尺寸：520px × 120px',
+    
+    // 密码重置功能
+    resetAdminPassword: '重置管理员密码',
+    confirmResetPasswordTitle: '重置管理员密码',
+    resetPasswordQuestion: '确定要重置管理员 "<strong>{username}</strong>" 的密码吗？',
+    newPassword: '新密码',
+    newPasswordPlaceholder: '请输入新密码（至少6位）',
+    confirmNewPassword: '确认新密码',
+    confirmNewPasswordPlaceholder: '请再次输入新密码',
+    confirmReset: '确认重置',
+    resettingPassword: '重置中...',
+    passwordRequired: '请输入新密码',
+    passwordLengthMin: '密码长度至少为6位',
+    passwordRequiresLetterAndNumber: '密码必须包含字母和数字',
+    passwordStrongConfirm: '密码强度良好，使用此密码重置管理员账户',
+    passwordStrengthInsufficient: '密码强度不足，请使用至少8位字母数字组合',
+    resetPasswordNotification: '重置后请及时通知相关人员',
+    passwordMismatch: '两次输入的密码不一致',
+    enterPasswordFirst: '请输入新密码',
+    passwordTooShort: '密码长度至少为6位',
+    passwordResetSuccess: '管理员密码重置成功！新密码为：{password}',
+    passwordResetFailed: '密码重置失败',
+    passwordResetFailedNetwork: '密码重置失败：网络错误',
+    passwordResetFailedMessage: '密码重置失败',
+    userInformation: '用户信息',
+    userId: '用户ID',
+    passwordRequirementsText: '• 密码必须至少6个字符<br/>• 建议使用字母、数字和特殊字符组合<br/>• 重置后请及时通知相关人员',
     
     // 浏览器扩展API Key
     browserExtensionApiKey: '浏览器扩展API Key',
@@ -432,6 +472,19 @@ export const translations = {
     pleaseLogin: 'Please login first',
     noDescription: 'No description',
     
+    // 消息框
+    alertTitle: 'Alert',
+    confirmTitle: 'Confirm Action',
+    alertConfirm: 'OK',
+    confirmCancel: 'Cancel',
+
+    // 通知图标
+    iconSuccess: '✅',
+    iconError: '❌',
+    iconWarning: '⚠️',
+    iconInfo: 'ℹ️',
+    iconQuestion: '❓',
+    
     // 系统卡图
     systemCardUrlLabel: 'System Card URL (9:16 aspect ratio)',
     spaceCardImageUrl: 'https://example.com/card-image.jpg',
@@ -555,6 +608,33 @@ export const translations = {
     
     // System Card Description
     systemCardDesc: 'Set the system card for the space, which will be displayed at the top of the sidebar. Recommended size: 520px × 120px',
+    
+    // Password Reset Functionality
+    resetAdminPassword: 'Reset Admin Password',
+    confirmResetPasswordTitle: 'Reset Admin Password',
+    resetPasswordQuestion: 'Are you sure you want to reset admin "<strong>{username}</strong>" password?',
+    newPassword: 'New Password',
+    newPasswordPlaceholder: 'Enter new password (minimum 6 characters)',
+    confirmNewPassword: 'Confirm New Password',
+    confirmNewPasswordPlaceholder: 'Enter new password again',
+    confirmReset: 'Confirm Reset',
+    resettingPassword: 'Resetting...',
+    passwordRequired: 'Please enter new password',
+    passwordLengthMin: 'Password must be at least 6 characters',
+    passwordMismatch: 'Passwords do not match',
+    passwordRequiresLetterAndNumber: 'Password must contain letters and numbers',
+    passwordStrongConfirm: 'Password strength is good, using this password to reset admin account',
+    passwordStrengthInsufficient: 'Password strength is insufficient, please use at least 8 character alphanumeric combination',
+    userInformation: 'User Information',
+    userId: 'User ID',
+    passwordRequirementsText: '• Password must be at least 6 characters<br/>• Recommend using combination of letters, numbers and special characters<br/>• Please notify relevant personnel after reset',
+    resetPasswordNotification: 'Please notify relevant personnel after reset',
+    enterPasswordFirst: 'Please enter new password',
+    passwordTooShort: 'Password must be at least 6 characters',
+    passwordResetSuccess: 'Admin password reset successfully! New password: {password}',
+    passwordResetFailed: 'Password reset failed',
+    passwordResetFailedNetwork: 'Password reset failed: Network error',
+    passwordResetFailedMessage: 'Password reset failed',
     
     // Browser Extension API Key
     browserExtensionApiKey: 'Browser Extension API Key',

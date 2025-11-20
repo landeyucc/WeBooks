@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 // 导出书签 - 完全静态化处理，避免动态服务器使用
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 静态获取用户ID - 不使用request参数
     let userId: string | null = null

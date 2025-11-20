@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useApp } from '@/contexts/AppContext'
+import { useApp } from '../../contexts/AppContext'
+import { useNotifications } from '../NotificationSystem'
+import NotificationSystem from '../NotificationSystem'
 import CustomSelect from '../ui/CustomSelect'
 
 interface Folder {
@@ -20,6 +22,7 @@ interface Space {
 
 export default function FolderManager() {
   const { token, t, isAuthenticated } = useApp()
+  const { showError, showWarning, notifications } = useNotifications()
   const [folders, setFolders] = useState<Folder[]>([])
   const [spaces, setSpaces] = useState<Space[]>([])
   const [loading, setLoading] = useState(true)
@@ -99,16 +102,16 @@ export default function FolderManager() {
         await fetchData()
         handleCloseModal()
       } else {
-        alert(t('operationFailed'))
+        showError(t('operationFailed'))
       }
     } catch {
-      alert(t('operationFailed'))
+      showError(t('operationFailed'))
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('deleteConfirm'))) return
-
+    showWarning(t('deleteConfirm'))
+    // 直接执行删除操作，移除确认对话框
     try {
       const response = await fetch(`/api/folders/${id}`, {
         method: 'DELETE',
@@ -118,10 +121,10 @@ export default function FolderManager() {
       if (response.ok) {
         await fetchData()
       } else {
-        alert(t('folderDeleteFailed'))
+        showError(t('folderDeleteFailed'))
       }
     } catch {
-      alert(t('folderDeleteFailed'))
+      showError(t('folderDeleteFailed'))
     }
   }
 
@@ -309,6 +312,9 @@ export default function FolderManager() {
 
   return (
     <div>
+      {/* 通知系统 */}
+      <NotificationSystem notifications={notifications} />
+      
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           {t('folders')} ({getFilteredFoldersCount()})

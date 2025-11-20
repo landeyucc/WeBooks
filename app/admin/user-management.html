@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - Webooks</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .section h2 {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section h2::before {
+            content: "🔧";
+            font-size: 1.2em;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .info-value {
+            color: #6c757d;
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .password-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .input-group label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .input-group input {
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .message {
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: color 0.3s ease;
+        }
+        
+        .back-link:hover {
+            color: #764ba2;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s infinite;
+        }
+        
+        /* 通知样式 */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        
+        .notification {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            max-width: 500px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid #3b82f6;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            cursor: default;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .notification.success {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+        
+        .notification.error {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+        }
+        
+        .notification.warning {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        }
+        
+        .notification.info {
+            border-left-color: #3b82f6;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        }
+        
+        .notification-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .notification.success .notification-icon {
+            color: #10b981;
+        }
+        
+        .notification.error .notification-icon {
+            color: #ef4444;
+        }
+        
+        .notification.warning .notification-icon {
+            color: #f59e0b;
+        }
+        
+        .notification.info .notification-icon {
+            color: #3b82f6;
+        }
+        
+        .notification-content {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            line-height: 1.5;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        
+        .notification-close:hover {
+            color: #6b7280;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .modal-close:hover {
+            color: #6b7280;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .modal-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .modal-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .modal-btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .modal-btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .modal-btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .modal-btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .modal-btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: ""; }
+            40% { content: "."; }
+            60% { content: ".."; }
+            80%, 100% { content: "..."; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>用户管理</h1>
+            <p>管理系统用户信息和密码</p>
+        </div>
+        
+        <!-- 用户信息显示 -->
+        <div class="section">
+            <h2>用户信息</h2>
+            <div id="user-info">
+                <div class="loading">正在加载</div>
+            </div>
+        </div>
+        
+        <!-- 重置密码 -->
+        <div class="section">
+            <h2>重置管理员密码</h2>
+            <form class="password-form" id="password-form">
+                <div class="input-group">
+                    <label for="new-password">新密码</label>
+                    <input type="password" id="new-password" name="newPassword" required minlength="6" placeholder="请输入至少6个字符的新密码">
+                </div>
+                <button type="submit" class="btn" id="reset-btn">
+                    重置密码
+                </button>
+                <div id="password-message"></div>
+            </form>
+        </div>
+        
+        <a href="/" class="back-link">
+            ← 返回首页
+        </a>
+    </div>
+
+    <!-- 通知容器 -->
+    <div id="notification-container" class="notification-container"></div>
+    
+    <!-- 弹窗容器 -->
+    <div id="modal-container"></div>
+
+    <script>
+        // 自定义通知系统
+        class NotificationSystem {
+            constructor() {
+                this.container = document.getElementById('notification-container');
+                this.notifications = new Map();
+            }
+
+            show(message, type = 'info', duration = 3000) {
+                const id = Date.now().toString();
+                const notification = this.createNotificationElement(id, message, type);
+                
+                this.container.appendChild(notification);
+                this.notifications.set(id, { element: notification, timeout: null });
+                
+                // 触发动画
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+                
+                // 自动消失
+                if (duration > 0) {
+                    const timeout = setTimeout(() => {
+                        this.hide(id);
+                    }, duration);
+                    
+                    this.notifications.get(id).timeout = timeout;
+                }
+                
+                return id;
+            }
+
+            createNotificationElement(id, message, type) {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.dataset.id = id;
+                
+                const icon = this.getIcon(type);
+                const timeId = Date.now().toString();
+                
+                notification.innerHTML = `
+                    <span class="notification-icon">${icon}</span>
+                    <div class="notification-content">${message}</div>
+                    <button class="notification-close" onclick="notificationSystem.hide('${id}')">&times;</button>
+                `;
+                
+                return notification;
+            }
+
+            getIcon(type) {
+                switch (type) {
+                    case 'success': return '✅';
+                    case 'error': return '❌';
+                    case 'warning': return '⚠️';
+                    case 'info':
+                    default: return 'ℹ️';
+                }
+            }
+
+            hide(id) {
+                const notificationData = this.notifications.get(id);
+                if (!notificationData) return;
+                
+                const { element, timeout } = notificationData;
+                
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                
+                element.classList.remove('show');
+                
+                setTimeout(() => {
+                    if (element.parentNode) {
+                        element.parentNode.removeChild(element);
+                    }
+                    this.notifications.delete(id);
+                }, 300);
+            }
+
+            success(message, duration = 3000) {
+                return this.show(message, 'success', duration);
+            }
+
+            error(message, duration = 3000) {
+                return this.show(message, 'error', duration);
+            }
+
+            warning(message, duration = 3000) {
+                return this.show(message, 'warning', duration);
+            }
+
+            info(message, duration = 3000) {
+                return this.show(message, 'info', duration);
+            }
+        }
+
+        // 自定义弹窗系统
+        class CustomDialogSystem {
+            constructor() {
+                this.container = document.getElementById('modal-container');
+            }
+
+            showAlert(message, options = {}) {
+                return new Promise((resolve) => {
+                    const {
+                        title = '提示',
+                        confirmText = '确定',
+                        type = 'info'
+                    } = options;
+
+                    const modal = this.createAlertModal(message, title, confirmText, type, resolve);
+                    this.container.appendChild(modal);
+
+                    // 触发动画
+                    setTimeout(() => {
+                        modal.querySelector('.modal-overlay').classList.add('show');
+                    }, 10);
+                });
+            }
+
+            createAlertModal(message, title, confirmText, type, onClose) {
+                const modal = document.createElement('div');
+                modal.innerHTML = `
+                    <div class="modal-overlay" onclick="this.closest('.modal-overlay').remove()">
+                        <div class="modal-content" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3 class="modal-title">${title}</h3>
+                                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-size: 24px;">${this.getIcon(type)}</span>
+                                    <span>${message}</span>
+                                </div>
+                            </div>
+                            <div class="modal-buttons">
+                                <button class="modal-btn modal-btn-primary" onclick="this.closest('.modal-overlay').remove(); this.dataset.action = 'confirm'">${confirmText}</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // 监听按钮点击
+                const overlay = modal.querySelector('.modal-overlay');
+                const confirmBtn = modal.querySelector('.modal-btn-primary');
+                
+                const handleClose = () => {
+                    overlay.classList.remove('show');
+                    setTimeout(() => {
+                        modal.remove();
+                        onClose();
+                    }, 300);
+                };
+                
+                confirmBtn.addEventListener('click', handleClose);
+
+                return modal;
+            }
+
+            showConfirm(message, options = {}) {
+                return new Promise((resolve) => {
+                    const {
+                        title = '确认操作',
+                        confirmText = '确定',
+                        cancelText = '取消',
+                        type = 'info',
+                        danger = false
+                    } = options;
+
+                    const modal = this.createConfirmModal(message, title, confirmText, cancelText, type, danger, resolve);
+                    this.container.appendChild(modal);
+
+                    // 触发动画
+                    setTimeout(() => {
+                        modal.querySelector('.modal-overlay').classList.add('show');
+                    }, 10);
+                });
+            }
+
+            createConfirmModal(message, title, confirmText, cancelText, type, danger, onConfirm) {
+                const modal = document.createElement('div');
+                const confirmBtnClass = danger ? 'modal-btn modal-btn-danger' : 'modal-btn modal-btn-primary';
+                
+                modal.innerHTML = `
+                    <div class="modal-overlay" onclick="this.closest('.modal-overlay').remove()">
+                        <div class="modal-content" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3 class="modal-title">${title}</h3>
+                                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-size: 24px;">${this.getIcon('question')}</span>
+                                    <span>${message}</span>
+                                </div>
+                            </div>
+                            <div class="modal-buttons">
+                                <button class="modal-btn modal-btn-secondary" onclick="this.closest('.modal-overlay').remove(); this.dataset.action = 'cancel'">${cancelText}</button>
+                                <button class="${confirmBtnClass}" onclick="this.closest('.modal-overlay').remove(); this.dataset.action = 'confirm'">${confirmText}</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // 监听按钮点击
+                const overlay = modal.querySelector('.modal-overlay');
+                const confirmBtn = modal.querySelector(`.${confirmBtnClass.split(' ')[1]}`);
+                const cancelBtn = modal.querySelector('.modal-btn-secondary');
+                
+                const handleAction = (action) => {
+                    overlay.classList.remove('show');
+                    setTimeout(() => {
+                        modal.remove();
+                        onConfirm(action === 'confirm');
+                    }, 300);
+                };
+                
+                confirmBtn.addEventListener('click', () => handleAction('confirm'));
+                cancelBtn.addEventListener('click', () => handleAction('cancel'));
+
+                return modal;
+            }
+
+            getIcon(type) {
+                switch (type) {
+                    case 'success': return '✅';
+                    case 'error': return '❌';
+                    case 'warning': return '⚠️';
+                    case 'info': return 'ℹ️';
+                    case 'question': return '❓';
+                    default: return 'ℹ️';
+                }
+            }
+        }
+
+        // 初始化系统
+        const notificationSystem = new NotificationSystem();
+        const customDialog = new CustomDialogSystem();
+
+        // 替换原有的alert和confirm调用
+        window.customAlert = (message, options) => customDialog.showAlert(message, options);
+        window.customConfirm = (message, options) => customDialog.showConfirm(message, options);
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/system-config/user-info');
+                const data = await response.json();
+                
+                const userInfoDiv = document.getElementById('user-info');
+                if (response.ok) {
+                    userInfoDiv.innerHTML = `
+                        <div class="info-item">
+                            <span class="info-label">用户ID</span>
+                            <span class="info-value">${data.id}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">用户名</span>
+                            <span class="info-value">${data.username}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">邮箱</span>
+                            <span class="info-value">${data.email || '未设置'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">创建时间</span>
+                            <span class="info-value">${new Date(data.createdAt).toLocaleString('zh-CN')}</span>
+                        </div>
+                    `;
+                } else {
+                    userInfoDiv.innerHTML = `
+                        <div class="message error">
+                            加载用户信息失败: ${data.error}
+                        </div>
+                    `;
+                    notificationSystem.error(`加载用户信息失败: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('加载用户信息错误:', error);
+                document.getElementById('user-info').innerHTML = `
+                    <div class="message error">
+                        网络错误，请稍后重试
+                    </div>
+                `;
+                notificationSystem.error('网络错误，请稍后重试');
+            }
+        }
+        
+        // 重置密码
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('new-password').value;
+            const messageDiv = document.getElementById('password-message');
+            const resetBtn = document.getElementById('reset-btn');
+            
+            if (newPassword.length < 6) {
+                notificationSystem.warning('密码长度至少6个字符');
+                return;
+            }
+            
+            // 显示加载状态
+            resetBtn.disabled = true;
+            resetBtn.textContent = '正在重置';
+            
+            try {
+                const response = await fetch('/api/system-config/reset-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ newPassword })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    notificationSystem.success('密码重置成功！');
+                    document.getElementById('new-password').value = '';
+                } else {
+                    notificationSystem.error(`密码重置失败: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('重置密码错误:', error);
+                notificationSystem.error('网络错误，请稍后重试');
+            } finally {
+                resetBtn.disabled = false;
+                resetBtn.textContent = '重置密码';
+            }
+        });
+        
+        // 页面加载时获取用户信息
+        loadUserInfo();
+    </script>
+</body>
+</html>
