@@ -1,12 +1,15 @@
 // 使用原生 fetch
+const API_BASE = process.env.API_BASE_URL || 'http://localhost:3000/api'
+
 async function testFoldersAPI() {
   console.log('=== 测试folders API修复效果 ===\n')
+  console.log(`🌐 API基础地址: ${API_BASE}`)
   
   try {
     // 测试GET /api/folders
     console.log('1. 测试GET /api/folders:')
     
-    const response = await fetch('http://localhost:3000/api/folders', {
+    const response = await fetch(`${API_BASE}/folders`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

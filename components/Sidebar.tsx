@@ -56,7 +56,18 @@ export default function Sidebar({
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await response.json()
-      const spacesData = data.spaces || data || []
+      // 确保spacesData始终是一个数组，防止TypeError
+      let spacesData = []
+      
+      // 检查不同的可能响应格式
+      if (Array.isArray(data)) {
+        spacesData = data
+      } else if (data && Array.isArray(data.spaces)) {
+        spacesData = data.spaces
+      } else if (data && data.data && Array.isArray(data.data)) {
+        spacesData = data.data
+      }
+      
       setSpaces(spacesData)
       
       // 移除自动选择第一个空间的逻辑，避免与HomePage的默认空间逻辑冲突
@@ -66,6 +77,8 @@ export default function Sidebar({
       // }
     } catch (error) {
       console.error(t('fetchSpacesFailed'), error)
+      // 出错时确保设置一个空数组
+      setSpaces([])
     }
   }, [token, t])
 
@@ -73,10 +86,24 @@ export default function Sidebar({
     try {
       const response = await fetch(`/api/folders?spaceId=${spaceId}`)
       const data = await response.json()
-      const foldersData = data.folders || []
+      
+      // 确保foldersData始终是一个数组，防止TypeError
+      let foldersData = []
+      
+      // 检查不同的可能响应格式
+      if (Array.isArray(data)) {
+        foldersData = data
+      } else if (data && Array.isArray(data.folders)) {
+        foldersData = data.folders
+      } else if (data && data.data && Array.isArray(data.data)) {
+        foldersData = data.data
+      }
+      
       setFolders(foldersData)
     } catch (error) {
       console.error(t('fetchFoldersFailedSide'), error)
+      // 出错时确保设置一个空数组
+      setFolders([])
     }
   }, [t])
 

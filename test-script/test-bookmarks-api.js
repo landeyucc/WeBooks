@@ -1,7 +1,7 @@
 // 测试修复后的书签API
-const fetch = require('node-fetch')
+const axios = require('axios')
 
-const API_BASE = 'http://localhost:3000/api'
+const API_BASE = process.env.API_BASE_URL || 'http://localhost:3000/api'
 let authToken = null
 
 // 获取认证token（模拟登录）
@@ -9,25 +9,21 @@ async function authenticate() {
   try {
     console.log('🔐 正在获取认证token...')
     
-    const response = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
+    const response = await axios.post(`${API_BASE}/auth/login`, {
+      email: 'admin@example.com',
+      password: 'admin123'
+    }, {
       headers: {
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: 'admin@example.com',
-        password: 'admin123'
-      })
+      }
     })
 
-    const data = await response.json()
-    
-    if (data.token) {
-      authToken = data.token
+    if (response.data.token) {
+      authToken = response.data.token
       console.log('✅ 认证成功，获得token')
       return true
     } else {
-      console.log('❌ 认证失败:', data)
+      console.log('❌ 认证失败:', response.data)
       return false
     }
   } catch (error) {
@@ -46,33 +42,42 @@ async function testCreateBookmark() {
       return false
     }
 
-    const response = await fetch(`${API_BASE}/bookmarks`, {
-      method: 'POST',
+    // 获取默认空间ID
+    const spacesResponse = await axios.get(`${API_BASE}/spaces`, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    })
+    
+    if (!spacesResponse.data.spaces || spacesResponse.data.spaces.length === 0) {
+      console.log('❌ 没有找到可用空间')
+      return false
+    }
+    
+    const defaultSpaceId = spacesResponse.data.spaces[0].id
+
+    const response = await axios.post(`${API_BASE}/bookmarks`, {
+      title: 'API测试书签',
+      url: 'https://api-test.example.com',
+      description: '这是一个API测试书签',
+      spaceId: defaultSpaceId
+    }, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({
-        title: 'API测试书签',
-        url: 'https://api-test.example.com',
-        description: '这是一个API测试书签',
-        spaceId: 'a33ed957-ace6-48d8-8b6a-514a0c004ed7'
-      })
+      }
     })
 
     console.log('📊 响应状态:', response.status)
-
-    const data = await response.json()
     
-    if (response.ok && data.bookmark) {
+    if (response.status === 200 && response.data.bookmark) {
       console.log('✅ 创建书签成功!')
-      console.log('   ID:', data.bookmark.id)
-      console.log('   标题:', data.bookmark.title)
-      console.log('   URL:', data.bookmark.url)
+      console.log('   ID:', response.data.bookmark.id)
+      console.log('   标题:', response.data.bookmark.title)
+      console.log('   URL:', response.data.bookmark.url)
       
       // 清理测试数据
-      await fetch(`${API_BASE}/bookmarks/${data.bookmark.id}`, {
-        method: 'DELETE',
+      await axios.delete(`${API_BASE}/bookmarks/${response.data.bookmark.id}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -81,7 +86,7 @@ async function testCreateBookmark() {
       console.log('✅ 清理测试数据完成')
       return true
     } else {
-      console.log('❌ 创建书签失败:', data)
+      console.log('❌ 创建书签失败:', response.data)
       return false
     }
   } catch (error) {
@@ -100,23 +105,20 @@ async function testGetBookmarks() {
       return false
     }
 
-    const response = await fetch(`${API_BASE}/bookmarks`, {
-      method: 'GET',
+    const response = await axios.get(`${API_BASE}/bookmarks`, {
       headers: {
         'Authorization': `Bearer ${authToken}`
       }
     })
 
     console.log('📊 响应状态:', response.status)
-
-    const data = await response.json()
     
-    if (response.ok && data.bookmarks) {
+    if (response.status === 200 && response.data.bookmarks) {
       console.log('✅ 获取书签成功!')
-      console.log('   总数:', data.bookmarks.length)
+      console.log('   总数:', response.data.bookmarks.length)
       return true
     } else {
-      console.log('❌ 获取书签失败:', data)
+      console.log('❌ 获取书签失败:', response.data)
       return false
     }
   } catch (error) {

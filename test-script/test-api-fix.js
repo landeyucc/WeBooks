@@ -1,27 +1,28 @@
 // 简单测试修复后的书签API
 const { PrismaClient } = require('@prisma/client')
+const axios = require('axios')
+
 const prisma = new PrismaClient()
+const API_BASE = process.env.API_BASE_URL || 'http://localhost:3000/api'
 
 async function testBookmarkAPI() {
   try {
     console.log('🧪 测试修复后的书签API...\n')
+    console.log(`🌐 API基础地址: ${API_BASE}`)
 
     // 1. 测试GET /api/bookmarks
     console.log('1️⃣  测试GET书签列表...')
     try {
-      const fetch = (await import('node-fetch')).default
-      
       // 没有token的公共访问
-      const publicResponse = await fetch('http://localhost:3000/api/bookmarks')
-      const publicData = await publicResponse.json()
+      const publicResponse = await axios.get(`${API_BASE}/bookmarks`)
       
       console.log(`   公共访问状态: ${publicResponse.status}`)
-      console.log(`   获取书签数: ${publicData.bookmarks?.length || 0}`)
+      console.log(`   获取书签数: ${publicResponse.data.bookmarks?.length || 0}`)
       
-      if (publicData.bookmarks) {
+      if (publicResponse.data.bookmarks) {
         console.log('   ✅ 公共获取书签成功')
       } else {
-        console.log('   ❌ 公共获取书签失败:', publicData.error || '未知错误')
+        console.log('   ❌ 公共获取书签失败:', publicResponse.data.error || '未知错误')
       }
     } catch (error) {
       console.log('   ❌ API连接失败:', error.message)
