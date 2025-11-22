@@ -15,13 +15,15 @@ async function main() {
     }
   })
 
-  // 创建空间，包含 systemCardUrl
+  // 创建空间，包含 systemCardUrl 和加密字段
   const space1 = await prisma.space.create({
     data: {
       name: '工作空间',
       description: '我的工作相关书签',
       iconUrl: 'https://via.placeholder.com/32x32/4F46E5/FFFFFF?text=W',
       systemCardUrl: 'https://images.unsplash.com/photo-1486312338219-ce68e2c6b21d?w=400&h=600&fit=crop&crop=center',
+      isEncrypted: false,
+      passwordHash: null,
       userId: user.id
     }
   })
@@ -32,6 +34,8 @@ async function main() {
       description: '学习资源和技术文档',
       iconUrl: 'https://via.placeholder.com/32x32/10B981/FFFFFF?text=L',
       systemCardUrl: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=600&fit=crop&crop=center',
+      isEncrypted: false,
+      passwordHash: null,
       userId: user.id
     }
   })
@@ -42,6 +46,8 @@ async function main() {
       description: '娱乐和游戏相关',
       iconUrl: 'https://via.placeholder.com/32x32/F59E0B/FFFFFF?text=E',
       systemCardUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=600&fit=crop&crop=center',
+      isEncrypted: false,
+      passwordHash: null,
       userId: user.id
     }
   })

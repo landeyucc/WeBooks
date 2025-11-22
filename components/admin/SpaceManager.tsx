@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useApp } from '../../contexts/AppContext'
 import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
+import LoadingSpinner from '../LoadingSpinner'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface Space {
   id: string
@@ -11,6 +13,7 @@ interface Space {
   description: string | null
   iconUrl: string | null
   systemCardUrl: string | null
+  isEncrypted: boolean
   _count?: { bookmarks: number; folders: number }
 }
 
@@ -25,7 +28,10 @@ export default function SpaceManager() {
     name: '',
     description: '',
     iconUrl: '',
-    systemCardUrl: ''
+    systemCardUrl: '',
+    isEncrypted: false,
+    password: '',
+    showPassword: false
   })
 
   // 优化：添加请求去重缓存ref，避免重复API调用
@@ -138,11 +144,18 @@ export default function SpaceManager() {
 
   const handleEdit = (space: Space) => {
     setEditingSpace(space)
+    // 检查是否已验证该空间的密码（使用加密的localStorage key）
+    const verifiedKey = `verified_space_${space.id}`
+    const isVerified = typeof window !== 'undefined' && localStorage.getItem(verifiedKey)
+    
     setFormData({
       name: space.name,
       description: space.description || '',
       iconUrl: space.iconUrl || '',
-      systemCardUrl: space.systemCardUrl || ''
+      systemCardUrl: space.systemCardUrl || '',
+      isEncrypted: space.isEncrypted,
+      password: isVerified ? '••••••••' : '', // 如果已验证，显示掩码字符
+      showPassword: false
     })
     setShowModal(true)
   }
@@ -154,7 +167,10 @@ export default function SpaceManager() {
       name: '',
       description: '',
       iconUrl: '',
-      systemCardUrl: ''
+      systemCardUrl: '',
+      isEncrypted: false,
+      password: '',
+      showPassword: false
     })
   }
 
@@ -163,13 +179,20 @@ export default function SpaceManager() {
       name: '',
       description: '',
       iconUrl: '',
-      systemCardUrl: ''
+      systemCardUrl: '',
+      isEncrypted: false,
+      password: '',
+      showPassword: false
     })
     setShowModal(true)
   }
 
   if (loading) {
-    return <div>{t('loading')}</div>
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" message={t('loading')} />
+      </div>
+    )
   }
 
   return (
@@ -189,8 +212,13 @@ export default function SpaceManager() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {spaces.map((space) => (
           <div key={space.id} className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
               {space.name}
+              {space.isEncrypted && (
+                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                 {t('encrypted')}
+                </span>
+              )}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               {space.description || t('noDescription')}
@@ -267,6 +295,48 @@ export default function SpaceManager() {
                   className="input-field"
                 />
                 <p className="text-xs text-gray-500 mt-1">{t('spaceCardImageDesc')}</p>
+              </div>
+
+              {/* 加密选项 */}
+              <div className="border-t pt-4">
+                <div className="flex items-center mb-3">
+                  <input
+                    type="checkbox"
+                    id="isEncrypted"
+                    checked={formData.isEncrypted}
+                    onChange={(e) => setFormData({ ...formData, isEncrypted: e.target.checked })}
+                    className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="isEncrypted" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('encryptThisSpace')}
+                  </label>
+                </div>
+                
+                {formData.isEncrypted && (
+                  <div className="pl-6">
+                    <label className="block text-sm font-medium mb-1">{t('spacePassword')} *</label>
+                    <div className="relative">
+                      <input
+                        type={formData.showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder={editingSpace ? t('keepExistingPassword') : t('enterPassword')}
+                        required={!editingSpace || formData.password !== '••••••••'}
+                        className="input-field pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, showPassword: !formData.showPassword })}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        {formData.showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {editingSpace ? t('keepExistingPasswordDesc') : t('setPasswordDesc')}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 justify-end">

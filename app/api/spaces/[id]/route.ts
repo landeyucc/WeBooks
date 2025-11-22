@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
+import bcrypt from 'bcryptjs'
 
 // 更新空间
 export async function PUT(
@@ -24,7 +25,7 @@ export async function PUT(
     
     console.log('PUT space - User ID:', userId)
 
-    const { name, description, iconUrl, systemCardUrl } = await request.json()
+    const { name, description, iconUrl, systemCardUrl, isEncrypted, password } = await request.json()
 
     // 查找并验证书签所有权
     const existingSpace = await prisma.space.findUnique({
@@ -39,16 +40,50 @@ export async function PUT(
       )
     }
 
+    // 处理加密相关逻辑
+    const updateData: {
+      name: string
+      description: string
+      iconUrl: string
+      systemCardUrl: string
+      isEncrypted?: boolean
+      passwordHash?: string | null
+    } = {
+      name,
+      description,
+      iconUrl,
+      systemCardUrl
+    }
+
+    if (isEncrypted !== undefined) {
+      updateData.isEncrypted = isEncrypted
+      
+      if (isEncrypted) {
+        // 如果设置加密且提供了新密码
+        if (password && password.trim() !== '') {
+          updateData.passwordHash = await bcrypt.hash(password.trim(), 12)
+        } else if (!existingSpace.passwordHash) {
+          // 如果原本没有密码且没有提供新密码，返回错误
+          return NextResponse.json(
+            { error: '加密空间必须设置密码' },
+            { status: 400 }
+          )
+        }
+        // 如果有现有密码且没有提供新密码，保持原密码
+      } else {
+        // 如果取消加密，清除密码
+        updateData.passwordHash = null
+      }
+    } else if (password && password.trim() !== '') {
+      // 如果只更新了密码
+      updateData.passwordHash = await bcrypt.hash(password.trim(), 12)
+    }
+
     const space = await prisma.space.update({
       where: {
         id: params.id
       },
-      data: {
-        name,
-        description,
-        iconUrl,
-        systemCardUrl
-      }
+      data: updateData
     })
 
     return NextResponse.json({ space })

@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
 import BookmarkGrid from '@/components/BookmarkGrid'
 import InitModal from '@/components/InitModal'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function HomePage() {
   const { token, loading, isAuthenticated, user, t } = useApp()
@@ -72,12 +73,6 @@ export default function HomePage() {
       // 优化：减少频繁的console.log，只在关键节点输出
       console.log('设置默认空间...')
       
-      // 确保用户完全认证（token和user都存在）
-      if (!isAuthenticated || !token || !user) {
-        console.log('等待认证完成')
-        return
-      }
-      
       // 确保还没有设置默认空间
       if (selectedSpaceId) {
         console.log('默认空间已设置')
@@ -86,34 +81,39 @@ export default function HomePage() {
       
       console.log('开始获取默认空间设置...')
       
-      // 优先从系统配置获取默认空间
-      const configResponse = await fetch('/api/system-config', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-
-      if (configResponse.ok) {
-        const config = await configResponse.json()
-        if (config.defaultSpaceId && isMounted) {
-          console.log('使用系统默认空间:', config.defaultSpaceId)
-          setSelectedSpaceId(config.defaultSpaceId)
-          return
-        } else {
-          console.log('未找到系统默认空间，将选择第一个可用空间')
-        }
-      } else {
-        console.log('获取系统配置失败，状态码:', configResponse.status)
-      }
-
-      // 如果没有默认空间或系统配置获取失败，获取第一个可用空间作为备用
-      if (!selectedSpaceId && isMounted) {
-        console.log('开始获取第一个可用空间...')
-        const spacesResponse = await fetch('/api/spaces', {
+      // 对于已登录用户，优先从系统配置获取默认空间
+      if (isAuthenticated && token && user) {
+        const configResponse = await fetch('/api/system-config', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         })
+
+        if (configResponse.ok) {
+          const config = await configResponse.json()
+          if (config.defaultSpaceId && isMounted) {
+            console.log('使用系统默认空间:', config.defaultSpaceId)
+            setSelectedSpaceId(config.defaultSpaceId)
+            return
+          } else {
+            console.log('未找到系统默认空间，将选择第一个可用空间')
+          }
+        } else {
+          console.log('获取系统配置失败，状态码:', configResponse.status)
+        }
+      }
+
+      // 获取第一个可用空间作为默认空间（支持未登录状态）
+      if (!selectedSpaceId && isMounted) {
+        console.log('开始获取第一个可用空间...')
+        
+        // 根据认证状态决定是否使用Authorization头
+        const headers: Record<string, string> = {}
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`
+        }
+        
+        const spacesResponse = await fetch('/api/spaces', { headers })
 
         if (spacesResponse.ok) {
           const spacesData = await spacesResponse.json()
@@ -146,7 +146,8 @@ export default function HomePage() {
   useEffect(() => {
     // 优化：移除频繁的console.log，只在必要的时候输出
     // 等待所有初始状态都完成后再设置默认空间，且只执行一次
-    if (!checkingInit && !loading && !needsInit && isAuthenticated && token && user && !selectedSpaceId && !defaultSpaceInit.current) {
+    // 支持未登录状态：在初始化完成且没有选中的空间时设置默认空间
+    if (!checkingInit && !loading && !needsInit && !selectedSpaceId && !defaultSpaceInit.current) {
       defaultSpaceInit.current = true // 标记已开始初始化
       // 减少延迟时间，减少频繁的状态检查
       const timeoutId = setTimeout(() => {
@@ -156,12 +157,12 @@ export default function HomePage() {
         clearTimeout(timeoutId)
       }
     }
-  }, [checkingInit, loading, needsInit, isAuthenticated, token, user, selectedSpaceId, setDefaultSpace]) // 添加setDefaultSpace依赖以修复ESLint警告
+  }, [checkingInit, loading, needsInit, selectedSpaceId, setDefaultSpace]) // 添加setDefaultSpace依赖以修复ESLint警告
 
   if (checkingInit || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">{t('loading')}</div>
+        <LoadingSpinner size="lg" message={t('loading')} />
       </div>
     )
   }

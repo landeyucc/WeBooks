@@ -28,6 +28,8 @@ model Space {
   iconUrl       String?        @map("icon_url")
   systemCardUrl String?        @map("system_card_url")
   userId        String         @map("user_id")
+  isEncrypted   Boolean        @default(false) @map("is_encrypted")
+  passwordHash  String?        @map("password_hash")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
   bookmarks     Bookmark[]

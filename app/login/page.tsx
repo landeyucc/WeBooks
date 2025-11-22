@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -100,9 +101,9 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            {loading ? t('loading') : t('login')}
+            {loading ? <LoadingSpinner size="sm" /> : t('login')}
           </button>
 
           <button

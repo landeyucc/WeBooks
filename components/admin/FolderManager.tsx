@@ -5,6 +5,7 @@ import { useApp } from '../../contexts/AppContext'
 import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
 import CustomSelect from '../ui/CustomSelect'
+import LoadingSpinner from '../LoadingSpinner'
 
 interface Folder {
   id: string
@@ -307,7 +308,11 @@ export default function FolderManager() {
   const sortedFolders = sortFolders(getFilteredFolders())
 
   if (loading) {
-    return <div>{t('loading')}</div>
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" message={t('loading')} />
+      </div>
+    )
   }
 
   return (

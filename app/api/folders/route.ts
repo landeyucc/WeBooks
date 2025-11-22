@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
+import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
 // 获取文件夹
 export async function GET(request: NextRequest) {
   try {
-    // 使用公共用户访问，允许未认证用户获取文件夹
-    const targetUserId = await getPublicUserId(request)
+    // 检查认证状态
+    const authResult = await getAuthenticatedUserId(request)
+    
+    if (authResult.response) {
+      return authResult.response
+    }
+
+    const targetUserId = authResult.userId
     console.log('GET folders - User ID:', targetUserId)
 
     const { searchParams } = new URL(request.url)

@@ -150,6 +150,50 @@ body {
       inset -4px -4px 8px var(--neu-inset-light),
       0 0 0 2px var(--primary);
   }
+
+  /* Password Input Neumorphic Styles */
+  .password-input-neumorphic {
+    background: linear-gradient(145deg, #ffffff, #f3f4f6);
+    border: 1px solid #d1d5db;
+    box-shadow: 
+      inset 3px 3px 8px #e5e7eb,
+      inset -3px -3px 8px #ffffff;
+    transition: all 0.3s ease;
+  }
+
+  .password-input-neumorphic:focus {
+    outline: none;
+    background: linear-gradient(145deg, #f9fafb, #f3f4f6);
+    border: 1px solid #3b82f6;
+    box-shadow: 
+      0 0 0 3px rgba(59, 130, 246, 0.1),
+      inset 3px 3px 8px #e5e7eb,
+      inset -3px -3px 8px #ffffff;
+  }
+
+  .dark .password-input-neumorphic {
+    background: linear-gradient(145deg, #374151, #1f2937);
+    border: 1px solid #4b5563;
+    box-shadow: 
+      inset 3px 3px 8px #374151,
+      inset -3px -3px 8px #1f2937;
+    color: #f9fafb !important; /* 确保深色模式下文字清晰可见 */
+  }
+
+  .dark .password-input-neumorphic:focus {
+    background: linear-gradient(145deg, #374151, #111827);
+    border: 1px solid #3b82f6;
+    box-shadow: 
+      0 0 0 3px rgba(59, 130, 246, 0.1),
+      inset 3px 3px 8px #374151,
+      inset -3px -3px 8px #1f2937;
+    color: #ffffff !important; /* 确保聚焦时文字清晰可见 */
+  }
+
+  /* 占位符颜色也加强 */
+  .dark .password-input-neumorphic::placeholder {
+    color: #d1d5db !important;
+  }
   
   .neu-card {
     background: var(--card-bg);

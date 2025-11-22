@@ -6,6 +6,7 @@ import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
 import CustomSelect from '../ui/CustomSelect'
 import Image from 'next/image'
+import LoadingSpinner from '../LoadingSpinner'
 
 interface Bookmark {
   id: string
@@ -428,7 +429,11 @@ export default function BookmarkManager() {
   }, [folders])
 
   if (loading) {
-    return <div>{t('loading')}</div>
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" message={t('loading')} />
+      </div>
+    )
   }
 
   const { groups, folderPaths } = groupedBookmarks()

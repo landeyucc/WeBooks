@@ -1,17 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
+import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
 // 获取书签
 export async function GET(request: NextRequest) {
   try {
+    // 检查认证状态
+    const authResult = await getAuthenticatedUserId(request)
+    
+    if (authResult.response) {
+      return authResult.response
+    }
+
+    const targetUserId = authResult.userId
+
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
     const folderId = searchParams.get('folderId')
     const search = searchParams.get('search')
-
-    const targetUserId = await getPublicUserId(request)
-    console.log('GET bookmarks - User ID:', targetUserId)
 
     const where: Record<string, unknown> = { userId: targetUserId }
     

@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { useApp } from '@/contexts/AppContext'
 import CustomSelect from './ui/CustomSelect'
+import PasswordModal from './PasswordModal'
 import { ChevronDown, Folder, FolderOpen } from 'lucide-react'
+
 
 interface Space {
   id: string
@@ -12,6 +14,7 @@ interface Space {
   description: string | null
   iconUrl: string | null
   systemCardUrl: string | null
+  isEncrypted?: boolean
   _count?: {
     bookmarks: number
     folders: number
@@ -50,11 +53,102 @@ export default function Sidebar({
   // 跟踪是否已经为当前空间设置了默认折叠状态
   const [isInitialCollapsedSet, setIsInitialCollapsedSet] = useState(false)
 
+  // 密码验证相关状态
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [pendingSpaceId, setPendingSpaceId] = useState<string | null>(null)
+  const [pendingSpaceName, setPendingSpaceName] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+
+  // 存储已验证的加密空间ID，避免重复验证
+  const verifiedEncryptedSpaces = useRef<Set<string>>(new Set())
+
+  // 处理空间切换（包含密码验证逻辑）
+  const handleSpaceChange = useCallback(async (newSpaceId: string) => {
+    const space = spaces.find(s => s.id === newSpaceId)
+    if (!space) return
+
+    // 如果不是加密空间，直接切换
+    if (!space.isEncrypted) {
+      onSelectSpace(newSpaceId)
+      onSelectFolder(null)
+      return
+    }
+
+    // 如果用户已登录（token存在），直接切换到加密空间，无需密码验证
+    if (token) {
+      console.log('已登录用户直接访问加密空间:', space.name)
+      onSelectSpace(newSpaceId)
+      onSelectFolder(null)
+      return
+    }
+
+    // 如果是加密空间且未登录用户，检查是否已经验证过
+    if (verifiedEncryptedSpaces.current.has(newSpaceId)) {
+      onSelectSpace(newSpaceId)
+      onSelectFolder(null)
+      return
+    }
+
+    // 如果未验证，弹出密码输入框（仅未登录用户）
+    setPendingSpaceId(newSpaceId)
+    setPendingSpaceName(space.name)
+    setPasswordError('')
+    setIsPasswordModalOpen(true)
+  }, [spaces, token, onSelectSpace, onSelectFolder])
+
+  // 验证密码
+  const verifyPassword = useCallback(async (password: string) => {
+    if (!pendingSpaceId) return
+
+    try {
+      const response = await fetch(`/api/spaces/${pendingSpaceId}/verify-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ password })
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.valid) {
+        // 密码正确，添加到已验证列表
+        verifiedEncryptedSpaces.current.add(pendingSpaceId)
+        setIsPasswordModalOpen(false)
+        onSelectSpace(pendingSpaceId)
+        onSelectFolder(null)
+        setPendingSpaceId(null)
+        setPendingSpaceName('')
+        setPasswordError('')
+      } else {
+        // 密码错误
+        setPasswordError(result.error || t('passwordIncorrect') || '密码错误，请重试')
+      }
+    } catch (error) {
+      console.error('密码验证失败:', error)
+      setPasswordError(t('passwordVerificationFailed') || '密码验证失败，请重试')
+    }
+  }, [pendingSpaceId, token, t, onSelectSpace, onSelectFolder])
+
+  // 取消密码输入
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cancelPasswordInput = useCallback(() => {
+    setIsPasswordModalOpen(false)
+    setPendingSpaceId(null)
+    setPendingSpaceName('')
+    setPasswordError('')
+  }, [])
+
   const fetchSpaces = useCallback(async () => {
     try {
-      const response = await fetch('/api/spaces', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      // 根据认证状态决定是否使用Authorization头
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      
+      const response = await fetch('/api/spaces', { headers })
       const data = await response.json()
       // 确保spacesData始终是一个数组，防止TypeError
       let spacesData = []
@@ -108,10 +202,9 @@ export default function Sidebar({
   }, [t])
 
   useEffect(() => {
-    if (isAuthenticated && token) {
-      fetchSpaces()
-    }
-  }, [isAuthenticated, token, fetchSpaces])
+    // 支持未登录状态：总是尝试获取空间列表
+    fetchSpaces()
+  }, [fetchSpaces])
 
   useEffect(() => {
     if (selectedSpaceId) {
@@ -321,10 +414,7 @@ export default function Sidebar({
       <div className="px-6 pb-4 flex-shrink-0">
         <CustomSelect
           value={selectedSpaceId || ''}
-          onChange={(value) => {
-            onSelectSpace(value)
-            onSelectFolder(null)
-          }}
+          onChange={handleSpaceChange}
           options={spaces.map(space => ({
             value: space.id,
             label: space.name
@@ -376,6 +466,15 @@ export default function Sidebar({
           </a>
         )}
       </div>
+
+      {/* 密码输入模态框 */}
+      <PasswordModal
+        isOpen={isPasswordModalOpen}
+        spaceName={pendingSpaceName}
+        onSuccess={verifyPassword}
+        onCancel={cancelPasswordInput}
+        error={passwordError}
+      />
     </aside>
   )
 }

@@ -14,6 +14,18 @@ export const translations = {
     reload: '重新加载',
     clear: '清空',
     saving: '保存中...',
+    unlocking: '解锁中...',
+    verifying: '验证中...',
+    
+    // 加密空间
+    unlockEncryptedSpace: '解锁加密空间',
+    spaceRequiresPassword: '空间',
+    requiresPassword: '需要密码访问',
+    enterPassword: '请输入密码',
+    enterPasswordPlaceholder: '请输入密码',
+    unlock: '解锁',
+    passwordIncorrect: '密码错误，请重试',
+    passwordVerificationFailed: '密码验证失败，请重试',
     
     // 认证
     login: '登录',
@@ -147,11 +159,11 @@ export const translations = {
     confirmCancel: '取消',
 
     // 通知图标
-    iconSuccess: '✅',
-    iconError: '❌',
-    iconWarning: '⚠️',
-    iconInfo: 'ℹ️',
-    iconQuestion: '❓',
+    iconSuccess: '成功:',
+    iconError: '错误:',
+    iconWarning: '警告:',
+    iconInfo: '信息:',
+    iconQuestion: '问题:',
     
     // 系统卡图
     systemCardUrlLabel: '系统卡图URL (9:16比例)',
@@ -326,6 +338,19 @@ export const translations = {
     oldKeyInvalidAfterRegenerate: '重新生成API Key后，旧Key将立即失效',
     recommendRegularUpdate: '如需安全考虑，建议定期更新API Key',
     adminVisibleOnly: 'API Key仅对已认证的管理员可见，请妥善保管',
+
+    // SpaceManager 加密相关文本
+    encrypted: '加密',
+    encryptThisSpace: '加密此空间',
+    spacePassword: '空间密码',
+    keepExistingPassword: '留空则保持原有密码',
+    keepExistingPasswordDesc: '留空则保持原有密码不变',
+    setPasswordDesc: '设置后访问此空间需要输入密码',
+    
+    // 其他硬编码文本的国际化
+    newApiKeyGenerateSuccess: '新API Key生成成功！',
+    generateApiKeyFailed: '生成API Key失败',
+    exportFailed: '导出失败',
   },
 
 
@@ -345,6 +370,18 @@ export const translations = {
     reload: 'Reload',
     clear: 'Clear',
     saving: 'Saving...',
+    unlocking: 'Unlocking...',
+    verifying: 'Verifying...',
+    
+    // Encrypted Space
+    unlockEncryptedSpace: 'Unlock Encrypted Space',
+    spaceRequiresPassword: 'Space',
+    requiresPassword: 'requires password to access',
+    enterPassword: 'Enter Password',
+    enterPasswordPlaceholder: 'Enter password',
+    unlock: 'Unlock',
+    passwordIncorrect: 'Incorrect password, please try again',
+    passwordVerificationFailed: 'Password verification failed, please try again',
     
     // Auth
     login: 'Login',
@@ -479,11 +516,11 @@ export const translations = {
     confirmCancel: 'Cancel',
 
     // 通知图标
-    iconSuccess: '✅',
-    iconError: '❌',
-    iconWarning: '⚠️',
-    iconInfo: 'ℹ️',
-    iconQuestion: '❓',
+    iconSuccess: 'Yes:',
+    iconError: 'Error:',
+    iconWarning: 'Warning:',
+    iconInfo: 'Info:',
+    iconQuestion: 'Question:',
     
     // 系统卡图
     systemCardUrlLabel: 'System Card URL (9:16 aspect ratio)',
@@ -655,6 +692,19 @@ export const translations = {
     oldKeyInvalidAfterRegenerate: 'After regenerating the API Key, the old Key will be invalidated immediately',
     recommendRegularUpdate: 'For security reasons, it is recommended to update the API Key regularly',
     adminVisibleOnly: 'API Key is only visible to authenticated administrators, please keep it safe',
+
+    // SpaceManager encryption related text
+    encrypted: 'Encrypted',
+    encryptThisSpace: 'Encrypt this space',
+    spacePassword: 'Space Password',
+    keepExistingPassword: 'Leave blank to keep original password',
+    keepExistingPasswordDesc: 'Leave blank to keep original password unchanged',
+    setPasswordDesc: 'After setting, access to this space requires password entry',
+    
+    // Other hardcoded text internationalization
+    newApiKeyGenerateSuccess: 'New API Key generated successfully!',
+    generateApiKeyFailed: 'Failed to generate API Key',
+    exportFailed: 'Export failed',
   }
 }
 

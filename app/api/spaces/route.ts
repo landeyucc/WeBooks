@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
+import bcrypt from 'bcryptjs'
 
 // 获取所有空间
 export async function GET(request: NextRequest) {
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     const requestBody = await request.json()
     console.log('POST spaces - Request body:', requestBody)
     
-    const { name, description, iconUrl, systemCardUrl } = requestBody
+    const { name, description, iconUrl, systemCardUrl, isEncrypted, password } = requestBody
     
     // 验证必填字段
     if (!name || name.trim() === '') {
@@ -70,12 +71,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 处理加密相关逻辑
+    let passwordHash = null
+    if (isEncrypted) {
+      if (!password || password.trim() === '') {
+        return NextResponse.json(
+          { error: '加密空间必须设置密码' },
+          { status: 400 }
+        )
+      }
+      passwordHash = await bcrypt.hash(password.trim(), 12)
+    }
+
     const space = await prisma.space.create({
       data: {
         name: name.trim(),
         description: description || null,
         iconUrl: iconUrl || null,
         systemCardUrl: systemCardUrl || null,
+        isEncrypted: isEncrypted || false,
+        passwordHash: passwordHash,
         userId
       }
     })

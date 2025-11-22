@@ -1,5 +1,5 @@
 {
-  "name": "Webooks",
+  "name": "webooks",
   "version": "0.1.2",
   "private": true,
   "scripts": {
@@ -15,7 +15,7 @@
     "deploy": "prisma generate && prisma db push && next build"
   },
   "dependencies": {
-    "@prisma/client": "^5.20.0",
+    "@prisma/client": "^5.22.0",
     "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "cheerio": "^1.0.0-rc.12",

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import RobustImage from './RobustImage'
+import LoadingSpinner from './LoadingSpinner'
 
 interface Bookmark {
   id: string
@@ -295,7 +296,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-lg text-gray-500">{t('loading')}</div>
+        <LoadingSpinner size="lg" message={t('loading')} />
       </div>
     )
   }
