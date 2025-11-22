@@ -7,13 +7,13 @@ export async function getSystemConfig() {
     // 获取第一个系统配置
     const config = await prisma.systemConfig.findFirst();
 
-    // 如果没有配置，返回默认配置（使用icon文件夹中的图标）
+    // 如果没有配置，返回默认配置
     if (!config) {
       return {
         siteTitle: "Webooks",
         seoDescription: "现代化的拟态浏览器书签管理系统",
         keywords: "书签管理,浏览器书签,bookmark manager",
-        faviconUrl: "/favicon.ico"  // 使用icon文件夹中的WeBooks.ico
+        faviconUrl: "/favicon.ico"  // 默认使用icon文件夹中的图标
       };
     }
 
@@ -29,10 +29,10 @@ export async function getSystemConfig() {
     console.error('获取系统配置失败:', error);
     // 发生错误时返回默认配置（使用icon文件夹中的图标）
     return {
-      siteTitle: "书签管理器 - Bookmark Manager",
-      seoDescription: "现代化的浏览器书签管理系统",
+      siteTitle: "Webooks",
+      seoDescription: "现代化的拟态浏览器书签管理系统",
       keywords: "书签管理,浏览器书签,bookmark manager",
-      faviconUrl: "/favicon.ico"  // 使用icon文件夹中的WeBooks.ico
+      faviconUrl: "/favicon.ico"  // 默认使用icon文件夹中的图标
     };
   }
 }

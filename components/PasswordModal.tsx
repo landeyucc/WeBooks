@@ -33,8 +33,6 @@ export default function PasswordModal({
     try {
       await onSuccess(password)
       setPassword('')
-    } catch {
-      // 密码验证失败由上层组件处理
     } finally {
       setLoading(false)
     }
@@ -148,7 +146,7 @@ export default function PasswordModal({
                       inset 3px 3px 8px #e5e7eb,
                       inset -3px -3px 8px #ffffff
                     `,
-                    color: 'inherit' // 使用CSS类的颜色样式
+                    color: 'inherit' 
                   }}
                   placeholder={t('enterPasswordPlaceholder')}
                   autoFocus

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// 获取系统配置（单用户模式）
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+// 获取系统配置
 export async function GET() {
   try {
-    // 在单用户模式下，先确保存在一个用户
     const user = await prisma.user.findFirst()
     if (!user) {
-      // 如果没有用户，返回空的配置
       return NextResponse.json({
         id: null,
         defaultSpaceId: null,
@@ -22,7 +23,7 @@ export async function GET() {
       })
     }
 
-    // 在单用户模式下，获取当前用户的配置记录
+    // 获取当前用户的配置记录
     const config = await prisma.systemConfig.findFirst({
       where: { userId: user.id },
       include: {
@@ -56,7 +57,7 @@ export async function GET() {
   }
 }
 
-// 更新系统配置（单用户模式）
+// 更新系统配置
 export async function PUT(request: NextRequest) {
   try {
     const { 
@@ -67,24 +68,24 @@ export async function PUT(request: NextRequest) {
       keywords 
     } = await request.json()
 
-    // 在单用户模式下，先确保存在一个用户
+    // 先确保存在一个用户
     let user = await prisma.user.findFirst()
     if (!user) {
-      // 如果没有用户，创建一个默认用户（单用户模式）
+      // 如果没有用户，创建一个默认用户
       user = await prisma.user.create({
         data: {
           username: 'admin',
-          passwordHash: 'default_hash' // 单用户模式下不需要真实密码
+          passwordHash: 'default_hash' 
         }
       })
     }
 
-    // 检查defaultSpaceId是否存在且属于当前用户（如果提供了的话）
+    // 检查defaultSpaceId是否存在且属于当前用户
     if (defaultSpaceId) {
       const space = await prisma.space.findUnique({
         where: { 
           id: defaultSpaceId,
-          userId: user.id // 确保空间属于当前用户
+          userId: user.id
         }
       })
       
@@ -96,14 +97,14 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // 在单用户模式下，更新现有配置或创建新配置
+    // 更新现有配置或创建新配置
     const existingConfig = await prisma.systemConfig.findFirst({
       where: { userId: user.id }
     })
     
     let config
     if (existingConfig) {
-      // 如果存在现有配置，更新它
+      // 如果存在现有配置则更新
       config = await prisma.systemConfig.update({
         where: { id: existingConfig.id },
         data: { 
@@ -123,7 +124,7 @@ export async function PUT(request: NextRequest) {
         }
       })
     } else {
-      // 如果没有现有配置，创建新配置
+      // 如果没有现有配置则创建新配置
       config = await prisma.systemConfig.create({
         data: { 
           userId: user.id,

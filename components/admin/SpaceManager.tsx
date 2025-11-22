@@ -34,11 +34,9 @@ export default function SpaceManager() {
     showPassword: false
   })
 
-  // 优化：添加请求去重缓存ref，避免重复API调用
   const lastRequestRef = useRef<string>('')
 
   const fetchSpaces = useCallback(async () => {
-    // 优化：添加请求去重逻辑，避免重复API调用
     const requestKey = `space-manager-${isAuthenticated}-${token}`
     if (lastRequestRef.current === requestKey) {
       return
@@ -78,8 +76,6 @@ export default function SpaceManager() {
     }
     
     try {
-      console.log('Token exists:', !!token)
-      console.log('Form data:', formData)
       
       const url = editingSpace
         ? `/api/spaces/${editingSpace.id}`
@@ -125,7 +121,7 @@ export default function SpaceManager() {
 
   const handleDelete = async (id: string) => {
     showWarning(t('deleteConfirm'))
-    // 直接执行删除操作，移除确认对话框
+    // 直接执行删除操作
     try {
       const response = await fetch(`/api/spaces/${id}`, {
         method: 'DELETE',
@@ -154,7 +150,7 @@ export default function SpaceManager() {
       iconUrl: space.iconUrl || '',
       systemCardUrl: space.systemCardUrl || '',
       isEncrypted: space.isEncrypted,
-      password: isVerified ? '••••••••' : '', // 如果已验证，显示掩码字符
+      password: isVerified ? '••••••••' : '', 
       showPassword: false
     })
     setShowModal(true)

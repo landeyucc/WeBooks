@@ -87,7 +87,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     const visited = new Set<string>()
     
     const buildPath = (currentFolderId: string): string[] => {
-      if (visited.has(currentFolderId)) return [] // 防止循环引用
+      if (visited.has(currentFolderId)) return [] 
       visited.add(currentFolderId)
       
       const folder = allFolders.find(f => f.id === currentFolderId)
@@ -121,7 +121,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
       if (bookmark.folderId) {
         const path = getFolderPath(bookmark.folderId, folders)
         
-        // 如果路径为空，说明文件夹不存在或有问题，视为无文件夹
+        // 如果路径为空，视为无文件夹
         if (path.length === 0) {
           console.warn(`书签 "${bookmark.title}" 的文件夹路径为空，将其归类为无文件夹`)
           groups[t('noFolder')].push(bookmark)
@@ -180,7 +180,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
       
       setBookmarks(bookmarksData.bookmarks || [])
       setFolders(foldersData.folders || [])
-      lastRequestRef.current = requestKey // 更新缓存的请求参数
+      lastRequestRef.current = requestKey 
     } catch (error) {
       console.error(t('fetchBookmarksFailed'), error)
     } finally {
@@ -209,7 +209,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
-  // 计算智能定位（防止超出屏幕边界）
+  // 计算智能定位
   const calculateTooltipPosition = (mouseX: number, mouseY: number) => {
     const tooltipWidth = 320 // 提示框宽度 (w-80 = 320px)
     const tooltipHeight = 200 // 提示框估计高度
@@ -235,15 +235,15 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
       left = margin
     }
     
-    // 确保不超出上边缘（只在上方显示时生效）
+    // 确保不超出上边缘
     if (top < margin && top < mouseY) {
-      top = mouseY + gap // 如果上方放不下，则放回下方
+      top = mouseY + gap  
     }
     
     return { left, top }
   }
 
-  // 处理鼠标悬浮开始 - 优化：减少频繁的setTimeout调用
+  // 处理鼠标悬浮开始 
   const handleMouseEnter = useCallback((e: React.MouseEvent, bookmarkId: string) => {
     // 移动端禁用详细信息描述框
     if (isMobile) return
@@ -262,7 +262,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     // 优化：使用useCallback和setTimeout的引用保持稳定，避免频繁创建新的定时器
     const timeout = setTimeout(() => {
       setHoveredBookmarkId(bookmarkId)
-    }, 300) // 从500ms减少到300ms，提升响应速度
+    }, 300) 
     setHoverTimeout(timeout)
   }, [isMobile, hoverTimeout])
 
@@ -306,7 +306,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
   
   // 获取所有非空分组，按文件夹层级排序
   const sortedGroups = Object.keys(groups).filter(groupKey => groups[groupKey].length > 0).sort((a, b) => {
-    if (a === t('noFolder')) return 1 // 无文件夹组排在最后
+    if (a === t('noFolder')) return 1 
     if (b === t('noFolder')) return -1
     
     const depthA = folderPaths[a].length

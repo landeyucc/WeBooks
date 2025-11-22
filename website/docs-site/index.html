@@ -39,6 +39,7 @@
             <div class="sidebar-section">
                 <h3>快速入门</h3>
                 <ul>
+                    <li><a href="index.html">文档首页</a></li>
                     <li><a href="quick-start.html">安装指南</a></li>
                     <li><a href="quick-start.html#first-use">首次使用</a></li>
                     <li><a href="quick-start.html#basic-operations">基础操作</a></li>
@@ -46,30 +47,36 @@
                 </ul>
             </div>
             <div class="sidebar-section">
-                <h3>核心功能</h3>
+                <h3>API 文档</h3>
                 <ul>
+                    <li><a href="api.html">API 概览</a></li>
+                    <li><a href="api.html#authentication">认证方式</a></li>
                     <li><a href="api.html#bookmarks">书签管理</a></li>
-                    <li><a href="api.html#folders">文件夹管理</a></li>
                     <li><a href="api.html#spaces">空间管理</a></li>
-                    <li><a href="api.html#search">搜索功能</a></li>
-                    <li><a href="api.html#tags">标签系统</a></li>
+                    <li><a href="api.html#folders">文件夹管理</a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
-                <h3>开发指南</h3>
+                <h3>部署指南</h3>
                 <ul>
-                    <li><a href="api.html">RESTful API</a></li>
-                    <li><a href="deployment.html">部署说明</a></li>
-                    <li><a href="deployment.html#vercel">Vercel 部署</a></li>
+                    <li><a href="deployment.html">部署概览</a></li>
+                    <li><a href="deployment.html#local">本地开发</a></li>
                     <li><a href="deployment.html#docker">Docker 部署</a></li>
+                    <li><a href="deployment.html#vercel">Vercel 部署</a></li>
+                    <li><a href="deployment.html#netlify">Netlify 部署</a></li>
+                    <li><a href="deployment.html#railway">Railway 部署</a></li>
+                    <li><a href="deployment.html#digitalocean">DigitalOcean 部署</a></li>
+                    <li><a href="deployment.html#environment-vars">环境变量</a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
-                <h3>其他</h3>
+                <h3>常见问题</h3>
                 <ul>
-                    <li><a href="faq.html">常见问题</a></li>
+                    <li><a href="faq.html">FAQ 概览</a></li>
+                    <li><a href="faq.html#installation">安装问题</a></li>
+                    <li><a href="faq.html#configuration">配置问题</a></li>
                     <li><a href="faq.html#troubleshooting">故障排除</a></li>
-                    <li><a href="../official-site/index.html">返回官网</a></li>
+                    <li><a href="faq.html#getting-help">获取帮助</a></li>
                 </ul>
             </div>
         </aside>
@@ -238,32 +245,27 @@ npm start</code></pre>
         </main>
     </div>
 
-    <footer class="docs-footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>文档</h4>
-                    <ul>
-                        <li><a href="quick-start.html">快速开始</a></li>
-                        <li><a href="api.html">API 文档</a></li>
-                        <li><a href="deployment.html">部署指南</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>资源</h4>
-                    <ul>
-                        <li><a href="../official-site/index.html">官方网站</a></li>
-                        <li><a href="faq.html">常见问题</a></li>
-                        <li><a href="https://github.com/yourusername/webooks">GitHub</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Webooks 文档. 开源项目，遵循 MIT 许可证。</p>
-            </div>
-        </div>
-    </footer>
-
     <script src="../assets/js/main.js"></script>
+
+    <script>
+        // 高亮当前页面的导航链接
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            const sidebarLinks = document.querySelectorAll('.docs-sidebar a');
+            
+            sidebarLinks.forEach(link => {
+                const linkPage = link.getAttribute('href').split('#')[0].split('?')[0];
+                if (linkPage === currentPage || 
+                    (currentPage === '' && linkPage === 'index.html') ||
+                    (currentPage === 'index.html' && linkPage === 'index.html')) {
+                    link.classList.add('active');
+                    // 如果是页面链接且不是锚点，则添加active到父级li
+                    if (!link.getAttribute('href').includes('#')) {
+                        link.parentElement.classList.add('active');
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

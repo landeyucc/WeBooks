@@ -123,8 +123,6 @@ NEXTAUTH_SECRET="your-secret-key"
 
 #### 认证相关
 - `POST /api/auth/login` - 用户登录
-- `POST /api/auth/register` - 用户注册
-- `POST /api/auth/logout` - 用户登出
 
 #### 书签管理
 - `GET /api/bookmarks` - 获取书签列表
@@ -137,14 +135,27 @@ NEXTAUTH_SECRET="your-secret-key"
 #### 文件夹管理
 - `GET /api/folders` - 获取文件夹列表
 - `POST /api/folders` - 创建文件夹
-- `PUT /api/folders/:id` - 更新文件夹
-- `DELETE /api/folders/:id` - 删除文件夹
 
 #### 空间管理
 - `GET /api/spaces` - 获取空间列表
 - `POST /api/spaces` - 创建空间
+- `GET /api/spaces/:id` - 获取空间详情
 - `PUT /api/spaces/:id` - 更新空间
 - `DELETE /api/spaces/:id` - 删除空间
+- `POST /api/spaces/:id/verify-password` - 验证空间密码
+- `POST /api/spaces/verify-password` - 通过名称验证空间密码
+
+#### 系统管理
+- `GET /api/system-config` - 获取系统配置
+- `PUT /api/system-config` - 更新系统配置
+- `GET /api/system-export` - 导出完整系统数据
+- `POST /api/system-import` - 导入系统数据
+- `POST /api/system-config/reset-password` - 重置管理员密码
+
+#### 扩展功能
+- `GET /api/extension/bookmarks` - 获取扩展可访问的书签
+- `GET /api/extension/api-key` - 生成/管理扩展API密钥
+- `POST /api/scrape` - 抓取网页元数据
 
 ### 请求格式示例
 

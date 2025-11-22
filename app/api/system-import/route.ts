@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // 导入系统参数（空间、文件夹、书签、系统设置）
 export async function POST(request: NextRequest) {
   try {
@@ -18,8 +21,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
-
-    console.log('POST 系统参数导入 - User ID:', userId)
 
     // 获取请求数据
     const requestData = await request.json()
@@ -40,14 +41,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`开始导入 - 模式: ${importMode}, 版本: ${importData.version}`)
-
-    // 执行导入操作
+        // 执行导入操作
     const importResult = await performImport(userId, importData, importMode)
 
-    console.log(`导入完成 - 成功: ${importResult.successCount}, 失败: ${importResult.errorCount}`)
-
-    return NextResponse.json({
+      return NextResponse.json({
       success: true,
       message: `导入完成，成功处理 ${importResult.successCount} 项，失败 ${importResult.errorCount} 项`,
       details: importResult
@@ -160,7 +157,6 @@ async function performImport(userId: string, importData: ImportData, importMode:
   try {
     // 根据导入模式处理现有数据
     if (importMode === 'replace') {
-      console.log('替换模式：清空现有数据')
       await clearExistingData(userId)
     }
 
@@ -176,7 +172,6 @@ async function performImport(userId: string, importData: ImportData, importMode:
     // 导入书签
     await importBookmarks(userId, importData.bookmarks, result)
 
-    console.log('导入操作完成')
   } catch (error) {
     console.error('导入过程中发生错误:', error)
     result.errors.push(`导入过程发生错误: ${error instanceof Error ? error.message : '未知错误'}`)
@@ -187,16 +182,14 @@ async function performImport(userId: string, importData: ImportData, importMode:
 }
 
 // 清空现有数据（替换模式）
-async function clearExistingData(userId: string) {
-  console.log('清空用户现有数据...')
+async function clearExistingData(userId: string) {  
   
   // 按依赖关系删除数据
   await prisma.bookmark.deleteMany({ where: { userId } })
   await prisma.folder.deleteMany({ where: { userId } })
   await prisma.space.deleteMany({ where: { userId } })
   await prisma.systemConfig.deleteMany({ where: { userId } })
-  
-  console.log('现有数据清空完成')
+
 }
 
 // 定义系统配置接口

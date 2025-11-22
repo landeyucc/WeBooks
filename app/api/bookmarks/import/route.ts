@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
 import { JSDOM } from 'jsdom'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 interface ParsedBookmark {
   title: string
   url: string

@@ -22,8 +22,6 @@ export async function PUT(
         { status: 401 }
       )
     }
-    
-    console.log('PUT space - User ID:', userId)
 
     const { name, description, iconUrl, systemCardUrl, isEncrypted, password } = await request.json()
 
@@ -115,9 +113,6 @@ export async function DELETE(
         { status: 401 }
       )
     }
-    
-    console.log('DELETE space - User ID:', userId)
-    console.log('Deleting space ID:', params.id)
 
     // 首先检查空间是否存在且属于当前用户
     const space = await prisma.space.findUnique({
@@ -141,8 +136,6 @@ export async function DELETE(
         { status: 404 }
       )
     }
-
-    console.log('Found space:', space.name, 'Bookmarks:', space._count.bookmarks, 'Folders:', space._count.folders)
 
     // 使用事务删除空间及其关联数据
     await prisma.$transaction(async (tx) => {
@@ -178,7 +171,6 @@ export async function DELETE(
       })
     })
 
-    console.log('Space deleted successfully:', params.id)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('删除空间错误:', error)

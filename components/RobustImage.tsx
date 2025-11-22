@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 
-// RobustImage 组件 - 确保所有必要的属性都被正确设置
+// RobustImage 组件
 interface RobustImageProps extends Omit<React.ComponentProps<typeof Image>, 'width' | 'height'> {
   src: string;
   alt: string;
@@ -23,7 +23,7 @@ export default function RobustImage({
   const [imgError, setImgError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(src);
 
-  // 清理 URL（移除前后空格和括号）
+  // 清理 URL
   const cleanUrl = currentSrc.trim().replace(/^[\s(]+|[\s)]+$/g, '');
 
   // 检查是否是有效的图片 URL
@@ -53,7 +53,7 @@ export default function RobustImage({
       return;
     }
     
-    // 如果有自定义错误处理器，调用它
+    // 如果有自定义错误处理器则调用它
     if (onError) {
       onError(e);
     } else {
@@ -93,8 +93,6 @@ export default function RobustImage({
       className={className}
       onError={handleError}
       unoptimized={unoptimized}
-      // 对于 Next.js Image 组件，我们需要提供 width 和 height
-      // 由于这些是动态内容，我们使用一个合理的默认值
       width={48}
       height={48}
       {...imageProps}
@@ -102,5 +100,4 @@ export default function RobustImage({
   );
 }
 
-// 导出类型定义
 export type { RobustImageProps };

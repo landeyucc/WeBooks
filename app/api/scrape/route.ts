@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchWebsiteMetadata } from '@/lib/scraper'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     const { url } = await request.json()
@@ -11,8 +14,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    console.log('Scraping URL:', url)
 
     const metadata = await fetchWebsiteMetadata(url)
 

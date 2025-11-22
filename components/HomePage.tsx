@@ -17,7 +17,7 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMode, setSearchMode] = useState<'bookmarks' | 'engine'>('bookmarks')
   // 控制侧边栏显示状态 - 移动端默认关闭，桌面端默认开启
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true) // 桌面端默认展开
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true) 
 
   // 控制搜索栏显示状态 - 移动端默认关闭
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -65,21 +65,15 @@ export default function HomePage() {
     checkInitStatus()
   }, [checkInitStatus])
 
-  // 设置默认空间逻辑 - 优先使用系统配置的默认空间
+  // 设置默认空间逻辑
   const setDefaultSpace = useCallback(async () => {
-    const isMounted = true // 添加组件挂载状态检查
-    
+    const isMounted = true 
+
     try {
-      // 优化：减少频繁的console.log，只在关键节点输出
-      console.log('设置默认空间...')
-      
       // 确保还没有设置默认空间
       if (selectedSpaceId) {
-        console.log('默认空间已设置')
         return
       }
-      
-      console.log('开始获取默认空间设置...')
       
       // 对于已登录用户，优先从系统配置获取默认空间
       if (isAuthenticated && token && user) {
@@ -92,7 +86,6 @@ export default function HomePage() {
         if (configResponse.ok) {
           const config = await configResponse.json()
           if (config.defaultSpaceId && isMounted) {
-            console.log('使用系统默认空间:', config.defaultSpaceId)
             setSelectedSpaceId(config.defaultSpaceId)
             return
           } else {
@@ -149,15 +142,14 @@ export default function HomePage() {
     // 支持未登录状态：在初始化完成且没有选中的空间时设置默认空间
     if (!checkingInit && !loading && !needsInit && !selectedSpaceId && !defaultSpaceInit.current) {
       defaultSpaceInit.current = true // 标记已开始初始化
-      // 减少延迟时间，减少频繁的状态检查
       const timeoutId = setTimeout(() => {
         setDefaultSpace()
-      }, 100) // 从200ms减少到100ms
+      }, 100) 
       return () => {
         clearTimeout(timeoutId)
       }
     }
-  }, [checkingInit, loading, needsInit, selectedSpaceId, setDefaultSpace]) // 添加setDefaultSpace依赖以修复ESLint警告
+  }, [checkingInit, loading, needsInit, selectedSpaceId, setDefaultSpace]) 
 
   if (checkingInit || loading) {
     return (
@@ -173,7 +165,7 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-      {/* 侧边栏 - 响应式布局 */}
+      {/* 侧边栏 */}
       <div className={`
         ${isMobile 
           ? `fixed inset-y-0 left-0 z-50 w-80 transform transition-transform duration-300 ease-in-out ${

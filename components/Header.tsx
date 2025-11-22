@@ -60,7 +60,7 @@ export default function Header({ searchQuery, onSearchChange, searchMode, onSear
           </svg>
         </button>
 
-        {/* 桌面端菜单 - 在小屏幕上隐藏 */}
+        {/* 桌面端菜单 */}
         <button
           onClick={onMenuClick}
           className="neu-button p-3 hidden md:block"
@@ -71,7 +71,7 @@ export default function Header({ searchQuery, onSearchChange, searchMode, onSear
           </svg>
         </button>
 
-        {/* 桌面端搜索栏 - 在md屏幕及以上显示 */}
+        {/* 桌面端搜索栏 */}
         <form onSubmit={handleSearch} className="hidden md:flex flex-1 gap-3">
           <div className="flex-1 relative">
             <input
@@ -107,7 +107,7 @@ export default function Header({ searchQuery, onSearchChange, searchMode, onSear
             className="min-w-[120px]"
           />
 
-          {/* 搜索引擎选择器（仅在搜索引擎模式下显示） */}
+          {/* 搜索引擎选择器 */}
           {searchMode === 'engine' && (
             <CustomSelect
               value={searchEngine}
@@ -182,7 +182,7 @@ export default function Header({ searchQuery, onSearchChange, searchMode, onSear
                 className="flex-1"
               />
 
-              {/* 搜索引擎选择器（仅在搜索引擎模式下显示） */}
+              {/* 搜索引擎选择器 */}
               {searchMode === 'engine' && (
                 <CustomSelect
                   value={searchEngine}

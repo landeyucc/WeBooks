@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // 导出整个系统参数（空间、文件夹、书签、系统设置，不包括用户密码）
 export async function GET(request: NextRequest) {
   try {
@@ -19,8 +22,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('GET 系统参数导出 - User ID:', userId)
-
     // 获取系统配置（排除用户密码）
     const systemConfig = await prisma.systemConfig.findFirst({
       where: { userId },
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // 获取用户信息（排除密码）
+    // 获取用户信息
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
         iconUrl: true,
         systemCardUrl: true,
         isEncrypted: true,
-        passwordHash: false, // 不导出密码哈希
+        passwordHash: false, 
         createdAt: true,
         updatedAt: true
       },
@@ -131,8 +132,6 @@ export async function GET(request: NextRequest) {
         encryptedSpaces: spaces.filter(s => s.isEncrypted).length
       }
     }
-
-    console.log(`导出完成 - 空间: ${spaces.length}, 文件夹: ${folders.length}, 书签: ${bookmarks.length}`)
 
     // 返回JSON文件下载
     const timestamp = new Date().toISOString().split('T')[0]

@@ -42,7 +42,6 @@ export async function getAuthenticatedUserId(request: NextRequest): Promise<{
         }
       }
       
-      console.log(`Token中的用户ID ${userId} 不存在，使用第一个用户: ${firstUser.id}`)
       return { userId: firstUser.id }
     }
     

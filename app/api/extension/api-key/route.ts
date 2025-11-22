@@ -3,14 +3,14 @@ import { getAuthenticatedUserId } from '@/lib/auth-helper'
 import { generateUserApiKey, validateApiKey } from '@/lib/extension-auth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 /**
- * 扩展API - API Key管理
+ * 浏览器扩展插件API - API Key管理
  * 支持生成、查看和验证API Key
  */
 
-/**
- * 生成新的API Key
- */
 export async function POST(request: NextRequest) {
   try {
     // 使用现有的用户认证机制
@@ -27,8 +27,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
-
-    console.log(`Extension API - 用户 ${userId} 请求生成API Key`)
 
     // 生成新的API Key
     const apiKey = await generateUserApiKey(userId)
@@ -51,8 +49,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
-
-    console.log(`Extension API - 为用户 ${userId} 生成新API Key`)
 
     return NextResponse.json({
       success: true,

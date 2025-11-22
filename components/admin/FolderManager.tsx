@@ -197,7 +197,6 @@ export default function FolderManager() {
   // 多级排序函数
   const sortFolders = useCallback((folders: Folder[]) => {
     return [...folders].sort((a, b) => {
-      // 按照优先级顺序进行比较
       for (const sortItem of sortConfig) {
         let aValue, bValue
 
@@ -244,7 +243,7 @@ export default function FolderManager() {
       const columnIndex = updated.findIndex(item => item.key === columnKey)
       
       if (columnIndex >= 0) {
-        // 如果当前是升序，切换到降序；如果是降序，切换回升序
+        // 切换排序方式
         updated[columnIndex] = {
           ...updated[columnIndex],
           direction: updated[columnIndex].direction === 'asc' ? 'desc' : 'asc'
@@ -271,12 +270,12 @@ export default function FolderManager() {
     return 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 cursor-pointer'
   }
 
-  // 计算文件夹的层级深度（用于缩进显示）
+  // 计算文件夹的层级深度
   const getFolderDepth = (folderId: string): number => {
     const visited = new Set<string>()
     
     const calculateDepth = (currentFolderId: string): number => {
-      if (visited.has(currentFolderId)) return 0 // 防止循环引用
+      if (visited.has(currentFolderId)) return 0 
       visited.add(currentFolderId)
       
       const folder = folders.find(f => f.id === currentFolderId)

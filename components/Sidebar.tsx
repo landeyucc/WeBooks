@@ -76,7 +76,6 @@ export default function Sidebar({
 
     // 如果用户已登录（token存在），直接切换到加密空间，无需密码验证
     if (token) {
-      console.log('已登录用户直接访问加密空间:', space.name)
       onSelectSpace(newSpaceId)
       onSelectFolder(null)
       return
@@ -151,7 +150,6 @@ export default function Sidebar({
       
       const response = await fetch('/api/spaces', { headers })
       const data = await response.json()
-      // 确保spacesData始终是一个数组，防止TypeError
       let spacesData = []
       
       // 检查不同的可能响应格式
@@ -165,14 +163,10 @@ export default function Sidebar({
       
       setSpaces(spacesData)
       
-      // 移除自动选择第一个空间的逻辑，避免与HomePage的默认空间逻辑冲突
-      // 让HomePage组件决定默认选择哪个空间
-      // if (spacesData.length > 0 && !selectedSpaceId) {
-      //   onSelectSpace(spacesData[0].id)
-      // }
+      
     } catch (error) {
       console.error(t('fetchSpacesFailed'), error)
-      // 出错时确保设置一个空数组
+      // 如果出错时则确保设置一个空数组
       setSpaces([])
     }
   }, [token, t])
@@ -182,7 +176,6 @@ export default function Sidebar({
       const response = await fetch(`/api/folders?spaceId=${spaceId}`)
       const data = await response.json()
       
-      // 确保foldersData始终是一个数组，防止TypeError
       let foldersData = []
       
       // 检查不同的可能响应格式
@@ -197,7 +190,7 @@ export default function Sidebar({
       setFolders(foldersData)
     } catch (error) {
       console.error(t('fetchFoldersFailedSide'), error)
-      // 出错时确保设置一个空数组
+      // 如果出错时则确保设置一个空数组
       setFolders([])
     }
   }, [t])

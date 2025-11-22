@@ -91,13 +91,13 @@ const ModalBase = ({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
+      {/* 背景模糊层 */}
       <div 
         className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
         onClick={closeOnOverlayClick ? onClose : undefined}
       />
       
-      {/* Modal Content */}
+      {/* 弹窗内容容器 */}
       <div 
         className={`
           relative neu-card 
@@ -108,7 +108,7 @@ const ModalBase = ({
         `}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* 弹窗标题栏 */}
         {title && (
           <div className="flex items-center justify-between p-6 neu-inset">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -128,7 +128,7 @@ const ModalBase = ({
           </div>
         )}
         
-        {/* Content */}
+        {/* 弹窗内容区域 */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-8rem)]">
           {children}
         </div>
@@ -152,11 +152,11 @@ export const AlertModal = ({
   const getTypeConfig = () => {
     const getTypeIcon = (type: string) => {
       switch (type) {
-        case 'success': return '✅'
-        case 'warning': return '⚠️'
-        case 'error': return '❌'
-        case 'info':
-        default: return 'ℹ️'
+        case 'success': return '成功：'
+        case 'warning': return '警告：'
+        case 'error': return '错误：'
+        case 'info': return '信息：'
+        default: return '默认：'
       }
     }
     
@@ -236,11 +236,11 @@ export const ConfirmModal = ({
   const getTypeConfig = () => {
     const getTypeIcon = (type: string) => {
       switch (type) {
-        case 'success': return '✅'
-        case 'warning': return '⚠️'
-        case 'error': return '❌'
-        case 'info':
-        default: return 'ℹ️'
+        case 'success': return '成功：'
+        case 'warning': return '警告：'
+        case 'error': return '错误：'
+        case 'info': return '信息：'
+        default: return '默认：'
       }
     }
     

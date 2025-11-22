@@ -33,44 +33,46 @@
     <div class="docs-container">
         <aside class="docs-sidebar">
             <div class="sidebar-section">
-                <h3>部署概览</h3>
+                <h3>快速入门</h3>
                 <ul>
-                    <li><a href="#requirements">系统要求</a></li>
-                    <li><a href="#environment">环境准备</a></li>
-                    <li><a href="#database">数据库设置</a></li>
+                    <li><a href="index.html">文档首页</a></li>
+                    <li><a href="quick-start.html">安装指南</a></li>
+                    <li><a href="quick-start.html#first-use">首次使用</a></li>
+                    <li><a href="quick-start.html#basic-operations">基础操作</a></li>
+                    <li><a href="quick-start.html#import-bookmarks">导入书签</a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
-                <h3>部署方式</h3>
+                <h3>API 文档</h3>
                 <ul>
-                    <li><a href="#local">本地开发</a></li>
-                    <li><a href="#docker">Docker 部署</a></li>
-                    <li><a href="#production">生产环境</a></li>
+                    <li><a href="api.html">API 概览</a></li>
+                    <li><a href="api.html#authentication">认证方式</a></li>
+                    <li><a href="api.html#bookmarks">书签管理</a></li>
+                    <li><a href="api.html#spaces">空间管理</a></li>
+                    <li><a href="api.html#folders">文件夹管理</a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
-                <h3>云平台部署</h3>
+                <h3>部署指南</h3>
                 <ul>
-                    <li><a href="#vercel">Vercel</a></li>
-                    <li><a href="#netlify">Netlify</a></li>
-                    <li><a href="#railway">Railway</a></li>
-                    <li><a href="#digitalocean">DigitalOcean</a></li>
+                    <li><a href="deployment.html">部署概览</a></li>
+                    <li><a href="deployment.html#local">本地开发</a></li>
+                    <li><a href="deployment.html#docker">Docker 部署</a></li>
+                    <li><a href="deployment.html#vercel">Vercel 部署</a></li>
+                    <li><a href="deployment.html#netlify">Netlify 部署</a></li>
+                    <li><a href="deployment.html#railway">Railway 部署</a></li>
+                    <li><a href="deployment.html#digitalocean">DigitalOcean 部署</a></li>
+                    <li><a href="deployment.html#environment-vars">环境变量</a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
-                <h3>配置管理</h3>
+                <h3>常见问题</h3>
                 <ul>
-                    <li><a href="#environment-vars">环境变量</a></li>
-                    <li><a href="#security">安全配置</a></li>
-                    <li><a href="#monitoring">监控与日志</a></li>
-                </ul>
-            </div>
-            <div class="sidebar-section">
-                <h3>故障排除</h3>
-                <ul>
-                    <li><a href="#troubleshooting">常见问题</a></li>
-                    <li><a href="#performance">性能优化</a></li>
-                    <li><a href="#backup">备份与恢复</a></li>
+                    <li><a href="faq.html">FAQ 概览</a></li>
+                    <li><a href="faq.html#installation">安装问题</a></li>
+                    <li><a href="faq.html#configuration">配置问题</a></li>
+                    <li><a href="faq.html#troubleshooting">故障排除</a></li>
+                    <li><a href="faq.html#getting-help">获取帮助</a></li>
                 </ul>
             </div>
         </aside>
@@ -259,106 +261,296 @@ npm run start</code></pre>
                     <h2>Docker 部署</h2>
                     
                     <div class="docker-setup">
-                        <h3>Dockerfile</h3>
-                        <p>项目根目录已有 Dockerfile：</p>
-                        <pre><code class="language-dockerfile">FROM node:18-alpine AS base
+                        <div class="quick-deploy">
+                            <h3>🚀 快速部署</h3>
+                            
+                            <div class="method-tabs">
+                                <div class="method-tab active" data-tab="auto">
+                                    <h4>方法一：使用自动化脚本（推荐）</h4>
+                                    <pre><code class="language-bash"># 给部署脚本添加执行权限
+chmod +x deploy.sh
 
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+# 执行自动部署
+./deploy.sh deploy</code></pre>
+                                </div>
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+                                <div class="method-tab" data-tab="manual">
+                                    <h4>方法二：手动部署</h4>
+                                    <pre><code class="language-bash"># 复制环境变量模板
+cp .env.example .env
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# 编辑配置文件（重要！）
+# 根据实际需要修改 .env 文件中的配置
 
-# Generate Prisma Client
-RUN npx prisma generate
+# 构建并启动服务
+docker-compose up --build -d
 
-# Build the application
-ENV NEXT_TELEMETRY_DISABLED 1
-RUN npm run build
+# 检查服务状态
+docker-compose ps</code></pre>
+                                </div>
+                            </div>
+                        </div>
 
-# Production image
-FROM base AS runner
-WORKDIR /app
+                        <div class="system-requirements">
+                            <h3>📋 系统要求</h3>
+                            <div class="requirements-grid">
+                                <div class="req-item">
+                                    <h4>软件要求</h4>
+                                    <ul>
+                                        <li>Docker Engine 20.10+</li>
+                                        <li>Docker Compose 2.0+</li>
+                                        <li>至少 2GB 可用内存</li>
+                                        <li>至少 10GB 可用磁盘空间</li>
+                                    </ul>
+                                </div>
+                                <div class="req-item">
+                                    <h4>目录结构</h4>
+                                    <pre><code class="language-bash">webooks/
+├── Dockerfile                 # 应用构建配置
+├── docker-compose.yml         # 服务编排配置
+├── .dockerignore             # Docker忽略文件
+├── .env.example              # 环境变量模板
+├── deploy.sh                 # 自动化部署脚本
+├── nginx.conf                # Nginx配置
+├── init-scripts/             # 数据库初始化脚本
+├── logs/                     # 日志目录
+└── uploads/                  # 上传文件目录</code></pre>
+                                </div>
+                            </div>
+                        </div>
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+                        <div class="docker-config">
+                            <h3>⚙️ 配置说明</h3>
+                            
+                            <div class="config-section">
+                                <h4>环境变量配置</h4>
+                                <p>复制 <code>.env.example</code> 为 <code>.env</code> 并根据实际情况修改：</p>
+                                <pre><code class="language-bash"># 必要配置
+NODE_ENV=production
+POSTGRES_PASSWORD=your_secure_password
+JWT_SECRET=your_jwt_secret_key
+NEXTAUTH_SECRET=your_nextauth_secret
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# 数据库配置
+POSTGRES_DB=webooks
+POSTGRES_USER=webooks_user
+POSTGRES_PASSWORD=your_secure_password
 
-COPY --from=builder /app/public ./public
+# 应用配置
+PORT=3000
+NEXTAUTH_URL=http://your-domain.com</code></pre>
+                            </div>
 
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+                            <div class="config-section">
+                                <h4>安全建议</h4>
+                                <ul>
+                                    <li><strong>修改所有默认密码</strong>：数据库密码、JWT密钥、NextAuth密钥</li>
+                                    <li><strong>使用强密码</strong>：至少12位字符，包含大小写字母、数字和特殊字符</li>
+                                    <li><strong>生产环境注意事项</strong>：配置SSL/TLS证书、设置防火墙规则</li>
+                                </ul>
+                            </div>
+                        </div>
 
-# Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+                        <div class="services-overview">
+                            <h3>🏗️ 服务架构</h3>
+                            
+                            <div class="services-grid">
+                                <div class="service-card">
+                                    <h4>应用服务</h4>
+                                    <div class="service-details">
+                                        <p><strong>容器名：</strong> webooks_app</p>
+                                        <p><strong>端口：</strong> 3000</p>
+                                        <p><strong>功能：</strong> Webooks 主应用</p>
+                                        <p><strong>健康检查：</strong> /api/health</p>
+                                    </div>
+                                </div>
 
-USER nextjs
+                                <div class="service-card">
+                                    <h4>数据库服务</h4>
+                                    <div class="service-details">
+                                        <p><strong>容器名：</strong> webooks_db</p>
+                                        <p><strong>镜像：</strong> postgres:15-alpine</p>
+                                        <p><strong>端口：</strong> 5432</p>
+                                        <p><strong>持久化：</strong> postgres_data 卷</p>
+                                    </div>
+                                </div>
 
-EXPOSE 3000
+                                <div class="service-card">
+                                    <h4>缓存服务</h4>
+                                    <div class="service-details">
+                                        <p><strong>容器名：</strong> webooks_redis</p>
+                                        <p><strong>镜像：</strong> redis:7-alpine</p>
+                                        <p><strong>端口：</strong> 6379</p>
+                                        <p><strong>功能：</strong> Redis 缓存和会话存储</p>
+                                    </div>
+                                </div>
 
-ENV PORT 3000
+                                <div class="service-card">
+                                    <h4>反向代理</h4>
+                                    <div class="service-details">
+                                        <p><strong>容器名：</strong> webooks_nginx</p>
+                                        <p><strong>镜像：</strong> nginx:alpine</p>
+                                        <p><strong>端口：</strong> 80, 443</p>
+                                        <p><strong>功能：</strong> 反向代理和负载均衡</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-CMD ["node", "server.js"]</code></pre>
+                        <div class="maintenance">
+                            <h3>🔧 维护操作</h3>
+                            
+                            <div class="maintenance-grid">
+                                <div class="maintenance-section">
+                                    <h4>常用命令</h4>
+                                    <pre><code class="language-bash"># 查看服务状态
+docker-compose ps
 
-                        <h3>Docker Compose</h3>
-                        <p>使用 docker-compose.yml 快速部署：</p>
-                        <pre><code class="language-yaml">version: '3.8'
+# 查看服务日志
+docker-compose logs -f webooks_app
+docker-compose logs -f webooks_db
 
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://webooks_user:password@db:5432/webooks
-      - JWT_SECRET=your-jwt-secret-here
-    depends_on:
-      - db
-    restart: unless-stopped
+# 重启服务
+docker-compose restart webooks_app
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=webooks
-      - POSTGRES_USER=webooks_user
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-volumes:
-  postgres_data:</code></pre>
-
-                        <h3>运行 Docker 部署</h3>
-                        <pre><code class="language-bash"># 构建并启动服务
-docker-compose up -d
-
-# 查看日志
-docker-compose logs -f
-
-# 停止服务
+# 停止所有服务
 docker-compose down
 
-# 重新构建
-docker-compose up -d --build</code></pre>
+# 停止并删除数据卷（谨慎使用）
+docker-compose down -v
+
+# 更新并重新构建
+docker-compose up --build -d</code></pre>
+                                </div>
+
+                                <div class="maintenance-section">
+                                    <h4>备份和恢复</h4>
+                                    <pre><code class="language-bash"># 数据库备份
+docker-compose exec webooks_db pg_dump -U webooks_user webooks > backup.sql
+
+# 数据库恢复
+docker-compose exec -T webooks_db psql -U webooks_user webooks < backup.sql
+
+# 完整数据备份
+tar -czf webooks-backup-$(date +%Y%m%d).tar.gz data/ uploads/ .env</code></pre>
+                                </div>
+
+                                <div class="maintenance-section">
+                                    <h4>日志管理</h4>
+                                    <pre><code class="language-bash"># 查看应用日志
+docker-compose logs webooks_app
+
+# 查看Nginx访问日志
+docker-compose exec webooks_nginx tail -f /var/log/nginx/access.log
+
+# 查看Nginx错误日志
+docker-compose exec webooks_nginx tail -f /var/log/nginx/error.log</code></pre>
+                                </div>
+
+                                <div class="maintenance-section">
+                                    <h4>部署脚本功能</h4>
+                                    <p>使用 <code>./deploy.sh</code> 脚本可以：</p>
+                                    <ul>
+                                        <li>自动检查Docker环境</li>
+                                        <li>生成安全密码</li>
+                                        <li>创建必要目录</li>
+                                        <li>配置环境变量</li>
+                                        <li>启动所有服务</li>
+                                        <li>执行健康检查</li>
+                                    </ul>
+                                    <pre><code class="language-bash"># 查看所有可用命令
+./deploy.sh --help
+
+# 查看服务状态
+./deploy.sh status
+
+# 停止服务
+./deploy.sh stop
+
+# 重启服务
+./deploy.sh restart
+
+# 查看日志
+./deploy.sh logs
+
+# 备份数据
+./deploy.sh backup</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="troubleshooting">
+                            <h3>🔍 故障排除</h3>
+                            
+                            <div class="troubleshooting-grid">
+                                <div class="trouble-item">
+                                    <h4>服务启动失败</h4>
+                                    <p><strong>可能原因：</strong>端口冲突、环境变量未配置</p>
+                                    <p><strong>解决方案：</strong></p>
+                                    <ul>
+                                        <li>检查端口是否被占用：<code>netstat -tulpn | grep :3000</code></li>
+                                        <li>确认.env文件配置正确</li>
+                                        <li>查看详细错误日志：<code>docker-compose logs</code></li>
+                                    </ul>
+                                </div>
+
+                                <div class="trouble-item">
+                                    <h4>数据库连接失败</h4>
+                                    <p><strong>可能原因：</strong>数据库未启动、连接参数错误</p>
+                                    <p><strong>解决方案：</strong></p>
+                                    <ul>
+                                        <li>确认PostgreSQL服务状态：<code>docker-compose ps db</code></li>
+                                        <li>检查数据库日志：<code>docker-compose logs db</code></li>
+                                        <li>验证连接字符串格式</li>
+                                    </ul>
+                                </div>
+
+                                <div class="trouble-item">
+                                    <h4>构建失败</h4>
+                                    <p><strong>可能原因：</strong>网络问题、依赖版本冲突</p>
+                                    <p><strong>解决方案：</strong></p>
+                                    <ul>
+                                        <li>清理Docker缓存：<code>docker system prune -a</code></li>
+                                        <li>重新构建：<code>docker-compose build --no-cache</code></li>
+                                        <li>检查网络连接</li>
+                                    </ul>
+                                </div>
+
+                                <div class="trouble-item">
+                                    <h4>性能优化</h4>
+                                    <ul>
+                                        <li><strong>内存优化：</strong>限制容器内存使用</li>
+                                        <li><strong>数据卷：</strong>使用本地数据卷提高I/O性能</li>
+                                        <li><strong>缓存策略：</strong>配置Nginx缓存静态资源</li>
+                                        <li><strong>数据库优化：</strong>定期清理日志、优化查询</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="docker-compose-advanced">
+                            <h3>🐳 完整Docker Compose配置</h3>
+                            <p>项目包含完整的docker-compose.yml配置，支持多服务架构：</p>
+                            <ul>
+                                <li>应用服务（Node.js + Next.js）</li>
+                                <li>PostgreSQL数据库（持久化存储）</li>
+                                <li>Redis缓存（会话和临时数据）</li>
+                                <li>Nginx反向代理（负载均衡和安全）</li>
+                                <li>健康检查和自动重启</li>
+                                <li>网络隔离和数据卷管理</li>
+                            </ul>
+                            
+                            <div class="advanced-features">
+                                <h4>高级特性</h4>
+                                <ul>
+                                    <li><strong>多阶段构建：</strong>优化镜像大小和构建效率</li>
+                                    <li><strong>非root用户：</strong>提高安全性</li>
+                                    <li><strong>健康检查：</strong>自动监控服务状态</li>
+                                    <li><strong>数据持久化：</strong>数据库和上传文件独立存储</li>
+                                    <li><strong>网络隔离：</strong>服务间安全通信</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -901,31 +1093,27 @@ pm2 restart webooks</code></pre>
         </main>
     </div>
 
-    <footer class="docs-footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>文档</h4>
-                    <ul>
-                        <li><a href="quick-start.html">快速开始</a></li>
-                        <li><a href="api.html">API 文档</a></li>
-                        <li><a href="deployment.html">部署指南</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>资源</h4>
-                    <ul>
-                        <li><a href="../official-site/index.html">官方网站</a></li>
-                        <li><a href="faq.html">常见问题</a></li>
-                        <li><a href="https://github.com/yourusername/webooks">GitHub</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Webooks 文档. 开源项目，遵循 MIT 许可证。</p>
-            </div>
-        </div>
-    </footer>
+    <script>
+        // 导航高亮功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取当前页面文件名
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            
+            // 查找所有导航链接并移除active类
+            const navLinks = document.querySelectorAll('.docs-sidebar a');
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                
+                // 检查链接是否指向当前页面
+                const linkHref = link.getAttribute('href');
+                if (linkHref === currentPage || 
+                    (currentPage === '' && linkHref === 'index.html') ||
+                    (currentPage === 'index.html' && linkHref === 'index.html')) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 
     <script src="../assets/js/main.js"></script>
 </body>

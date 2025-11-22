@@ -64,7 +64,6 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
       }
     }
 
-    console.log(`Extension API访问 - 用户ID: ${systemConfig.userId}, API Key: ${apiKey.substring(0, 20)}...`)
     return { userId: systemConfig.userId }
   } catch (error) {
     console.error('API Key认证错误:', error)

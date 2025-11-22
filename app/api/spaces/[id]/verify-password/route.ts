@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const spaceId = params.id
@@ -28,8 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     
     // 如果用户已登录且空间属于当前用户，直接返回验证成功
     if (isAuthenticated && authResult.userId && space.userId === authResult.userId) {
-      console.log('登录用户访问自己的空间，跳过密码验证:', space.name)
-      return NextResponse.json({
+        return NextResponse.json({
         valid: true,
         message: '用户已登录，直接访问',
         skipPassword: true
@@ -64,8 +66,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           { status: 401 }
         )
       }
-
-      console.log('未登录用户密码验证成功，空间:', space.name)
       
       return NextResponse.json({
         valid: true,

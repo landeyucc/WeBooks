@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// 获取用户信息（用户名和用户ID）
+// 获取用户名和用户ID
 export async function GET() {
   try {
     const user = await prisma.user.findFirst()

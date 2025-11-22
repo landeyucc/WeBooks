@@ -23,7 +23,7 @@ const NotificationItem = ({ id, message, type, duration = 3000, onClose }: Notif
       setIsExiting(true)
       setTimeout(() => {
         onClose(id)
-      }, 300) // 等待动画完成
+      }, 300) 
     }, duration)
 
     return () => clearTimeout(timer)
@@ -32,11 +32,11 @@ const NotificationItem = ({ id, message, type, duration = 3000, onClose }: Notif
   const getTypeStyles = () => {
     const getTypeIcon = (type: string) => {
       switch (type) {
-        case 'success': return '✅'
-        case 'error': return '❌'
-        case 'warning': return '⚠️'
-        case 'info':
-        default: return 'ℹ️'
+        case 'success': return '成功：'
+        case 'error': return '错误：'
+        case 'warning': return '警告：'
+        case 'info': return '信息：'
+        default: return '默认：'
       }
     }
     
@@ -172,7 +172,6 @@ export const useNotifications = () => {
     addNotification,
     removeNotification,
     clearAll,
-    // 便利方法
     showSuccess: (message: string, duration?: number) => addNotification(message, 'success', duration),
     showError: (message: string, duration?: number) => addNotification(message, 'error', duration),
     showWarning: (message: string, duration?: number) => addNotification(message, 'warning', duration),

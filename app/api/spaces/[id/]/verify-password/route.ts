@@ -6,7 +6,6 @@ import bcrypt from 'bcryptjs'
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const spaceId = params.id
-    console.log('验证空间密码 - Space ID:', spaceId)
 
     if (!spaceId) {
       return NextResponse.json(
@@ -16,7 +15,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const { password } = await request.json()
-    console.log('POST verify-password - Request body:', { spaceId, hasPassword: !!password })
 
     if (!password || password.trim() === '') {
       return NextResponse.json(
@@ -27,7 +25,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // 获取当前用户ID（支持未登录状态）
     const userId = await getPublicUserId(request)
-    console.log('POST verify-password - User ID:', userId)
 
     // 查找指定的空间
     const space = await prisma.space.findFirst({
@@ -61,8 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // 验证密码
     const isValidPassword = await bcrypt.compare(password.trim(), space.passwordHash)
-    console.log('POST verify-password - Password validation:', isValidPassword)
-
+    
     if (!isValidPassword) {
       return NextResponse.json(
         { error: '密码错误' },

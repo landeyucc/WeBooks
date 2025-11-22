@@ -440,7 +440,7 @@ export default function BookmarkManager() {
 
   // 按文件夹层级深度排序组
   const sortedGroups = Object.keys(groups).sort((a, b) => {
-    if (a === t('noFolder')) return 1 // 无文件夹组排在最后
+    if (a === t('noFolder')) return 1 
     if (b === t('noFolder')) return -1
     
     const depthA = folderPaths[a].length
@@ -463,7 +463,6 @@ export default function BookmarkManager() {
           {t('bookmarks')} ({getFilteredBookmarksCount()})
         </h2>
         <div className="flex items-center gap-3">
-          {/* 空间切换按钮 */}
           <CustomSelect
             value={selectedSpaceId}
             onChange={(value) => setSelectedSpaceId(value)}

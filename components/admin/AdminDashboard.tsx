@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     if (tabParam && TABS.some(tab => tab.key === tabParam)) {
       return tabParam as TabType
     }
-    return 'spaces' // 默认选项卡
+    return 'spaces' 
   }, [searchParams])
 
   // 设置选项卡并更新URL
@@ -110,6 +110,7 @@ export default function AdminDashboard() {
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('')
   const [defaultSpaceId, setDefaultSpaceId] = useState<string>('') // 新增默认空间ID状态
   const [systemCardUrl, setSystemCardUrl] = useState<string>('')
+
   // 网站设置状态
   const [siteTitle, setSiteTitle] = useState<string>('')
   const [faviconUrl, setFaviconUrl] = useState<string>('')
@@ -140,7 +141,7 @@ export default function AdminDashboard() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
-  // 优化：添加请求去重缓存ref，避免重复API调用
+  // 添加请求去重缓存ref，避免重复API调用
   const lastRequestRef = useRef<string>('')
 
   // 获取浏览器扩展API Key
@@ -202,7 +203,7 @@ export default function AdminDashboard() {
   const handleUserTooltipLeave = useCallback(() => {
     tooltipTimeoutRef.current = setTimeout(() => {
       setShowUserTooltip(false)
-    }, 200) // 200ms延迟，让用户有时间点击按钮
+    }, 200) 
   }, [])
 
   // 在组件加载时获取API Key
@@ -223,7 +224,7 @@ export default function AdminDashboard() {
 
   // 获取空间数据
   const fetchSpaces = useCallback(async () => {
-    // 优化：添加请求去重逻辑，避免重复API调用
+    // 添加请求去重逻辑，避免重复API调用
     const requestKey = `spaces-${isAuthenticated}-${token}`
     if (lastRequestRef.current === requestKey) {
       return
@@ -231,13 +232,11 @@ export default function AdminDashboard() {
     lastRequestRef.current = requestKey
 
     try {
-      // 优化：移除调试日志
       const response = await fetch('/api/spaces', {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
         const data = await response.json()
-        // 优化：移除调试日志
         
         // 处理API返回的格式 {spaces: [...]} 或直接数组格式
         let spacesData = []
@@ -296,10 +295,8 @@ export default function AdminDashboard() {
   // 组件首次加载时获取空间数据和系统配置
   useEffect(() => {
     if (isAuthenticated && token) {
-      // 优化：移除调试日志，减少控制台输出导致的性能问题
-      Promise.all([fetchSpaces(), fetchSystemConfig()])
+            Promise.all([fetchSpaces(), fetchSystemConfig()])
         .then(() => {
-          // 优化：移除调试日志
         })
         .catch((error) => {
           console.error(t('adminConfigLoadFailed'), error)
@@ -312,14 +309,12 @@ export default function AdminDashboard() {
     if (selectedSpaceId && spaces.length > 0) {
       const selectedSpace = spaces.find(s => s.id === selectedSpaceId)
       setSystemCardUrl(selectedSpace?.systemCardUrl || '')
-      // 优化：移除调试日志，减少频繁console输出
     }
-  }, [selectedSpaceId, spaces]) // 优化：移除t函数依赖
+  }, [selectedSpaceId, spaces]) 
 
   // 处理标签页切换并更新URL
   const handleTabChange = (tab: TabType) => {
     setActiveTabWithUrl(tab)
-    // 优化：移除重复的fetchSpaces调用，避免在数据已加载时重复请求
     if (tab === 'import' && folders.length === 0) {
       fetchFolders()
     }
@@ -454,7 +449,6 @@ export default function AdminDashboard() {
       return
     }
 
-    // 没有密码参数，显示密码输入对话框
     setShowPasswordResetDialog(true)
   }
 
@@ -485,7 +479,7 @@ export default function AdminDashboard() {
     setConfirmPassword('')
   }
 
-  // 获取所有文件夹数据（用于导出时按空间分组显示）
+  // 获取所有文件夹数据，用于导出时按空间分组显示
   const fetchFolders = async () => {
     try {
       const response = await fetch('/api/folders', {
@@ -506,7 +500,7 @@ export default function AdminDashboard() {
         })
         
         setFolderSpacesFolders(groupedFolders)
-        // 设置默认的全局文件夹列表（用于向下兼容）
+        // 设置默认的全局文件夹列表，用于向下兼容
         setFolders(foldersData)
       }
     } catch (error) {
@@ -568,7 +562,7 @@ export default function AdminDashboard() {
     }
   }
 
-  // 处理实际导入（点击导入按钮时）
+  // 处理实际导入
   const handleImportBookmarks = async () => {
     if (!selectedFile) {
       showWarning('请先选择一个书签文件')
@@ -1142,7 +1136,7 @@ export default function AdminDashboard() {
                           value={exportFolderSpaceId}
                           onChange={(value: string) => {
                             setExportFolderSpaceId(value)
-                            setExportFolderId('') // 重置文件夹选择
+                            setExportFolderId('') 
                             // 如果没有该空间的文件夹数据，则获取
                             if (value && (!folderSpacesFolders[value] || folderSpacesFolders[value].length === 0)) {
                               fetchFoldersBySpace(value)
@@ -1570,12 +1564,10 @@ export default function AdminDashboard() {
                               title={showApiKey ? '隐藏API Key' : '显示API Key'}
                             >
                               {showApiKey ? (
-                                // 闭眼图标
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L12 12m-3.122-3.122l4.242 4.242" />
                                 </svg>
                               ) : (
-                                // 睁眼图标
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -1630,7 +1622,6 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* 使用说明 */}
                   <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">{t('usageInstructions')}</h4>
                     <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">

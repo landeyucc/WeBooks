@@ -28,7 +28,7 @@ export default function AdminPage() {
     )
   }
 
-  // 未认证时显示重定向提示（实际重定向会由useEffect处理）
+  // 未认证时显示重定向提示
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -39,6 +39,6 @@ export default function AdminPage() {
     )
   }
 
-  // 已认证，显示管理面板
+  // 如果已认证，显示管理面板
   return <AdminDashboard />
 }

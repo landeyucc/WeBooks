@@ -26,7 +26,7 @@ export async function fetchWebsiteMetadata(url: string): Promise<WebsiteMetadata
         'Upgrade-Insecure-Requests': '1'
       },
       validateStatus: function (status) {
-        return status < 500; // 只在服务器错误时拒绝状态
+        return status < 500; // 
       }
     })
 

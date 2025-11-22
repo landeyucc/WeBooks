@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
 import bcrypt from 'bcryptjs'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // 获取所有空间
 export async function GET(request: NextRequest) {
   try {
@@ -41,10 +44,8 @@ export async function POST(request: NextRequest) {
     }
     
     const userId = authResult.userId!
-    console.log('POST spaces - User ID:', userId)
 
     const requestBody = await request.json()
-    console.log('POST spaces - Request body:', requestBody)
     
     const { name, description, iconUrl, systemCardUrl, isEncrypted, password } = requestBody
     
@@ -95,7 +96,6 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    console.log('POST spaces - Created space:', space.id)
     return NextResponse.json({ space })
   } catch (error) {
     console.error('创建空间错误:', error)

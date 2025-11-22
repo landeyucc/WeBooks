@@ -35,20 +35,44 @@
             <div class="sidebar-section">
                 <h3>快速入门</h3>
                 <ul>
-                    <li><a href="#installation">安装指南</a></li>
-                    <li><a href="#first-use">首次使用</a></li>
-                    <li><a href="#basic-operations">基础操作</a></li>
-                    <li><a href="#import-bookmarks">导入书签</a></li>
-                    <li><a href="#manage-bookmarks">管理书签</a></li>
-                    <li><a href="#admin-panel">管理后台</a></li>
+                    <li><a href="index.html">文档首页</a></li>
+                    <li><a href="quick-start.html">安装指南</a></li>
+                    <li><a href="quick-start.html#first-use">首次使用</a></li>
+                    <li><a href="quick-start.html#basic-operations">基础操作</a></li>
+                    <li><a href="quick-start.html#import-bookmarks">导入书签</a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
-                <h3>故障排除</h3>
+                <h3>API 文档</h3>
                 <ul>
-                    <li><a href="faq.html#common-issues">常见问题</a></li>
-                    <li><a href="faq.html#database-errors">数据库问题</a></li>
-                    <li><a href="faq.html#port-conflicts">端口冲突</a></li>
+                    <li><a href="api.html">API 概览</a></li>
+                    <li><a href="api.html#authentication">认证方式</a></li>
+                    <li><a href="api.html#bookmarks">书签管理</a></li>
+                    <li><a href="api.html#spaces">空间管理</a></li>
+                    <li><a href="api.html#folders">文件夹管理</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>部署指南</h3>
+                <ul>
+                    <li><a href="deployment.html">部署概览</a></li>
+                    <li><a href="deployment.html#local">本地开发</a></li>
+                    <li><a href="deployment.html#docker">Docker 部署</a></li>
+                    <li><a href="deployment.html#vercel">Vercel 部署</a></li>
+                    <li><a href="deployment.html#netlify">Netlify 部署</a></li>
+                    <li><a href="deployment.html#railway">Railway 部署</a></li>
+                    <li><a href="deployment.html#digitalocean">DigitalOcean 部署</a></li>
+                    <li><a href="deployment.html#environment-vars">环境变量</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>常见问题</h3>
+                <ul>
+                    <li><a href="faq.html">FAQ 概览</a></li>
+                    <li><a href="faq.html#installation">安装问题</a></li>
+                    <li><a href="faq.html#configuration">配置问题</a></li>
+                    <li><a href="faq.html#troubleshooting">故障排除</a></li>
+                    <li><a href="faq.html#getting-help">获取帮助</a></li>
                 </ul>
             </div>
         </aside>
@@ -374,55 +398,31 @@ npx prisma generate</code></pre>
                     </div>
                 </section>
 
-                <section class="next-steps">
-                    <h2>下一步</h2>
-                    <div class="next-steps-grid">
-                        <a href="api.html" class="next-step">
-                            <div class="step-icon">📚</div>
-                            <h3>API 文档</h3>
-                            <p>了解 RESTful API 的使用方法</p>
-                        </a>
-                        <a href="deployment.html" class="next-step">
-                            <div class="step-icon">🚀</div>
-                            <h3>部署指南</h3>
-                            <p>学习如何部署到生产环境</p>
-                        </a>
-                        <a href="faq.html" class="next-step">
-                            <div class="step-icon">❓</div>
-                            <h3>常见问题</h3>
-                            <p>查看常见问题解答</p>
-                        </a>
-                    </div>
-                </section>
             </div>
         </main>
     </div>
 
-    <footer class="docs-footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>文档</h4>
-                    <ul>
-                        <li><a href="quick-start.html">快速开始</a></li>
-                        <li><a href="api.html">API 文档</a></li>
-                        <li><a href="deployment.html">部署指南</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>资源</h4>
-                    <ul>
-                        <li><a href="../official-site/index.html">官方网站</a></li>
-                        <li><a href="faq.html">常见问题</a></li>
-                        <li><a href="https://github.com/yourusername/webooks">GitHub</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Webooks 文档. 开源项目，遵循 MIT 许可证。</p>
-            </div>
-        </div>
-    </footer>
+    <script>
+        // 导航高亮功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取当前页面文件名
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            
+            // 查找所有导航链接并移除active类
+            const navLinks = document.querySelectorAll('.docs-sidebar a');
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                
+                // 检查链接是否指向当前页面
+                const linkHref = link.getAttribute('href');
+                if (linkHref === currentPage || 
+                    (currentPage === '' && linkHref === 'index.html') ||
+                    (currentPage === 'index.html' && linkHref === 'index.html')) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 
     <script src="../assets/js/main.js"></script>
 </body>

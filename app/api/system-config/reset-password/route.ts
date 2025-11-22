@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // 重置管理员密码
 export async function POST(request: NextRequest) {
   try {
@@ -32,8 +35,6 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: { passwordHash }
     })
-
-    console.log('管理员密码重置成功，用户ID:', updatedUser.id)
 
     return NextResponse.json({
       success: true,

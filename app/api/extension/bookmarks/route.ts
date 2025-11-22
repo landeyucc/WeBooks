@@ -3,8 +3,11 @@ import { prisma } from '@/lib/prisma'
 import { authenticateWithApiKey } from '@/lib/extension-auth'
 import { fetchWebsiteMetadata } from '@/lib/scraper'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 /**
- * 扩展API - 添加书签
+ * 浏览器扩展插件API - 添加书签
  * 支持通过扩展快捷键直接添加当前网页的书签
  * 仅支持POST操作（仅添加）
  */

@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// 导出书签 - 完全静态化处理，避免动态服务器使用
+// 导出书签
 export async function GET() {
   try {
-    // 静态获取用户ID - 不使用request参数
+    // 静态获取用户ID
     let userId: string | null = null
     
-    // 1. 环境变量优先（完全静态）
+    // 1. 环境变量优先
     if (process.env.DEFAULT_USER_ID) {
       userId = process.env.DEFAULT_USER_ID
-      console.log('导出书签：使用环境变量指定的用户ID', userId)
     } else {
-      // 2. 静态查询第一个用户（运行时，但不影响静态渲染）
+      // 2. 静态查询第一个用户
       const firstUser = await prisma.user.findFirst()
       if (!firstUser) {
-        // 返回友好的错误页面而不是JSON
         return new NextResponse(
           `<html><body><h1>系统未初始化</h1><p>请先创建管理员账户</p></body></html>`,
           { 
@@ -25,12 +23,9 @@ export async function GET() {
         )
       }
       userId = firstUser.id
-      console.log('导出书签：使用第一个用户ID', userId)
     }
-    
-    console.log('GET bookmarks export - User ID:', userId)
 
-    // 静态获取所有书签（不根据查询参数过滤）
+    // 静态获取所有书签
     const bookmarks = await prisma.bookmark.findMany({
       where: { userId },
       orderBy: [
@@ -47,7 +42,6 @@ export async function GET() {
     })
 
     if (bookmarks.length === 0) {
-      // 返回友好的错误页面
       return new NextResponse(
         `<html><body><h1>没有书签可导出</h1><p>您的书签列表为空，请先添加一些书签。</p></body></html>`,
         { 
@@ -68,7 +62,7 @@ export async function GET() {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-store', // 避免缓存
+        'Cache-Control': 'no-store',
       }
     })
   } catch (error) {

@@ -36,7 +36,7 @@ interface AppContextType {
   setCollapsedFolders: (folders: Set<string>) => void
 }
 
-// 默认值定义，确保在任何环境下都有有效值
+// 默认值定义
 const defaultContextValue: AppContextType = {
   user: null,
   token: null,
@@ -48,9 +48,7 @@ const defaultContextValue: AppContextType = {
   language: 'zh',
   setLanguage: () => {},
   t: (key: string, params?: Record<string, string | number>) => {
-    // 简单的默认实现，支持参数替换
     if (params) {
-      // 在默认实现中也进行参数替换，防止ESLint警告
       let result = key
       Object.keys(params).forEach(paramKey => {
         const placeholder = `{${paramKey}}`
@@ -90,17 +88,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     const initializeApp = async () => {
       try {
-        // 加载token
         const savedToken = localStorage.getItem('token')
         const savedUser = localStorage.getItem('user')
         if (savedToken && savedUser) {
           try {
             setToken(savedToken)
             setUser(JSON.parse(savedUser))
-            // 优化：移除调试日志
           } catch (error) {
             console.error('解析用户信息失败:', error)
-            // 清除无效数据
             localStorage.removeItem('token')
             localStorage.removeItem('user')
           }
@@ -131,11 +126,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
         
-        // 优化：移除调试日志
       } catch (error) {
         console.error('AppContext初始化失败:', error)
       } finally {
-        // 初始化完成后设置loading为false
         setLoading(false)
       }
     }
@@ -193,7 +186,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const t = (key: TranslationKey, params?: Record<string, string | number>): string => {
     let translation = translations[language][key] || key
     
-    // 如果有参数，进行对象替换
     if (params) {
       Object.keys(params).forEach(paramKey => {
         const placeholder = `{${paramKey}}`
@@ -229,7 +221,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 export function useApp() {
   const context = useContext(AppContext)
   if (context === undefined) {
-    // 在开发环境中记录错误，但返回默认值防止应用崩溃
     if (process.env.NODE_ENV === 'development') {
       console.warn('useApp must be used within an AppProvider. Returning default values.')
     }
