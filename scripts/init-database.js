@@ -119,7 +119,7 @@ async function checkDatabaseStructure() {
     const prisma = new PrismaClient()
     
     // 检查必需的表是否存在
-    const requiredTables = ['User', 'Space', 'Folder', 'Bookmark', 'SystemConfig']
+    // const requiredTables = ['User', 'Space', 'Folder', 'Bookmark', 'SystemConfig']
     
     try {
       // 尝试查询每个表，确认表结构存在
@@ -143,13 +143,13 @@ async function checkDatabaseStructure() {
         return { needsInit: true, message: '数据库结构不完整' }
       }
       
-    } catch (dbError) {
+    } catch {
       log('⚠️  数据库连接失败或表不存在，需要初始化', 'yellow')
       await prisma.$disconnect()
       return { needsInit: true, message: '数据库连接失败或表不存在' }
     }
     
-  } catch (error) {
+  } catch {
     log('❌ 数据库结构检查失败', 'red')
     return { needsInit: true, message: '检查过程中发生错误' }
   }

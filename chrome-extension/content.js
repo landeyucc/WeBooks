@@ -44,7 +44,7 @@ function extractPageInfo() {
     if (faviconUrl && !faviconUrl.startsWith('http')) {
       try {
         faviconUrl = new URL(faviconUrl, window.location.href).href
-      } catch (e) {
+      } catch {
         faviconUrl = null
       }
     }
@@ -53,7 +53,7 @@ function extractPageInfo() {
     if (ogImageUrl && !ogImageUrl.startsWith('http')) {
       try {
         ogImageUrl = new URL(ogImageUrl, window.location.href).href
-      } catch (e) {
+      } catch {
         ogImageUrl = null
       }
     }

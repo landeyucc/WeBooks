@@ -170,7 +170,7 @@ function initializeCodeCopy() {
                 setTimeout(() => {
                     copyBtn.innerHTML = '📋';
                 }, 2000);
-            } catch (error) {
+            } catch {
                 showNotification('复制失败，请手动选择代码', 'error');
             }
         });
@@ -359,7 +359,7 @@ function initializeLazyLoading() {
     const images = document.querySelectorAll('img[data-src]');
     
     if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries, observer) => {
+        const imageObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const img = entry.target;
@@ -379,11 +379,7 @@ function initializeLazyLoading() {
     }
 }
 
-// 代码高亮（如果需要）
-function initializeSyntaxHighlighting() {
-    // 这里可以集成 Prism.js 或 highlight.js 进行语法高亮
-    // 目前使用简单的代码样式，CSS已提供基础样式
-}
+// 代码高亮功能已整合到其他模块中
 
 // 主题切换功能（可选）
 function initializeThemeToggle() {

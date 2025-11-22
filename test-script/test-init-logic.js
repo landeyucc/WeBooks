@@ -6,7 +6,6 @@
  */
 
 const { PrismaClient } = require('@prisma/client')
-const { execSync } = require('child_process')
 
 async function testInitLogic() {
   console.log('🧪 测试数据库初始化逻辑')
@@ -70,7 +69,7 @@ async function checkDatabaseStructure() {
       return { needsInit: true, message: '数据库结构不完整' }
     }
     
-  } catch (error) {
+  } catch {
     console.log('❌ 数据库结构检查失败')
     return { needsInit: true, message: '检查过程中发生错误' }
   }

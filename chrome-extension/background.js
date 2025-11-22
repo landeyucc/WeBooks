@@ -3,11 +3,6 @@
  * 处理快捷键命令和扩展生命周期
  */
 
-let config = {
-  apiUrl: 'http://localhost:3000',
-  apiKey: null
-}
-
 // 扩展安装时的初始化
 chrome.runtime.onInstalled.addListener((details) => {
   console.log('Webooks扩展已安装', details)

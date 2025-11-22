@@ -41,6 +41,21 @@ interface ImportResult {
   errors?: string[]
 }
 
+interface SystemImportResult {
+  successCount: number
+  errorCount: number
+  errors: string[]
+  success: boolean
+  message: string
+  summary?: string
+  details: {
+    systemConfig: {
+      updated: number
+      total: number
+    }
+  }
+}
+
 // 文件夹接口定义
 interface FolderData {
   id: string
@@ -667,11 +682,117 @@ export default function AdminDashboard() {
         window.URL.revokeObjectURL(url)
       } else {
         const errorData = await response.json()
-        showError(errorData.message || '导出失败')
+        showError(errorData.message || t('exportFailed'))
       }
     } catch (error) {
       console.error('导出书签时出错:', error)
-      showError('导出失败：网络错误')
+      showError(t('exportFailed') + '：' + t('networkError'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 处理系统参数导出
+  const handleExportSystemConfig = async () => {
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/system-export', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        // 获取响应数据
+        const data = await response.json()
+        
+        // 创建JSON文件并触发下载
+        const jsonString = JSON.stringify(data, null, 2)
+        const blob = new Blob([jsonString], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `webooks_system_config_${new Date().toISOString().split('T')[0]}.json`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+
+        showSuccess(t('exportSystemConfigSuccess'))
+      } else {
+        const errorData = await response.json()
+        showError(errorData.message || t('exportFailed'))
+      }
+    } catch (error) {
+      console.error('导出系统参数时出错:', error)
+      showError(t('exportFailed') + '：' + t('networkError'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 系统参数导入相关状态
+  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge')
+  const [importSystemFile, setImportSystemFile] = useState<File | null>(null)
+  const [importSystemResult, setImportSystemResult] = useState<SystemImportResult | null>(null)
+
+  // 处理系统参数导入文件选择
+  const handleSystemImportFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file && file.type === 'application/json') {
+      setImportSystemFile(file)
+    } else {
+      showError(t('invalidFileType'))
+    }
+  }
+
+  // 处理系统参数导入
+  const handleImportSystemConfig = async () => {
+    if (!importSystemFile) {
+      showError(t('noFileSelected'))
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // 读取文件内容
+      const fileContent = await importSystemFile.text()
+      let importData
+
+      try {
+        importData = JSON.parse(fileContent)
+      } catch {
+        showError(t('invalidJsonFormat'))
+        return
+      }
+
+      // 发送导入请求
+      const response = await fetch('/api/system-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          importData,
+          importMode
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setImportSystemResult(result)
+        showSuccess(t('importSystemConfigSuccess'))
+      } else {
+        const errorData = await response.json()
+        showError(errorData.error || t('importFailed'))
+      }
+    } catch (error) {
+      console.error('导入系统参数时出错:', error)
+      showError(t('importFailed') + '：' + t('networkError'))
     } finally {
       setIsLoading(false)
     }
@@ -1076,6 +1197,103 @@ export default function AdminDashboard() {
                   >
                     {t('exportButton')}
                   </button>
+                </div>
+              </div>
+
+              {/* 导出系统参数 */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('exportSystemConfig')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {t('exportSystemConfigDesc')}
+                </p>
+                
+                <button
+                  onClick={handleExportSystemConfig}
+                  className="btn-primary"
+                >
+                  {t('exportSystemConfigButton')}
+                </button>
+              </div>
+
+              {/* 导入系统参数 */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('importSystemConfig')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {t('importSystemConfigDesc')}
+                </p>
+                
+                <div className="space-y-4">
+                  {/* 导入模式选择 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {t('importMode')}
+                    </label>
+                    <CustomSelect<'merge' | 'replace'>
+                      value={importMode}
+                      onChange={(value) => setImportMode(value as 'merge' | 'replace')}
+                      options={[
+                        { value: 'merge', label: t('mergeMode') },
+                        { value: 'replace', label: t('replaceMode') }
+                      ]}
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {t('importModeDesc')}
+                    </p>
+                  </div>
+
+                  {/* 文件选择 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {t('selectSystemConfigFile')}
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={handleSystemImportFileChange}
+                        className="hidden"
+                        id="system-import-file"
+                      />
+                      <label
+                        htmlFor="system-import-file"
+                        className="btn-secondary cursor-pointer"
+                      >
+                        {t('chooseFile')}
+                      </label>
+                      {importSystemFile && (
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {importSystemFile.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 导入按钮 */}
+                  <button
+                    onClick={handleImportSystemConfig}
+                    disabled={!importSystemFile || isLoading}
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? t('importing') : t('importSystemConfigButton')}
+                  </button>
+
+                  {/* 导入结果提示 */}
+                  {importSystemResult && (
+                    <div className={`p-3 rounded-lg ${
+                      importSystemResult.success 
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                    }`}>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                          <p className="font-medium">{importSystemResult.message}</p>
+                          {importSystemResult.summary && (
+                            <p className="text-sm mt-1">{importSystemResult.summary}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

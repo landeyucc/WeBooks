@@ -233,33 +233,7 @@ body {
     margin-top: 2rem;
 }
 
-.hero-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 2rem;
-    margin-top: 4rem;
-    padding: 2rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-xl);
-    backdrop-filter: blur(10px);
-}
 
-.stat-item {
-    text-align: center;
-}
-
-.stat-number {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--secondary-color);
-    display: block;
-}
-
-.stat-label {
-    font-size: 0.875rem;
-    opacity: 0.8;
-    margin-top: 0.5rem;
-}
 
 /* 特性网格 */
 .features {

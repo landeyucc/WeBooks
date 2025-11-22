@@ -84,7 +84,7 @@ const DocsSite = {
                             copyBtn.innerHTML = originalContent;
                         }, 2000);
                         
-                    } catch (error) {
+                    } catch {
                         this.showNotification('复制失败，请手动选择代码', 'error');
                     }
                 });
@@ -394,7 +394,7 @@ const DocsSite = {
             const resultsContainer = document.createElement('div');
             resultsContainer.className = 'search-results';
             
-            results.forEach((result, index) => {
+            results.forEach((result) => {
                 const resultItem = document.createElement('div');
                 resultItem.className = 'search-result-item';
                 resultItem.innerHTML = `

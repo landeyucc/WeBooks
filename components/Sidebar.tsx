@@ -112,8 +112,9 @@ export default function Sidebar({
 
       const result = await response.json()
 
-      if (response.ok && result.valid) {
-        // 密码正确，添加到已验证列表
+      // 处理API返回的skipPassword标志（登录用户访问自己的空间时会返回）
+      if (response.ok && (result.valid || result.skipPassword)) {
+        // 密码正确或无需密码验证，添加到已验证列表
         verifiedEncryptedSpaces.current.add(pendingSpaceId)
         setIsPasswordModalOpen(false)
         onSelectSpace(pendingSpaceId)

@@ -5,6 +5,38 @@ import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const spaceId = params.id
+    
+    // 尝试获取当前登录用户ID
+    const authResult = await getAuthenticatedUserId(request)
+    const isAuthenticated = authResult.userId !== null
+    
+    // 查找空间
+    const space = await prisma.space.findUnique({
+      where: { 
+        id: spaceId
+      }
+    })
+    
+    // 检查空间是否存在
+    if (!space) {
+      return NextResponse.json(
+        { error: '空间不存在或无访问权限' },
+        { status: 404 }
+      )
+    }
+    
+    // 如果用户已登录且空间属于当前用户，直接返回验证成功
+    if (isAuthenticated && authResult.userId && space.userId === authResult.userId) {
+      console.log('登录用户访问自己的空间，跳过密码验证:', space.name)
+      return NextResponse.json({
+        valid: true,
+        message: '用户已登录，直接访问',
+        skipPassword: true
+      })
+    }
+    
+    // 未登录用户或访问其他用户的空间，需要密码验证
     const { password } = await request.json()
 
     if (!password) {
@@ -12,51 +44,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         { error: '密码不能为空' },
         { status: 400 }
       )
-    }
-
-    const spaceId = params.id
-
-    // 获取当前用户ID
-    const { userId, response: authResponse } = await getAuthenticatedUserId(request)
-    
-    // 检查是否需要认证
-    if (!userId) {
-      return authResponse || NextResponse.json(
-        { error: '未授权访问' },
-        { status: 401 }
-      )
-    }
-
-    // 检查是否为管理员（第一个用户是管理员）
-    const user = await prisma.user.findFirst({
-      where: { id: userId }
-    })
-    
-    const firstUser = await prisma.user.findFirst()
-    const isAdmin = user && firstUser && user.id === firstUser.id
-
-    // 查找空间
-    const space = await prisma.space.findUnique({
-      where: { 
-        id: spaceId,
-        userId: userId // 确保空间属于当前用户
-      }
-    })
-
-    if (!space) {
-      return NextResponse.json(
-        { error: '空间不存在或无访问权限' },
-        { status: 404 }
-      )
-    }
-
-    // 如果是管理员，直接验证成功
-    if (isAdmin) {
-      console.log('管理员免验证访问空间:', space.name)
-      return NextResponse.json({
-        valid: true,
-        message: '管理员身份验证成功'
-      })
     }
 
     // 检查空间是否加密
@@ -78,7 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         )
       }
 
-      console.log('用户密码验证成功:', userId, '空间:', space.name)
+      console.log('未登录用户密码验证成功，空间:', space.name)
       
       return NextResponse.json({
         valid: true,

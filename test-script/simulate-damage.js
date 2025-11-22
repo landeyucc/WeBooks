@@ -70,7 +70,7 @@ async function simulateCorruptedTables(prisma) {
         nonExistentField: true
       }
     })
-  } catch (error) {
+  } catch {
     throw new Error('模拟表结构损坏')
   }
 }
@@ -101,8 +101,7 @@ async function checkDatabaseStructure() {
       await prisma.$disconnect()
       return { needsInit: true, message: '数据库结构不完整' }
     }
-    
-  } catch (error) {
+  } catch {
     console.log('❌ 数据库结构检查失败')
     return { needsInit: true, message: '检查过程中发生错误' }
   }
