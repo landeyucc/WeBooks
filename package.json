@@ -1,9 +1,9 @@
 {
-  "name": "bookmark-manager",
-  "version": "0.1.0",
+  "name": "Webooks",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
-    "dev": "prisma db push && next dev",
+    "dev": "node scripts/init-database.js && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -41,9 +41,9 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   },
-  "description": "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).",
+  "description": "Webooks is a bookmark manager that allows users to save, organize, and share their bookmarks. It features a user-friendly interface, secure authentication, and a powerful API for integration with other tools.",
   "main": "index.js",
   "keywords": [],
-  "author": "",
+  "author": "Lande",
   "license": "ISC"
 }

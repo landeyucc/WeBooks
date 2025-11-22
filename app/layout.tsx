@@ -45,10 +45,10 @@ export default async function RootLayout({
           crossOrigin="anonymous"
           referrerPolicy="no-referrer"
         />
-        {/* Favicon - 使用自定义配置或默认favicon */}
+        {/* Favicon - 使用自定义配置或默认favicon (来自icon文件夹) */}
         <link 
           rel="icon" 
-          href={config?.faviconUrl || "/default-favicon.ico"} 
+          href={config?.faviconUrl || "/favicon.ico"} 
           type={config?.faviconUrl?.endsWith('.png') ? 'image/png' : 'image/x-icon'}
           sizes={config?.faviconUrl?.endsWith('.png') ? '32x32' : '16x16'}
         />
