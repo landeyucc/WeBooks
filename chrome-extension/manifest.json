@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "Webooks Bookmark Saver",
+	"name": "WeBooks Tool",
 	"version": "1.0.0",
 	"description": "通过快捷键快速保存当前网页到Webooks书签系统",
 	"permissions": ["activeTab", "storage", "commands"],
@@ -16,7 +16,7 @@
 	}],
 	"action": {
 		"default_popup": "popup.html",
-		"default_title": "Webooks Bookmark Saver",
+		"default_title": "WeBooks Tool",
 		"default_icon": {
 			"16": "./icons/icon16.png",
 			"48": "./icons/icon48.png",
@@ -33,7 +33,7 @@
 			"suggested_key": {
 				"default": "Alt+Shift+S"
 			},
-			"description": "保存当前网页到Webooks书签系统"
+			"description": "保存当前网页书签到Webooks系统"
 		}
 	},
 	"web_accessible_resources": [{
