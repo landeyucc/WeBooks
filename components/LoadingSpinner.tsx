@@ -28,20 +28,26 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   return (
     <div className={`flex flex-col items-center justify-center ${className}`}>
-      <div 
-        className={`${containerSizeClasses[size]} animate-spin relative`}
-      >
-        <div className="absolute inset-0 rounded-full border-2 border-blue-200 dark:border-blue-800"></div>
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 dark:border-t-blue-400 animate-spin"></div>
-        <Image 
-          src="/anx.gif" 
-          alt="加载中" 
-          className={`${sizeClasses[size]} opacity-60 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2`}
-          style={{ mixBlendMode: 'multiply' }}
-          width={size === 'sm' ? 16 : size === 'md' ? 24 : 32}
-          height={size === 'sm' ? 16 : size === 'md' ? 24 : 32}
-          unoptimized
-        />
+      <div className={`${containerSizeClasses[size]} relative flex items-center justify-center`}>
+        {/* 旋转环 */}
+        <div 
+          className={`${containerSizeClasses[size]} animate-spin absolute`}
+        >
+          <div className="absolute inset-0 rounded-full border-2 border-blue-200 dark:border-blue-800"></div>
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 dark:border-t-blue-400"></div>
+        </div>
+        
+        {/* anx.gif 图像 - 居中显示，不旋转 */}
+        <div className="relative z-10">
+          <Image 
+            src="/anx.gif" 
+            alt="加载中" 
+            className={`${sizeClasses[size]} rounded-full`}
+            width={size === 'sm' ? 16 : size === 'md' ? 32 : 48}
+            height={size === 'sm' ? 16 : size === 'md' ? 32 : 48}
+            unoptimized
+          />
+        </div>
       </div>
       {message && (
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 text-center">

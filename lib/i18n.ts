@@ -226,7 +226,7 @@ export const translations = {
     // 批量操作相关
     batchOperation: '批量操作',
     exitBatchMode: '退出批量模式',
-    selectedCountBookmarks: '已选择 %d 个书签',
+    selectedCountBookmarks: '已选择 {count} 个书签',
     clearSelection: '清除选择',
     batchMove: '批量移动',
     batchDelete: '批量删除',
@@ -601,7 +601,7 @@ export const translations = {
     // Batch operations
     batchOperation: 'Batch Operation',
     exitBatchMode: 'Exit Batch Mode',
-    selectedCountBookmarks: 'Selected %d bookmarks',
+    selectedCountBookmarks: 'Selected {count} bookmarks',
     clearSelection: 'Clear Selection',
     batchMove: 'Batch Move',
     batchDelete: 'Batch Delete',

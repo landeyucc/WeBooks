@@ -752,7 +752,7 @@ export default function BookmarkManager() {
       {/* 创建/编辑弹窗 */}
       {showModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="neu-card max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="neu-card max-w-2xl w-full p-6">
             <h3 className="text-xl font-bold mb-4">
               {editingBookmark ? t('edit') : t('create')} {t('bookmarks')}
             </h3>
@@ -783,14 +783,14 @@ export default function BookmarkManager() {
                     type="button"
                     onClick={handleFetchInfo}
                     disabled={fetchStatus === 'loading' || !formData.url}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap ${
+                    className={`neu-button px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap ${
                       fetchStatus === 'loading' 
-                        ? 'bg-gray-400 cursor-not-allowed' 
+                        ? 'text-gray-400 cursor-not-allowed' 
                         : fetchStatus === 'success'
-                        ? 'bg-green-500 hover:bg-green-600 text-white'
+                        ? 'text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300'
                         : fetchStatus === 'error'
-                        ? 'bg-red-500 hover:bg-red-600 text-white'
-                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                        ? 'text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300'
+                        : 'text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300'
                     }`}
                     title={t('fetchInfoDesc')}
                   >

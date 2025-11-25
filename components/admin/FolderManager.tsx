@@ -37,15 +37,7 @@ export default function FolderManager() {
     spaceId: '',
     parentFolderId: ''
   })
-  const [sortConfig, setSortConfig] = useState<{
-    key: string
-    direction: 'asc' | 'desc'
-    priority: number
-  }[]>([
-    { key: 'name', direction: 'asc', priority: 1 },
-    { key: 'parent', direction: 'asc', priority: 2 },
-    { key: 'bookmarks', direction: 'asc', priority: 3 }
-  ])
+
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('all')
 
   const fetchData = useCallback(async () => {
@@ -203,81 +195,40 @@ export default function FolderManager() {
     return path.length > 0 ? path.join(' / ') : '-'
   }, [getFolderPath])
 
-  // 多级排序函数
+  // 自定义排序函数 - 按父文件夹优先，然后文件名（字母数字优先）
   const sortFolders = useCallback((folders: Folder[]) => {
     return [...folders].sort((a, b) => {
-      for (const sortItem of sortConfig) {
-        let aValue, bValue
-
-        switch (sortItem.key) {
-          case 'name':
-            aValue = a.name.toLowerCase()
-            bValue = b.name.toLowerCase()
-            break
-          case 'parent':
-            aValue = getParentFolderName(a.parentFolderId)
-            bValue = getParentFolderName(b.parentFolderId)
-            break
-          case 'bookmarks':
-            aValue = a.bookmarkCount
-            bValue = b.bookmarkCount
-            break
-          default:
-            aValue = a.name.toLowerCase()
-            bValue = b.name.toLowerCase()
-        }
-
-        // 字符串比较
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          const result = aValue.localeCompare(bValue)
-          if (result !== 0) {
-            return sortItem.direction === 'asc' ? result : -result
-          }
-        }
-        // 数字比较
-        else if (typeof aValue === 'number' && typeof bValue === 'number') {
-          if (aValue !== bValue) {
-            return sortItem.direction === 'asc' ? aValue - bValue : bValue - aValue
-          }
-        }
-      }
-      return 0
-    })
-  }, [sortConfig, getParentFolderName])
-
-  // 处理列排序点击
-  const handleSort = (columnKey: string) => {
-    setSortConfig(prev => {
-      const updated = [...prev]
-      const columnIndex = updated.findIndex(item => item.key === columnKey)
+      // 首先按父文件夹排序
+      const aParentName = getParentFolderName(a.parentFolderId)
+      const bParentName = getParentFolderName(b.parentFolderId)
       
-      if (columnIndex >= 0) {
-        // 切换排序方式
-        updated[columnIndex] = {
-          ...updated[columnIndex],
-          direction: updated[columnIndex].direction === 'asc' ? 'desc' : 'asc'
-        }
+      const parentResult = aParentName.localeCompare(bParentName)
+      if (parentResult !== 0) {
+        return parentResult
       }
       
-      return updated
+      // 同级文件夹按文件名排序，字母数字优先
+      const aName = a.name
+      const bName = b.name
+      
+      // 自定义比较函数：字母数字优先，中文符号保持原有顺序
+      const compareWithPriority = (str1: string, str2: string) => {
+        // 检查是否包含字母数字
+        const hasAlnum1 = /[a-zA-Z0-9]/.test(str1)
+        const hasAlnum2 = /[a-zA-Z0-9]/.test(str2)
+        
+        // 如果一个有字母数字，一个没有，优先显示有字母数字的
+        if (hasAlnum1 && !hasAlnum2) return -1
+        if (!hasAlnum1 && hasAlnum2) return 1
+        
+        // 如果都有字母数字或都没有，使用localeCompare排序
+        return str1.localeCompare(str2)
+      }
+      
+      const nameResult = compareWithPriority(aName, bName)
+      return nameResult
     })
-  }
-
-  // 获取排序图标
-  const getSortIcon = (columnKey: string) => {
-    const sortItem = sortConfig.find(item => item.key === columnKey)
-    if (!sortItem) return '↕️'
-    
-    return sortItem.direction === 'asc' ? '↑' : '↓'
-  }
-
-  // 获取当前排序状态类名
-  const getSortClass = (columnKey: string) => {
-    const sortItem = sortConfig.find(item => item.key === columnKey)
-    if (!sortItem) return 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
-    
-    return 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 cursor-pointer'
-  }
+  }, [getParentFolderName])
 
   // 计算文件夹的层级深度
   const getFolderDepth = (folderId: string): number => {
@@ -358,31 +309,22 @@ export default function FolderManager() {
             <table className="min-w-full">
             <thead>
               <tr>
-                <th 
-                  onClick={() => handleSort('name')}
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300 ${getSortClass('name')} transition-colors`}
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                   <div className="flex items-center gap-1">
                     {t('folderTableName')}
-                    <span className="text-xs">{getSortIcon('name')}</span>
+                    <span className="text-xs">↓</span>
                   </div>
                 </th>
-                <th 
-                  onClick={() => handleSort('parent')}
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300 ${getSortClass('parent')} transition-colors`}
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                   <div className="flex items-center gap-1">
                     {t('folderTableParent')}
-                    <span className="text-xs">{getSortIcon('parent')}</span>
+                    <span className="text-xs">↓</span>
                   </div>
                 </th>
-                <th 
-                  onClick={() => handleSort('bookmarks')}
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300 ${getSortClass('bookmarks')} transition-colors`}
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
                   <div className="flex items-center gap-1">
                     {t('folderTableBookmarks')}
-                    <span className="text-xs">{getSortIcon('bookmarks')}</span>
+                    <span className="text-xs">↓</span>
                   </div>
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300">
