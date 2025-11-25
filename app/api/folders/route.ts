@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
+import { authenticateWithApiKey } from '@/lib/extension-auth'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -8,14 +9,25 @@ export const runtime = 'nodejs'
 // 获取文件夹
 export async function GET(request: NextRequest) {
   try {
-    // 检查认证状态
-    const authResult = await getAuthenticatedUserId(request)
-    
-    if (authResult.response) {
-      return authResult.response
-    }
+    // 尝试从扩展API Key获取认证
+    const authHeader = request.headers.get('x-api-key')
+    let targetUserId = null
 
-    const targetUserId = authResult.userId
+    if (authHeader && authHeader.startsWith('webooks_')) {
+      // 浏览器扩展的API Key认证
+      const authResult = await authenticateWithApiKey(request)
+      if (authResult.response) {
+        return authResult.response
+      }
+      targetUserId = authResult.userId
+    } else {
+      // 标准 Bearer token 认证
+      const authResult = await getAuthenticatedUserId(request)
+      if (authResult.response) {
+        return authResult.response
+      }
+      targetUserId = authResult.userId
+    }
     console.log('GET folders - User ID:', targetUserId)
 
     const { searchParams } = new URL(request.url)
@@ -58,14 +70,26 @@ export async function GET(request: NextRequest) {
 // 创建文件夹
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await getAuthenticatedUserId(request)
-    
-    // 如果有response错误，直接返回
-    if (authResult.response) {
-      return authResult.response
+    // 尝试从扩展API Key获取认证
+    const authHeader = request.headers.get('x-api-key')
+    let userId = null
+
+    if (authHeader && authHeader.startsWith('webooks_')) {
+      // 浏览器扩展的API Key认证
+      const authResult = await authenticateWithApiKey(request)
+      if (authResult.response) {
+        return authResult.response
+      }
+      userId = authResult.userId
+    } else {
+      // 标准 Bearer token 认证
+      const authResult = await getAuthenticatedUserId(request)
+      if (authResult.response) {
+        return authResult.response
+      }
+      userId = authResult.userId
     }
 
-    const userId = authResult.userId
     if (!userId) {
       return NextResponse.json(
         { error: '认证失败' },
