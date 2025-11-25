@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../contexts/AppContext'
 import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
+
 import CustomSelect from '../ui/CustomSelect'
 import LoadingSpinner from '../LoadingSpinner'
 
@@ -23,7 +24,7 @@ interface Space {
 
 export default function FolderManager() {
   const { token, t, isAuthenticated } = useApp()
-  const { showError, showWarning, notifications } = useNotifications()
+  const { showError, notifications, showSuccess } = useNotifications()
   const [folders, setFolders] = useState<Folder[]>([])
   const [spaces, setSpaces] = useState<Space[]>([])
   const [loading, setLoading] = useState(true)
@@ -100,8 +101,12 @@ export default function FolderManager() {
       })
 
       if (response.ok) {
-        await fetchData()
-        handleCloseModal()
+        console.log('文件夹操作成功，准备刷新页面...')
+        showSuccess(String(t('success')))
+        // 强制刷新页面重新加载数据
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
         showError(t('operationFailed'))
       }
@@ -111,8 +116,7 @@ export default function FolderManager() {
   }
 
   const handleDelete = async (id: string) => {
-    showWarning(t('deleteConfirm'))
-    // 直接执行删除操作，移除确认对话框
+    // 直接执行删除操作
     try {
       const response = await fetch(`/api/folders/${id}`, {
         method: 'DELETE',
@@ -120,7 +124,12 @@ export default function FolderManager() {
       })
 
       if (response.ok) {
-        await fetchData()
+        console.log('删除操作成功，准备刷新页面...')
+        showSuccess(String(t('success')))
+        // 强制刷新页面重新加载数据
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
         showError(t('folderDeleteFailed'))
       }
@@ -345,8 +354,8 @@ export default function FolderManager() {
       </div>
 
       <div className="neu-base p-2">
-        <div className="overflow-hidden rounded-2xl">
-          <table className="min-w-full">
+          <div className="overflow-hidden rounded-2xl">
+            <table className="min-w-full">
             <thead>
               <tr>
                 <th 
@@ -428,7 +437,7 @@ export default function FolderManager() {
               })}
             </tbody>
           </table>
-        </div>
+            </div>
       </div>
 
       {showModal && (

@@ -160,26 +160,120 @@ body {
     color: white;
 }
 
-/* 移动端菜单 */
-.mobile-menu-toggle {
-    display: none;
-    flex-direction: column;
-    gap: 0.25rem;
-    cursor: pointer;
-    padding: 0.5rem;
-}
-
-.mobile-menu-toggle span {
-    width: 1.5rem;
-    height: 0.125rem;
-    background-color: var(--text-dark);
-    transition: var(--transition);
-}
-
 /* 主要内容区域 */
 .main-content {
     margin-top: 4rem;
     min-height: calc(100vh - 4rem);
+    padding: 2rem;
+}
+
+/* 响应式设计增强 */
+@media (max-width: 768px) {
+    /* 功能卡片响应式 */
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    /* 快速开始区域响应式 */
+    .quick-start-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    /* 下载区域响应式 */
+    .download-options {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: 1rem;
+    }
+    
+    .nav-brand h1 {
+        font-size: 1.25rem;
+    }
+    
+    /* 卡片优化 */
+    .feature-card {
+        padding: 15px;
+    }
+    
+    .feature-card .feature-title {
+        font-size: 1.125rem;
+    }
+    
+    /* 按钮优化 */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    /* 页脚响应式 */
+    .footer {
+        padding: 2rem 0 1rem;
+    }
+    
+    .footer-content {
+        gap: 2rem;
+    }
+    
+    /* 导航菜单在移动端显示为水平滚动 */
+    .nav-menu {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        gap: 1rem; /* 减小间距 */
+    }
+    
+    .nav-menu::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .nav-menu::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 2px;
+    }
+    
+    .nav-menu li {
+        white-space: nowrap;
+        margin-right: 15px;
+    }
+    
+    /* 更严格的移动端响应式样式 */
+    .hero h1, .section-title, .download h2, .quick-start-text h2 {
+        font-size: 1.75rem;
+        line-height: 1.2;
+    }
+    
+    .hero p, .section-subtitle, .download p, .quick-start-text p {
+        font-size: 0.9375rem;
+        line-height: 1.5;
+    }
+    
+    /* 确保所有容器都不会溢出 */
+    .container, .nav-container, .hero-content, .demo-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* 调整内边距 */
+    .hero, .features, .quick-start, .demo, .download {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* 确保代码块不会溢出 */
+    .code-block {
+        overflow-x: auto;
+        word-break: break-all;
+        white-space: pre-wrap;
+    }
 }
 
 /* 英雄区样式 */
@@ -199,8 +293,11 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="1000" height="1000" fill="url(%23grain)"/></svg>');
-    opacity: 0.3;
+    background-image: linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.6;
+    z-index: 1;
 }
 
 .hero-content {
@@ -232,8 +329,6 @@ body {
     flex-wrap: wrap;
     margin-top: 2rem;
 }
-
-
 
 /* 特性网格 */
 .features {
@@ -477,6 +572,7 @@ body {
     }
     
     .hero h1 {
+        margin-top: 100px;
         font-size: 2.5rem;
     }
     
@@ -520,6 +616,7 @@ body {
 
 @media (max-width: 480px) {
     .hero h1 {
+        margin-top: 100px;
         font-size: 2rem;
     }
     

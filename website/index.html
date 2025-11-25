@@ -2,13 +2,27 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#6366f1">
     <title>Webooks - 现代化书签管理工具</title>
     <meta name="description" content="功能强大的现代化书签管理工具，支持书签导入导出、分类管理、搜索和标签系统。专为提高浏览效率而设计。">
     <link rel="shortcut icon" href="./assets/icon/WeBooks.ico" type="image/x-icon">
     <link rel="stylesheet" href="./assets/css/style.css">
     <link rel="stylesheet" href="./assets/css/official-site.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 移动端安全样式 */
+        * { max-width: 100%; }
+        img { max-width: 100%; height: auto; }
+        body { overflow-x: hidden; }
+        /* 修复文本溢出 */
+        .feature-card p,
+        .demo-item p,
+        .download-card p {
+            word-break: break-word;
+        }
+    </style>
 </head>
 <body>
     <header class="header">
@@ -30,11 +44,6 @@
             <div class="nav-actions">
                 <a href="#download" class="btn btn-primary"><i class="fas fa-download"></i> 立即下载</a>
             </div>
-             <button class="mobile-menu-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button> 
             -->
         </nav>
     </header>
@@ -45,7 +54,7 @@
             <div class="container">
                 <div class="hero-content">
                     <h1 class="hero-title">
-                        <span style="color: rgb(0, 255, 98);font-size: 5rem;">Webooks</span>
+                        <span style="color: rgb(0, 255, 98);font-size: 4rem;margin-top: 100px;">Webooks</span>
                         <br>新拟态书签管理器
                     </h1>
                     <p class="hero-subtitle">
@@ -53,8 +62,8 @@
                     </p>
                     <div class="hero-buttons">
                         <a href="#download" class="btn btn-primary">
-                            <i class="fas fa-download"></i>
-                            立即下载
+                            <i class="fas fa-server"></i>
+                            立即部署
                         </a>
                         <a href="#features" class="btn btn-secondary">
                             <i class="fas fa-play"></i>
@@ -70,7 +79,7 @@
                                 <img src="./assets/images/webooks_home.png" alt="Webooks主页界面" loading="lazy">
                                 <div class="slide-caption">
                                     <h3>简洁美观的主页设计</h3>
-                                    <p>直观易用的界面设计，让书签管理变得简单高效</p>
+                                    <p>简约现代化的拟态界面设计，让书签管理变得简单高效</p>
                                 </div>
                             </div>
                             <div class="carousel-slide">
@@ -97,7 +106,6 @@
                 </div>
             </div>
             <div class="hero-scroll-indicator">
-                <i class="fas fa-chevron-down"></i>
             </div>
         </section>
 

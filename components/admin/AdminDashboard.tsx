@@ -12,6 +12,7 @@ import { useApp } from '../../contexts/AppContext'
 import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
 
+
 interface ApiKeyState {
   current: string
   isLoading: boolean
@@ -342,9 +343,12 @@ export default function AdminDashboard() {
         if (selectedSpaceId === defaultSpaceId) {
           await saveDefaultSpaceId(selectedSpaceId)
         }
+        console.log('配置保存成功，准备刷新页面...')
         showSuccess(t('configSaveSuccess'))
-        // 重新获取空间数据
-        fetchSpaces()
+        // 强制刷新页面重新加载数据
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
         showError(t('saveFailed'))
       }
@@ -397,7 +401,12 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
+        console.log('网站设置保存成功，准备刷新页面...')
         showSuccess(t('configSaveSuccess'))
+        // 强制刷新页面重新加载数据
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
         showError(t('saveFailed'))
       }
@@ -1611,7 +1620,7 @@ export default function AdminDashboard() {
                     {apiKeyState.current && (
                       <button
                         onClick={() => {
-                          showWarning(t('confirmRegenerateApiKey'))
+                          // 直接执行API Key更新操作
                           updateApiKey()
                         }}
                         disabled={apiKeyState.isLoading}

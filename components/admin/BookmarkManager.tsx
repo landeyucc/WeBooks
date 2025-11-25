@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../contexts/AppContext'
 import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
@@ -58,6 +58,8 @@ export default function BookmarkManager() {
   const [moveTargetFolder, setMoveTargetFolder] = useState('')
   const [showMoveModal, setShowMoveModal] = useState(false)
 
+
+
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
   // 批量操作相关函数
@@ -107,9 +109,12 @@ export default function BookmarkManager() {
         })
       }
       
-      await fetchData()
-      setSelectedBookmarks(new Set())
+      console.log('批量删除操作成功，准备刷新页面...')
       showSuccess(`已删除 ${selectedBookmarks.size} 个书签`)
+      // 强制刷新页面重新加载数据
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
     } catch (error) {
       console.error('批量删除失败:', error)
       showError('批量删除失败')
@@ -139,12 +144,16 @@ export default function BookmarkManager() {
         })
       }
       
-      await fetchData()
+      console.log('批量移动操作成功，准备刷新页面...')
       setSelectedBookmarks(new Set())
       setShowMoveModal(false)
       setMoveTargetSpace('')
       setMoveTargetFolder('')
       showSuccess(`已移动 ${selectedBookmarks.size} 个书签`)
+      // 强制刷新页面重新加载数据
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
     } catch (error) {
       console.error('批量移动失败:', error)
       showError('批量移动失败')
@@ -238,8 +247,12 @@ export default function BookmarkManager() {
       })
 
       if (response.ok) {
-        await fetchData()
-        handleCloseModal()
+        console.log('书签操作成功，准备刷新页面...')
+        showSuccess(String(t('success')))
+        // 强制刷新页面重新加载数据
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
         const data = await response.json()
         showError(data.error || t('operationFailed'))
@@ -250,8 +263,7 @@ export default function BookmarkManager() {
   }
 
   const handleDelete = async (id: string) => {
-    showWarning(t('deleteConfirm'))
-    // 直接执行删除操作，移除确认对话框
+    // 直接执行删除操作
     try {
       const response = await fetch(`/api/bookmarks/${id}`, {
         method: 'DELETE',
@@ -259,7 +271,12 @@ export default function BookmarkManager() {
       })
 
       if (response.ok) {
-        await fetchData()
+        console.log('删除操作成功，准备刷新页面...')
+        showSuccess(String(t('success')))
+        // 强制刷新页面重新加载数据
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
         showError(t('deleteFailed'))
       }

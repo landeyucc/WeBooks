@@ -19,7 +19,7 @@ interface Space {
 
 export default function SpaceManager() {
   const { token, t, isAuthenticated } = useApp()
-  const { showError, showWarning, notifications } = useNotifications()
+  const { showError, showWarning, notifications, showSuccess } = useNotifications()
   const [spaces, setSpaces] = useState<Space[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -35,10 +35,11 @@ export default function SpaceManager() {
   })
 
   const lastRequestRef = useRef<string>('')
+  const forceRefreshRef = useRef<boolean>(false)
 
   const fetchSpaces = useCallback(async () => {
     const requestKey = `space-manager-${isAuthenticated}-${token}`
-    if (lastRequestRef.current === requestKey) {
+    if (lastRequestRef.current === requestKey && !forceRefreshRef.current) {
       return
     }
     lastRequestRef.current = requestKey
@@ -54,6 +55,8 @@ export default function SpaceManager() {
       console.error(t('operationFailedNetwork'))
     } finally {
       setLoading(false)
+      // 重置强制刷新标志
+      forceRefreshRef.current = false
     }
   }, [token, t, isAuthenticated])
 
@@ -93,8 +96,13 @@ export default function SpaceManager() {
       })
 
       if (response.ok) {
-        await fetchSpaces()
         handleCloseModal()
+        console.log('API操作成功，准备刷新页面...')
+        showSuccess(String(t('success')))
+        // 强制刷新页面重新加载数据
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
         const errorData = await response.json().catch(() => ({}))
         console.error(t('operationFailed'), errorData)
@@ -120,7 +128,6 @@ export default function SpaceManager() {
   }
 
   const handleDelete = async (id: string) => {
-    showWarning(t('deleteConfirm'))
     // 直接执行删除操作
     try {
       const response = await fetch(`/api/spaces/${id}`, {
@@ -129,7 +136,12 @@ export default function SpaceManager() {
       })
 
       if (response.ok) {
-        await fetchSpaces()
+        console.log('删除操作成功，准备刷新页面...')
+        showSuccess(String(t('success')))
+        // 强制刷新页面重新加载数据
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
         showError(t('deleteFailed'))
       }
@@ -208,37 +220,37 @@ export default function SpaceManager() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {spaces.map((space) => (
           <div key={space.id} className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-              {space.name}
-              {space.isEncrypted && (
-                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                 {t('encrypted')}
-                </span>
-              )}
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              {space.description || t('noDescription')}
-            </p>
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <div>
-                {t('bookmarks')}: {space._count?.bookmarks || 0} | {t('folders')}: {space._count?.folders || 0}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(space)}
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {t('edit')}
-                </button>
-                <button
-                  onClick={() => handleDelete(space.id)}
-                  className="text-red-600 dark:text-red-400 hover:underline"
-                >
-                  {t('delete')}
-                </button>
-              </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
+            {space.name}
+            {space.isEncrypted && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+               {t('encrypted')}
+              </span>
+            )}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {space.description || t('noDescription')}
+          </p>
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <div>
+              {t('bookmarks')}: {space._count?.bookmarks || 0} | {t('folders')}: {space._count?.folders || 0}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleEdit(space)}
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {t('edit')}
+              </button>
+              <button
+                onClick={() => handleDelete(space.id)}
+                className="text-red-600 dark:text-red-400 hover:underline"
+              >
+                {t('delete')}
+              </button>
             </div>
           </div>
+        </div>
         ))}
       </div>
 
