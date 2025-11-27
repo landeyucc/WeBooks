@@ -47,10 +47,47 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // 构建文件夹路径映射
+    const foldersMap = new Map()
+    folders.forEach(folder => {
+      foldersMap.set(folder.id, {
+        id: folder.id,
+        name: folder.name,
+        parentFolderId: folder.parentFolderId,
+        path: [] // 存储完整路径
+      })
+    })
+
+    // 递归构建路径
+    const buildPath = (folderId: string): string[] => {
+      const folder = foldersMap.get(folderId)
+      if (!folder || folder.path.length > 0) {
+        return folder ? folder.path : []
+      }
+      
+      if (!folder.parentFolderId) {
+        folder.path = [folder.name]
+        return folder.path
+      }
+      
+      const parentPath = buildPath(folder.parentFolderId)
+      folder.path = [...parentPath, folder.name]
+      return folder.path
+    }
+
+    // 为所有文件夹构建路径
+    folders.forEach(folder => {
+      if (!foldersMap.get(folder.id).path.length) {
+        buildPath(folder.id)
+      }
+    })
+
     // 转换数据格式以匹配前端期望
     const formattedFolders = folders.map(folder => ({
       ...folder,
-      bookmarkCount: folder._count.bookmarks
+      bookmarkCount: folder._count.bookmarks,
+      path: foldersMap.get(folder.id).path,
+      pathString: foldersMap.get(folder.id).path.join('/')
     }))
 
     return NextResponse.json({ folders: formattedFolders })

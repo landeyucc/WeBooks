@@ -512,7 +512,9 @@ class WebooksExtension {
           result.folders.forEach(folder => {
             const option = document.createElement('option')
             option.value = folder.id
-            option.textContent = folder.name
+            // 使用完整路径显示文件夹层级结构
+            option.textContent = folder.pathString || folder.path?.join('/') || folder.name
+            option.dataset.path = folder.path?.join('/') || folder.name
             foldersSelect.appendChild(option)
           })
         }
