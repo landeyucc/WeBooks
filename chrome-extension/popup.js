@@ -40,37 +40,65 @@ class WebooksExtension {
       if (tab && tab.url) {
         document.getElementById('currentPagePreview').style.display = 'block'
         
-        // 获取页面信息
-        const pageInfo = await chrome.tabs.sendMessage(tab.id, {
-          action: 'extractPageInfo'
-        })
+        // 保存基本URL信息
+        this.autoData.url = tab.url
+        
+        // 检查是否为http/https协议，content script可能不会在其他协议上运行
+        if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
+          try {
+            // 获取页面信息，添加超时处理
+            const pageInfo = await Promise.race([
+              chrome.tabs.sendMessage(tab.id, {
+                action: 'extractPageInfo'
+              }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('获取页面信息超时')), 2000))
+            ])
 
-        if (pageInfo) {
-          // 保存自动抓取的数据
-          this.autoData = {
-            title: pageInfo.title || '',
-            url: pageInfo.url || tab.url,
-            description: pageInfo.description || '',
-            favicon: pageInfo.favicon || '',
-            icon: pageInfo.icon || ''
+            if (pageInfo) {
+              // 保存自动抓取的数据
+              this.autoData = {
+                title: pageInfo.title || tab.title || '',
+                url: pageInfo.url || tab.url,
+                description: pageInfo.description || '',
+                favicon: pageInfo.favicon || '',
+                icon: pageInfo.icon || ''
+              }
+              
+              // 更新当前页面预览
+              document.getElementById('currentTitle').textContent = pageInfo.title || tab.title || '无标题'
+              document.getElementById('currentUrl').textContent = pageInfo.url || tab.url
+              
+              if (pageInfo.favicon) {
+                document.getElementById('currentFavicon').src = pageInfo.favicon
+              }
+            } else {
+              // 如果没有获取到页面信息，使用标签页的基本信息
+              this.autoData.title = tab.title || ''
+              document.getElementById('currentTitle').textContent = tab.title || '无标题'
+              document.getElementById('currentUrl').textContent = tab.url
+            }
+          } catch (error) {
+            console.error('获取页面详细信息失败:', error)
+            // 使用标签页的基本信息
+            this.autoData.title = tab.title || ''
+            document.getElementById('currentTitle').textContent = tab.title || '无标题'
+            document.getElementById('currentUrl').textContent = tab.url
           }
-          
-          // 更新当前页面预览
-          document.getElementById('currentTitle').textContent = pageInfo.title || '无标题'
-          document.getElementById('currentUrl').textContent = pageInfo.url || tab.url
-          
-          if (pageInfo.favicon) {
-            document.getElementById('currentFavicon').src = pageInfo.favicon
-          }
-          
-          // 更新表单数据
-          this.updateBookmarkForm()
+        } else {
+          // 非http/https协议，使用标签页的基本信息
+          this.autoData.title = tab.title || ''
+          document.getElementById('currentTitle').textContent = tab.title || '无标题'
+          document.getElementById('currentUrl').textContent = tab.url
         }
+        
+        // 更新表单数据
+        this.updateBookmarkForm()
       }
     } catch (error) {
       console.error('获取当前标签页信息失败:', error)
       // 即使获取失败也要设置URL
       this.autoData.url = this.currentTab?.url || ''
+      this.autoData.title = this.currentTab?.title || ''
       this.updateBookmarkForm()
     }
   }
@@ -225,34 +253,62 @@ class WebooksExtension {
         throw new Error('无法获取当前页面信息')
       }
 
-      // 获取当前页面信息
-      const pageInfo = await chrome.tabs.sendMessage(this.currentTab.id, {
-        action: 'extractPageInfo'
-      })
+      // 检查是否为http/https协议
+      if (this.currentTab.url.startsWith('http://') || this.currentTab.url.startsWith('https://')) {
+        try {
+          // 获取当前页面信息，添加超时处理
+          const pageInfo = await Promise.race([
+            chrome.tabs.sendMessage(this.currentTab.id, {
+              action: 'extractPageInfo'
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('获取页面信息超时')), 2000))
+          ])
 
-      if (pageInfo) {
-        // 更新自动抓取的数据
-        this.autoData = {
-          title: pageInfo.title || '',
-          url: pageInfo.url || this.currentTab.url,
-          description: pageInfo.description || '',
-          favicon: pageInfo.favicon || '',
-          icon: pageInfo.icon || ''
+          if (pageInfo) {
+            // 更新自动抓取的数据
+            this.autoData = {
+              title: pageInfo.title || this.currentTab.title || '',
+              url: pageInfo.url || this.currentTab.url,
+              description: pageInfo.description || '',
+              favicon: pageInfo.favicon || '',
+              icon: pageInfo.icon || ''
+            }
+            
+            // 更新当前页面预览
+            document.getElementById('currentTitle').textContent = pageInfo.title || this.currentTab.title || '无标题'
+            document.getElementById('currentUrl').textContent = pageInfo.url || this.currentTab.url
+            
+            if (pageInfo.favicon) {
+              document.getElementById('currentFavicon').src = pageInfo.favicon
+            }
+            
+            // 重新填充表单
+            this.updateBookmarkForm()
+            this.showStatus('已从当前页面重新获取数据', 'success')
+          } else {
+            // 使用标签页的基本信息
+            this.autoData.title = this.currentTab.title || ''
+            document.getElementById('currentTitle').textContent = this.currentTab.title || '无标题'
+            document.getElementById('currentUrl').textContent = this.currentTab.url
+            this.updateBookmarkForm()
+            this.showStatus('已使用标签页基本信息', 'info')
+          }
+        } catch (error) {
+          console.error('获取页面详细信息失败:', error)
+          // 使用标签页的基本信息
+          this.autoData.title = this.currentTab.title || ''
+          document.getElementById('currentTitle').textContent = this.currentTab.title || '无标题'
+          document.getElementById('currentUrl').textContent = this.currentTab.url
+          this.updateBookmarkForm()
+          this.showStatus('已使用标签页基本信息', 'info')
         }
-        
-        // 更新当前页面预览
-        document.getElementById('currentTitle').textContent = pageInfo.title || '无标题'
-        document.getElementById('currentUrl').textContent = pageInfo.url || this.currentTab.url
-        
-        if (pageInfo.favicon) {
-          document.getElementById('currentFavicon').src = pageInfo.favicon
-        }
-        
-        // 重新填充表单
-        this.updateBookmarkForm()
-        this.showStatus('已从当前页面重新获取数据', 'success')
       } else {
-        throw new Error('未能获取页面信息')
+        // 非http/https协议，使用标签页的基本信息
+        this.autoData.title = this.currentTab.title || ''
+        document.getElementById('currentTitle').textContent = this.currentTab.title || '无标题'
+        document.getElementById('currentUrl').textContent = this.currentTab.url
+        this.updateBookmarkForm()
+        this.showStatus('已使用标签页基本信息', 'info')
       }
 
     } catch (error) {

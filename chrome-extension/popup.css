@@ -1,88 +1,135 @@
 /* Webooks Chrome Extension Popup Styles */
 
+/* 全局隐藏滚动条但保留滚动功能 */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 480px;
+  min-height: 600px;
+  max-height: 600px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  color: #e2e8f0;
+  overflow: hidden !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  width: 480px;
-  min-height: 600px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f8f9fa;
-  color: #333;
-  /* 隐藏滚动条但保留滚动功能 */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+body * {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
 }
 
-/* WebKit浏览器隐藏滚动条 */
-body::-webkit-scrollbar {
-  display: none;
+body *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .container {
   padding: 20px;
+  max-height: 600px;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+.container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 25px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #e9ecef;
+  margin-bottom: 10px;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 12px;
+  padding: 10px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .header h1 {
-  color: #2563eb;
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 5px;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 28px;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
-  color: #6b7280;
+  color: yellow;
   font-size: 14px;
+  font-weight: 500;
 }
 
 /* 书签信息输入区域 */
 .bookmark-info-section {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 15px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  padding: 20px;
   margin-bottom: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.bookmark-info-section:hover {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
 }
 
 .bookmark-info-section h3 {
   font-size: 16px;
   margin-bottom: 15px;
-  color: #374151;
+  color: #cbd5e1;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 600;
 }
 
 .required {
-  color: #dc2626;
+  color: #ef4444;
   font-weight: bold;
 }
 
 .form-group textarea {
   width: 100%;
-  padding: 8px 12px;
-  border: none;
-  border-bottom: 2px solid #e5e7eb;
-  border-radius: 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.2s;
+  transition: all 0.3s ease;
   resize: vertical;
-  min-height: 60px;
+  min-height: 80px;
   font-family: inherit;
-  background: transparent;
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
   /* 隐藏滚动条但保留滚动功能 */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* WebKit浏览器隐藏textarea滚动条 */
@@ -92,26 +139,29 @@ body::-webkit-scrollbar {
 
 .form-group textarea:focus {
   outline: none;
-  border-bottom-color: #2563eb;
-  box-shadow: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  background: rgba(15, 23, 42, 0.8);
 }
 
 /* 当前页面预览 */
 .current-page-preview {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 12px;
-  margin-top: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  backdrop-filter: blur(5px);
 }
 
 .current-page-preview h4 {
   font-size: 14px;
-  margin-bottom: 10px;
-  color: #374151;
+  margin-bottom: 12px;
+  color: #cbd5e1;
   display: flex;
   align-items: center;
   gap: 6px;
+  font-weight: 600;
 }
 
 .page-info {
@@ -125,10 +175,12 @@ body::-webkit-scrollbar {
 }
 
 .page-favicon img {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  background: #f3f4f6;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.2);
+  padding: 4px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .page-details {
@@ -137,10 +189,10 @@ body::-webkit-scrollbar {
 }
 
 .page-title {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
-  color: #111827;
-  margin-bottom: 2px;
+  color: #f1f5f9;
+  margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -148,7 +200,7 @@ body::-webkit-scrollbar {
 
 .page-url {
   font-size: 12px;
-  color: #6b7280;
+  color: #94a3b8;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -156,56 +208,74 @@ body::-webkit-scrollbar {
 
 /* 书签配置区域 */
 .bookmark-config-section {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 15px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  padding: 20px;
   margin-bottom: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.bookmark-config-section:hover {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
 }
 
 .bookmark-config-section h3 {
   font-size: 16px;
   margin-bottom: 15px;
-  color: #374151;
+  color: #cbd5e1;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 600;
 }
 
 /* 连接配置区域 - 固定展开 */
 .config-section {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
   padding: 0;
   margin-bottom: 15px;
   overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.config-section:hover {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
 }
 
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 15px 20px;
+  background: rgba(15, 23, 42, 0.6);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .section-header h3 {
   font-size: 16px;
   margin: 0;
-  color: #374151;
+  color: #cbd5e1;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 600;
 }
 
 .section-content {
-  padding: 15px;
+  padding: 20px;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .form-group:last-child {
@@ -226,8 +296,8 @@ body::-webkit-scrollbar {
 }
 
 label {
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: #cbd5e1;
   font-size: 14px;
 }
 
@@ -240,7 +310,7 @@ label {
 
 /* textarea组的label */
 .form-group.textarea-group label {
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 
 /* 确保输入框能够正确显示 */
@@ -248,13 +318,14 @@ input[type="url"],
 input[type="password"],
 input[type="text"],
 select {
-  padding: 8px 12px;
-  border: none;
-  border-bottom: 2px solid #e5e7eb;
-  border-radius: 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.2s;
-  background: transparent;
+  transition: all 0.3s ease;
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* 非textarea组的输入框 */
@@ -267,19 +338,20 @@ select {
 /* textarea样式 */
 .form-group textarea {
   width: 100%;
-  padding: 8px 12px;
-  border: none;
-  border-bottom: 2px solid #e5e7eb;
-  border-radius: 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.2s;
+  transition: all 0.3s ease;
   resize: vertical;
-  min-height: 60px;
+  min-height: 80px;
   font-family: inherit;
-  background: transparent;
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
   /* 隐藏滚动条但保留滚动功能 */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* WebKit浏览器隐藏textarea滚动条 */
@@ -291,21 +363,23 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-bottom-color: #2563eb;
-  box-shadow: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  background: rgba(15, 23, 42, 0.8);
 }
 
 small {
   display: block;
-  margin-top: 4px;
-  color: #6b7280;
+  margin-top: 6px;
+  color: #94a3b8;
   font-size: 12px;
+  font-weight: 500;
 }
 
 .button-group {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .checkbox-label {
@@ -313,123 +387,168 @@ small {
   align-items: center;
   cursor: pointer;
   font-weight: 400;
+  color: #cbd5e1;
+  transition: color 0.2s ease;
+}
+
+.checkbox-label:hover {
+  color: #3b82f6;
 }
 
 .checkbox-label input[type="checkbox"] {
   margin-right: 8px;
-  width: auto;
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+  cursor: pointer;
 }
 
 .btn {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   text-align: center;
   text-decoration: none;
   display: inline-block;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn:hover::before {
+  left: 100%;
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-primary {
-  background: #2563eb;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
+  border: 1px solid rgba(59, 130, 246, 0.5);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 .btn-secondary {
-  background: #6b7280;
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
   color: white;
+  border: 1px solid rgba(100, 116, 139, 0.5);
 }
 
 .btn-secondary:hover {
-  background: #4b5563;
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(100, 116, 139, 0.4);
 }
 
 .btn-outline {
   background: transparent;
-  color: #2563eb;
-  border: 1px solid #2563eb;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .btn-outline:hover {
-  background: #2563eb;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 .actions {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .actions .btn {
   width: 100%;
-  padding: 12px 20px;
+  padding: 14px 24px;
   font-size: 16px;
-  font-weight: 600;
-}
-
-.status {
-  margin-bottom: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .status-message {
-  padding: 10px;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
   font-size: 14px;
   text-align: center;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .status-message.show {
   opacity: 1;
+  transform: translateY(0);
 }
 
 .status-message.success {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .status-message.error {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 .status-message.info {
-  background: #dbeafe;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .help {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 15px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .help h4 {
   font-size: 14px;
-  margin-bottom: 8px;
-  color: #374151;
+  margin-bottom: 12px;
+  color: #cbd5e1;
+  font-weight: 600;
 }
 
 .help p {
   font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 4px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  line-height: 1.5;
 }
 
 .help p:last-child {
@@ -442,22 +561,24 @@ small {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(15, 23, 42, 0.95);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top: 3px solid #2563eb;
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(59, 130, 246, 0.2);
+  border-top: 3px solid #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
 @keyframes spin {
@@ -466,8 +587,9 @@ small {
 }
 
 .loading p {
-  color: #6b7280;
+  color: #cbd5e1;
   font-size: 14px;
+  font-weight: 600;
 }
 
 /* 响应式调整 */

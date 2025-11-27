@@ -15,6 +15,12 @@
   "css.lint.vendorPrefix": "ignore",
   "scss.lint.vendorPrefix": "ignore",
   "less.lint.vendorPrefix": "ignore",
+  "css.lint.importStatement": "ignore",
+  "scss.lint.importStatement": "ignore",
+  "less.lint.importStatement": "ignore",
+  "css.validate.supportType": false,
+  "scss.validate.supportType": false,
+  "less.validate.supportType": false,
   "files.associations": {
     "*.css": "tailwindcss"
   },
@@ -28,5 +34,8 @@
   },
   "cssValidation.disabled": true,
   "scssValidation.disabled": true,
-  "lessValidation.disabled": true
+  "lessValidation.disabled": true,
+  "css.customData": [
+    ".vscode/css_custom_data.json"
+  ]
 }

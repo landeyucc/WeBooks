@@ -16,6 +16,19 @@
         "import/no-commonjs": "off",
         "no-undef": "off"
       }
+    },
+    {
+      "files": ["**/*.css", "**/*.scss", "**/*.less", "chrome-extension/**"],
+      "rules": {
+        "cssause/no-unused-css": "off",
+        "no-undef": "off"
+      }
     }
+  ],
+  "ignorePatterns": [
+    "chrome-extension/**/*.css",
+    "website/**",
+    "dist/**",
+    "build/**"
   ]
 }

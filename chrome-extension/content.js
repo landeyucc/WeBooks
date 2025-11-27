@@ -3,11 +3,14 @@
  * 提取当前页面的基本信息
  */
 
-// 监听来自background script的消息
+// 监听来自popup或background script的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'extractPageInfo') {
+    console.log('Webooks: 收到extractPageInfo请求')
     const pageInfo = extractPageInfo()
+    console.log('Webooks: 返回页面信息:', pageInfo)
     sendResponse(pageInfo)
+    return true; // 保持消息通道开放，确保异步响应
   }
 })
 

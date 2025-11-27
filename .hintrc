@@ -15,7 +15,9 @@
       {
         "ignore": [
           "text-wrap",
-          "text-wrap: balance"
+          "text-wrap: balance",
+          "scrollbar-width",
+          "-ms-overflow-style"
         ]
       }
     ],
@@ -47,6 +49,13 @@
       }
     ],
     "disown-opener": "off",
-    "compat-api/html": "off"
+    "compat-api/html": "off",
+    "axe/parsing": [
+      "default",
+      {
+        "duplicate-id-active": "off"
+      }
+    ],
+    "meta-viewport": "off"
   }
 }

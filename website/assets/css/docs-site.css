@@ -937,22 +937,15 @@
     }
 }
 
-/* 滚动条样式（文档特定） */
+/* 滚动条样式（文档特定） - 隐藏侧边滚动条 */
 .docs-sidebar::-webkit-scrollbar {
-    width: 6px;
+    width: 0px;
+    background: transparent;
 }
 
-.docs-sidebar::-webkit-scrollbar-track {
-    background: var(--bg-gray-100);
-}
-
-.docs-sidebar::-webkit-scrollbar-thumb {
-    background: var(--bg-gray-300);
-    border-radius: 3px;
-}
-
-.docs-sidebar::-webkit-scrollbar-thumb:hover {
-    background: var(--text-light);
+.docs-sidebar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
 }
 
 /* 打印样式 */

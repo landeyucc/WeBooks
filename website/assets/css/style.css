@@ -652,22 +652,20 @@ body {
     animation: fadeInUp 0.6s ease-out;
 }
 
-/* 滚动条样式 */
+/* 滚动条样式 - 隐藏所有滚动条 */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 0px;
+    background: transparent;
 }
 
-::-webkit-scrollbar-track {
-    background: var(--bg-gray-100);
+/* Firefox */
+html {
+    scrollbar-width: none;
 }
 
-::-webkit-scrollbar-thumb {
-    background: var(--bg-gray-300);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--text-light);
+/* IE and Edge */
+body {
+    -ms-overflow-style: none;
 }
 
 /* 选择文本颜色 */
