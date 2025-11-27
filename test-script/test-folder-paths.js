@@ -46,7 +46,7 @@ async function testFolderPaths() {
         
         // 建立父子关系
         const rootFolders = []
-        for (const [id, folder] of foldersMap.entries()) {
+        for (const folder of foldersMap.values()) {
           if (folder.parentFolderId) {
             const parent = foldersMap.get(folder.parentFolderId)
             if (parent) {

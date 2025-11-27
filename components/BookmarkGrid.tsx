@@ -142,6 +142,28 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     return { groups, folderPaths }
   }, [bookmarks, folders, getFolderPath, t])
 
+  // 递归获取所有子文件夹ID
+  const getAllChildFolderIds = useCallback((parentFolderId: string | null, allFolders: Folder[]): string[] => {
+    if (!parentFolderId) return []
+    
+    const childFolderIds: string[] = []
+    const visited = new Set<string>()
+    
+    const findChildren = (currentFolderId: string) => {
+      if (visited.has(currentFolderId)) return
+      visited.add(currentFolderId)
+      
+      const children = allFolders.filter(f => f.parentFolderId === currentFolderId)
+      children.forEach(child => {
+        childFolderIds.push(child.id)
+        findChildren(child.id)
+      })
+    }
+    
+    findChildren(parentFolderId)
+    return childFolderIds
+  }, [])
+
   const fetchBookmarks = useCallback(async () => {
     // 生成请求参数的关键字用于去重
     const requestKey = `${spaceId || ''}-${folderId || ''}-${searchQuery || ''}`
@@ -153,10 +175,9 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
 
     setLoading(true)
     try {
+      // 首先获取所有文件夹数据
       const params = new URLSearchParams()
       if (spaceId) params.append('spaceId', spaceId)
-      if (folderId) params.append('folderId', folderId)
-      if (searchQuery) params.append('search', searchQuery)
 
       // 根据认证状态决定是否使用Authorization头
       const headers: Record<string, string> = {}
@@ -164,23 +185,69 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const [bookmarksResponse, foldersResponse] = await Promise.all([
-        fetch(`/api/bookmarks?${params.toString()}`, { headers }),
-        fetch(`/api/folders?${params.toString()}`, { headers })
-      ])
-
-      const bookmarksData = await bookmarksResponse.json()
+      const foldersResponse = await fetch(`/api/folders?${params.toString()}`, { headers })
       const foldersData = await foldersResponse.json()
+      const allFolders = foldersData.folders || []
+      setFolders(allFolders)
       
-      setBookmarks(bookmarksData.bookmarks || [])
-      setFolders(foldersData.folders || [])
+      // 如果选中了文件夹，获取该文件夹及其所有子文件夹的书签
+      const bookmarksParams = new URLSearchParams()
+      if (spaceId) bookmarksParams.append('spaceId', spaceId)
+      if (searchQuery) bookmarksParams.append('search', searchQuery)
+      
+      if (folderId) {
+        // 获取选中文件夹的直接书签
+        bookmarksParams.append('folderId', folderId)
+        const directBookmarksResponse = await fetch(`/api/bookmarks?${bookmarksParams.toString()}`, { headers })
+        const directBookmarksData = await directBookmarksResponse.json()
+        let allBookmarks = directBookmarksData.bookmarks || []
+        
+        // 递归获取所有子文件夹的书签
+        const childFolderIds = getAllChildFolderIds(folderId, allFolders)
+        
+        if (childFolderIds.length > 0) {
+          // 并行获取所有子文件夹的书签
+          const childBookmarksPromises = childFolderIds.map(childFolderId => {
+            const childParams = new URLSearchParams()
+            if (spaceId) childParams.append('spaceId', spaceId)
+            if (searchQuery) childParams.append('search', searchQuery)
+            childParams.append('folderId', childFolderId)
+            
+            return fetch(`/api/bookmarks?${childParams.toString()}`, { headers })
+              .then(response => response.json())
+              .then(data => data.bookmarks || [])
+              .catch(error => {
+                console.warn(`获取文件夹 ${childFolderId} 的书签失败:`, error)
+                return []
+              })
+          })
+          
+          const childBookmarksResults = await Promise.all(childBookmarksPromises)
+          const childBookmarks = childBookmarksResults.flat()
+          
+          // 合并所有书签
+          allBookmarks = [...allBookmarks, ...childBookmarks]
+        }
+        
+        setBookmarks(allBookmarks)
+      } else {
+        // 没有选中特定文件夹，获取所有书签
+        const allBookmarksParams = new URLSearchParams()
+        if (spaceId) allBookmarksParams.append('spaceId', spaceId)
+        if (searchQuery) allBookmarksParams.append('search', searchQuery)
+        
+        const allBookmarksResponse = await fetch(`/api/bookmarks?${allBookmarksParams.toString()}`, { headers })
+        const allBookmarksData = await allBookmarksResponse.json()
+        setBookmarks(allBookmarksData.bookmarks || [])
+      }
+      
       lastRequestRef.current = requestKey 
     } catch (error) {
       console.error(t('fetchBookmarksFailed'), error)
     } finally {
       setLoading(false)
     }
-  }, [spaceId, folderId, searchQuery, token, bookmarks.length, t]) // 添加t函数依赖
+  }, [spaceId, folderId, searchQuery, token, bookmarks.length, t, getAllChildFolderIds]) // 添加t函数依赖
 
   useEffect(() => {
     fetchBookmarks()

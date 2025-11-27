@@ -47,8 +47,10 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // 构建文件夹路径映射
+    // 构建文件夹映射和父子关系
     const foldersMap = new Map()
+    const childrenMap = new Map() // parentId -> children folders
+    
     folders.forEach(folder => {
       foldersMap.set(folder.id, {
         id: folder.id,
@@ -56,7 +58,27 @@ export async function GET(request: NextRequest) {
         parentFolderId: folder.parentFolderId,
         path: [] // 存储完整路径
       })
+      
+      // 建立父子关系
+      if (folder.parentFolderId) {
+        if (!childrenMap.has(folder.parentFolderId)) {
+          childrenMap.set(folder.parentFolderId, [])
+        }
+        childrenMap.get(folder.parentFolderId)!.push(folder)
+      }
     })
+
+    // 递归获取所有子文件夹ID
+    const getAllChildFolderIds = (parentId: string): string[] => {
+      const children: { id: string }[] = childrenMap.get(parentId) || []
+      const childIds = children.map(child => child.id)
+      
+      for (const child of children) {
+        childIds.push(...getAllChildFolderIds(child.id))
+      }
+      
+      return childIds
+    }
 
     // 递归构建路径
     const buildPath = (folderId: string): string[] => {
@@ -82,13 +104,34 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // 转换数据格式以匹配前端期望
-    const formattedFolders = folders.map(folder => ({
-      ...folder,
-      bookmarkCount: folder._count.bookmarks,
-      path: foldersMap.get(folder.id).path,
-      pathString: foldersMap.get(folder.id).path.join('/')
-    }))
+    // 计算每个文件夹及其所有子文件夹的书签总数
+    const calculateTotalBookmarks = async (folderId: string): Promise<number> => {
+      // 获取直接书签数
+      const folder = folders.find(f => f.id === folderId)
+      let total = folder?._count.bookmarks || 0
+      
+      // 获取所有子文件夹的ID并计算其书签数
+      const childIds = getAllChildFolderIds(folderId)
+      for (const childId of childIds) {
+        const childFolder = folders.find(f => f.id === childId)
+        total += childFolder?._count.bookmarks || 0
+      }
+      
+      return total
+    }
+
+    // 转换数据格式以匹配前端期望，并计算合并的书签数量
+    const formattedFolders = []
+    for (const folder of folders) {
+      const totalBookmarks = await calculateTotalBookmarks(folder.id)
+      formattedFolders.push({
+        ...folder,
+        bookmarkCount: folder._count.bookmarks,
+        totalBookmarks: totalBookmarks, // 新增：包含子文件夹的总书签数
+        path: foldersMap.get(folder.id).path,
+        pathString: foldersMap.get(folder.id).path.join('/')
+      })
+    }
 
     return NextResponse.json({ folders: formattedFolders })
   } catch (error) {

@@ -27,6 +27,7 @@ interface Folder {
   spaceId: string
   parentFolderId: string | null
   bookmarkCount: number
+  totalBookmarks?: number // 新增：包含子文件夹的总书签数
   _count?: {
     bookmarks: number
     childFolders: number
@@ -358,7 +359,7 @@ export default function Sidebar({
               
               {/* 书签数量徽章 - 绿色背景 */}
               <span className="bookmark-count-badge bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs px-1.5 py-0.5 rounded-full">
-                {folder._count?.bookmarks || 0}
+                {folder.totalBookmarks || folder._count?.bookmarks || 0}
               </span>
             </div>
           </div>
