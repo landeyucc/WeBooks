@@ -72,10 +72,26 @@ body {
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 3px;
+    transition: background-color 0.3s ease;
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: var(--secondary);
+    transition: background-color 0.3s ease;
+  }
+  
+  /* 深色模式下的滚动条样式 */
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 3px;
+  }
+  
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+  
+  .dark .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
   }
 }
 

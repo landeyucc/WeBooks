@@ -212,7 +212,7 @@ export default function HomePage() {
         </div>
 
         {/* 书签网格 */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto scrollbar-thin">
           <BookmarkGrid
             spaceId={selectedSpaceId}
             folderId={selectedFolderId}
