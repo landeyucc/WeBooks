@@ -283,17 +283,13 @@ export default function Sidebar({
         return
       }
       
-      // 如果点击的是整个文件夹块
+      // 如果点击的是整个文件夹块，总是选择文件夹
       e.stopPropagation()
+      onSelectFolder(folder.id)
+      
+      // 如果可以折叠且当前是折叠状态，同时展开文件夹
       if (canCollapse && isCollapsed) {
-        // 如果可以折叠且当前是折叠状态，则展开
         toggleFolderCollapse(folder.id)
-      } else if (canCollapse && !isCollapsed) {
-        // 如果可以折叠且当前是展开状态，选择文件夹
-        onSelectFolder(folder.id)
-      } else {
-        // 如果不能折叠，直接选择文件夹
-        onSelectFolder(folder.id)
       }
     }
 
