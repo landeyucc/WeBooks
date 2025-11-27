@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAuthenticatedUserId } from '@/lib/auth-helper'
+import { getPublicUserId, getAuthenticatedUserId } from '@/lib/auth-helper'
 import { authenticateWithApiKey } from '@/lib/extension-auth'
 
 export const dynamic = 'force-dynamic'
@@ -21,12 +21,8 @@ export async function GET(request: NextRequest) {
       }
       targetUserId = authResult.userId
     } else {
-      // 标准 Bearer token 认证
-      const authResult = await getAuthenticatedUserId(request)
-      if (authResult.response) {
-        return authResult.response
-      }
-      targetUserId = authResult.userId
+      // 标准 Bearer token 认证或公共访问
+      targetUserId = await getPublicUserId(request)
     }
     console.log('GET folders - User ID:', targetUserId)
 

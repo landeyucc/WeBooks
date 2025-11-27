@@ -67,7 +67,7 @@ interface Folder {
 }
 
 export default function BookmarkGrid({ spaceId, folderId, searchQuery }: BookmarkGridProps) {
-  const { t, isAuthenticated, token } = useApp()
+  const { t, token } = useApp()
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
   const [loading, setLoading] = useState(false)
@@ -143,10 +143,6 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
   }, [bookmarks, folders, getFolderPath, t])
 
   const fetchBookmarks = useCallback(async () => {
-    if (!isAuthenticated || !token) {
-      return
-    }
-
     // 生成请求参数的关键字用于去重
     const requestKey = `${spaceId || ''}-${folderId || ''}-${searchQuery || ''}`
     
@@ -162,17 +158,15 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
       if (folderId) params.append('folderId', folderId)
       if (searchQuery) params.append('search', searchQuery)
 
+      // 根据认证状态决定是否使用Authorization头
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const [bookmarksResponse, foldersResponse] = await Promise.all([
-        fetch(`/api/bookmarks?${params.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }),
-        fetch(`/api/folders?${params.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        })
+        fetch(`/api/bookmarks?${params.toString()}`, { headers }),
+        fetch(`/api/folders?${params.toString()}`, { headers })
       ])
 
       const bookmarksData = await bookmarksResponse.json()
@@ -186,13 +180,11 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     } finally {
       setLoading(false)
     }
-  }, [spaceId, folderId, searchQuery, isAuthenticated, token, bookmarks.length, t]) // 添加t函数依赖
+  }, [spaceId, folderId, searchQuery, token, bookmarks.length, t]) // 添加t函数依赖
 
   useEffect(() => {
-    if (isAuthenticated && token) {
-      fetchBookmarks()
-    }
-  }, [fetchBookmarks, isAuthenticated, token])
+    fetchBookmarks()
+  }, [fetchBookmarks])
 
   // 检测屏幕尺寸变化
   useEffect(() => {

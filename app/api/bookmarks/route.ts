@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAuthenticatedUserId } from '@/lib/auth-helper'
+import { getPublicUserId, getAuthenticatedUserId } from '@/lib/auth-helper'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -8,14 +8,9 @@ export const runtime = 'nodejs'
 // 获取书签
 export async function GET(request: NextRequest) {
   try {
-    // 检查认证状态
-    const authResult = await getAuthenticatedUserId(request)
-    
-    if (authResult.response) {
-      return authResult.response
-    }
-
-    const targetUserId = authResult.userId
+    // 公共访问或登录用户访问
+    const targetUserId = await getPublicUserId(request)
+    console.log('GET bookmarks - User ID:', targetUserId)
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')

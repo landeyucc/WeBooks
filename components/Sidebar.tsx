@@ -173,7 +173,13 @@ export default function Sidebar({
 
   const fetchFolders = useCallback(async (spaceId: string) => {
     try {
-      const response = await fetch(`/api/folders?spaceId=${spaceId}`)
+      // 根据认证状态决定是否使用Authorization头
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      
+      const response = await fetch(`/api/folders?spaceId=${spaceId}`, { headers })
       const data = await response.json()
       
       let foldersData = []
@@ -193,7 +199,7 @@ export default function Sidebar({
       // 如果出错时则确保设置一个空数组
       setFolders([])
     }
-  }, [t])
+  }, [token, t])
 
   useEffect(() => {
     // 支持未登录状态：总是尝试获取空间列表

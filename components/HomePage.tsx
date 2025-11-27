@@ -9,7 +9,7 @@ import InitModal from '@/components/InitModal'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 export default function HomePage() {
-  const { token, loading, isAuthenticated, user, t } = useApp()
+  const { token, loading, t } = useApp()
   const [needsInit, setNeedsInit] = useState(false)
   const [checkingInit, setCheckingInit] = useState(true)
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null)
@@ -75,25 +75,19 @@ export default function HomePage() {
         return
       }
       
-      // 对于已登录用户，优先从系统配置获取默认空间
-      if (isAuthenticated && token && user) {
-        const configResponse = await fetch('/api/system-config', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        })
+      // 优先从系统配置获取默认空间（支持所有用户）
+      const configResponse = await fetch('/api/system-config')
 
-        if (configResponse.ok) {
-          const config = await configResponse.json()
-          if (config.defaultSpaceId && isMounted) {
-            setSelectedSpaceId(config.defaultSpaceId)
-            return
-          } else {
-            console.log('未找到系统默认空间，将选择第一个可用空间')
-          }
+      if (configResponse.ok) {
+        const config = await configResponse.json()
+        if (config.defaultSpaceId && isMounted) {
+          setSelectedSpaceId(config.defaultSpaceId)
+          return
         } else {
-          console.log('获取系统配置失败，状态码:', configResponse.status)
+          console.log('未找到系统默认空间，将选择第一个可用空间')
         }
+      } else {
+        console.log('获取系统配置失败，状态码:', configResponse.status)
       }
 
       // 获取第一个可用空间作为默认空间（支持未登录状态）
@@ -134,14 +128,12 @@ export default function HomePage() {
         console.error('设置默认空间失败:', error)
       }
     }
-  }, [isAuthenticated, token, user, selectedSpaceId]) // 移除t依赖
+  }, [token, selectedSpaceId]) // 移除不必要的isAuthenticated和user依赖和t依赖 
 
   useEffect(() => {
-    // 优化：移除频繁的console.log，只在必要的时候输出
-    // 等待所有初始状态都完成后再设置默认空间，且只执行一次
-    // 支持未登录状态：在初始化完成且没有选中的空间时设置默认空间
+    
     if (!checkingInit && !loading && !needsInit && !selectedSpaceId && !defaultSpaceInit.current) {
-      defaultSpaceInit.current = true // 标记已开始初始化
+      defaultSpaceInit.current = true 
       const timeoutId = setTimeout(() => {
         setDefaultSpace()
       }, 100) 
