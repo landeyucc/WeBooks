@@ -35,9 +35,21 @@ export async function GET() {
       include: {
         folder: {
           select: {
-            name: true
+            id: true,
+            name: true,
+            parentFolderId: true
           }
         }
+      }
+    })
+
+    // 静态获取所有文件夹，用于构建层级关系
+    const folders = await prisma.folder.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        name: true,
+        parentFolderId: true
       }
     })
 
@@ -52,7 +64,7 @@ export async function GET() {
     }
 
     // 生成HTML书签文件
-    const html = generateBookmarkHtml(bookmarks)
+    const html = generateBookmarkHtml(bookmarks, folders)
 
     // 返回文件下载
     const timestamp = new Date().toISOString().split('T')[0]
@@ -84,7 +96,11 @@ function generateBookmarkHtml(bookmarks: {
   iconUrl: string | null
   createdAt: Date | null
   folderId: string | null
-  folder: { name: string } | null
+  folder: { id: string; name: string; parentFolderId: string | null } | null
+}[], folders: {
+  id: string
+  name: string
+  parentFolderId: string | null
 }[]): string {
   const now = Math.floor(Date.now() / 1000)
   
@@ -98,14 +114,40 @@ function generateBookmarkHtml(bookmarks: {
 <DL><p>
 `
 
-  // 按文件夹分组
-  const folders = new Map<string, {
+  // 构建文件夹层级映射
+  const folderMap = new Map<string, {
+    id: string
+    name: string
+    parentFolderId: string | null
+  }>()
+  folders.forEach(folder => {
+    folderMap.set(folder.id, folder)
+  })
+
+  // 计算文件夹的完整路径
+  function getFolderPath(folderId: string): string {
+    const path = []
+    let currentFolderId = folderId
+    
+    while (currentFolderId) {
+      const folder = folderMap.get(currentFolderId)
+      if (!folder) break
+      
+      path.unshift(folder.name)
+      currentFolderId = folder.parentFolderId || ''
+    }
+    
+    return path.join('/')
+  }
+
+  // 按路径分组书签
+  const bookmarksByPath = new Map<string, {
     title: string | null
     url: string
     iconUrl: string | null
     createdAt: Date | null
     folderId: string | null
-    folder: { name: string } | null
+    folder: { id: string; name: string; parentFolderId: string | null } | null
   }[]>()
   const rootBookmarks: {
     title: string | null
@@ -113,16 +155,16 @@ function generateBookmarkHtml(bookmarks: {
     iconUrl: string | null
     createdAt: Date | null
     folderId: string | null
-    folder: { name: string } | null
+    folder: { id: string; name: string; parentFolderId: string | null } | null
   }[] = []
   
   bookmarks.forEach(bookmark => {
     if (bookmark.folderId && bookmark.folder) {
-      const folderName = bookmark.folder.name
-      if (!folders.has(folderName)) {
-        folders.set(folderName, [])
+      const folderPath = getFolderPath(bookmark.folderId)
+      if (!bookmarksByPath.has(folderPath)) {
+        bookmarksByPath.set(folderPath, [])
       }
-      folders.get(folderName)!.push(bookmark)
+      bookmarksByPath.get(folderPath)!.push(bookmark)
     } else {
       rootBookmarks.push(bookmark)
     }
@@ -140,9 +182,21 @@ function generateBookmarkHtml(bookmarks: {
     html += `    </DL><p>\n`
   }
 
+  // 按路径排序（短的路径先出现）
+  const sortedPaths = Array.from(bookmarksByPath.keys()).sort((a, b) => {
+    // 先按层级深度排序，再按名称排序
+    const depthA = a.split('/').length
+    const depthB = b.split('/').length
+    if (depthA !== depthB) return depthA - depthB
+    return a.localeCompare(b)
+  })
+
   // 生成文件夹书签
-  folders.forEach((folderBookmarks, folderName) => {
-    html += `    <DT><H3 ADD_DATE="${now}" LAST_MODIFIED="${now}">${escapeHtml(folderName)}</H3>\n`
+  sortedPaths.forEach(folderPath => {
+    const folderBookmarks = bookmarksByPath.get(folderPath)!
+    const pathSegments = folderPath.split('/')
+    
+    html += `    <DT><H3 ADD_DATE="${now}" LAST_MODIFIED="${now}">${escapeHtml(pathSegments[pathSegments.length - 1])}</H3>\n`
     html += `    <DL><p>\n`
     
     folderBookmarks.forEach(bookmark => {
