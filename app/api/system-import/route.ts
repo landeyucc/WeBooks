@@ -195,6 +195,13 @@ async function clearExistingData(userId: string) {
 // 定义系统配置接口
 interface SystemConfig {
   defaultSpaceId?: string;
+  defaultSpace?: {
+    id: string;
+    name: string;
+    description?: string;
+    iconUrl?: string;
+    systemCardUrl?: string;
+  };
   siteTitle?: string;
   faviconUrl?: string;
   seoDescription?: string;
@@ -273,7 +280,7 @@ async function importSpaces(userId: string, spaces: SpaceData[], result: ImportR
 
   for (const spaceData of spaces) {
     try {
-      let existingSpace = await prisma.space.findFirst({
+      const existingSpace = await prisma.space.findFirst({
         where: { 
           userId,
           name: spaceData.name
