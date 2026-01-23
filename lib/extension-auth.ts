@@ -25,8 +25,9 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
   response?: NextResponse
 }> {
   try {
-    // 从请求头中获取API Key
     const apiKey = request.headers.get('x-api-key')
+    console.log('authenticateWithApiKey - 收到请求，API Key存在:', !!apiKey)
+    console.log('authenticateWithApiKey - API Key前缀:', apiKey ? apiKey.substring(0, 10) + '...' : '无')
     
     if (!apiKey) {
       return {
@@ -38,8 +39,8 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
       }
     }
 
-    // 验证API Key格式
     if (!isValidApiKeyFormat(apiKey)) {
+      console.log('authenticateWithApiKey - API Key格式无效')
       return {
         userId: null,
         response: NextResponse.json(
@@ -49,10 +50,11 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
       }
     }
 
-    // 查找API Key对应的用户
+    console.log('authenticateWithApiKey - 开始查询数据库...')
     const systemConfig = await prisma.systemConfig.findFirst({
       where: { apiKey }
     })
+    console.log('authenticateWithApiKey - 数据库查询完成，结果:', systemConfig ? `找到记录 userId=${systemConfig.userId}` : '未找到')
 
     if (!systemConfig) {
       return {
@@ -64,9 +66,11 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
       }
     }
 
+    console.log('authenticateWithApiKey - 认证成功，返回userId:', systemConfig.userId)
     return { userId: systemConfig.userId }
   } catch (error) {
     console.error('API Key认证错误:', error)
+    console.error('错误堆栈:', error instanceof Error ? error.stack : '未知')
     return {
       userId: null,
       response: NextResponse.json(

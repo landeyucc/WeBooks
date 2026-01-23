@@ -394,26 +394,25 @@ class WebooksExtension {
         }
       })
 
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        const responseText = await response.text()
-        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
-          throw new Error('服务器返回了HTML页面而非API响应，请检查API URL是否正确')
-        }
-        throw new Error(`连接失败 (HTTP ${response.status}): ${responseText.substring(0, 100)}`)
-      }
-
       if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          this.showStatus('连接测试成功！服务器可达。', 'success')
-          await this.loadSpacesAndFolders()
-        } else {
-          throw new Error(result.error || 'API Key无效')
-        }
+        this.showStatus('连接测试成功！API Key有效。', 'success')
+        await this.loadSpacesAndFolders()
       } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `连接失败 (HTTP ${response.status})`)
+        const contentType = response.headers.get('content-type')
+        let errorMessage = `连接失败 (HTTP ${response.status})`
+
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json()
+            errorMessage = errorData.error || errorData.details || errorMessage
+          } catch {
+            errorMessage = errorMessage
+          }
+        } else {
+          errorMessage = '服务器返回错误，请检查API URL是否正确'
+        }
+
+        throw new Error(errorMessage)
       }
 
     } catch (error) {
