@@ -160,11 +160,11 @@ async function performImport(userId: string, importData: ImportData, importMode:
       await clearExistingData(userId)
     }
 
-    // 先导入空间，再导入系统配置（避免外键约束问题）
-    await importSpaces(userId, importData.spaces, result)
+    // 先导入空间
+    const importedSpaces = await importSpaces(userId, importData.spaces, result)
 
     // 导入系统配置
-    await importSystemConfig(userId, importData.systemConfig || null, result)
+    await importSystemConfig(userId, importData.systemConfig || null, result, importedSpaces)
 
     // 导入文件夹
     await importFolders(userId, importData.folders, result)
@@ -203,21 +203,29 @@ interface SystemConfig {
 }
 
 // 导入系统配置
-async function importSystemConfig(userId: string, systemConfig: SystemConfig | null, result: ImportResult) {
+async function importSystemConfig(userId: string, systemConfig: SystemConfig | null, result: ImportResult, importedSpaces?: { name: string; id: string }[]) {
   if (!systemConfig) {
     result.details.systemConfig.skipped++
     return
   }
 
   try {
+    let finalDefaultSpaceId = systemConfig.defaultSpaceId || ''
+
+    if (systemConfig.defaultSpaceId && importedSpaces && importedSpaces.length > 0) {
+      const defaultSpace = importedSpaces.find(s => s.name === systemConfig.defaultSpace?.name)
+      if (defaultSpace) {
+        finalDefaultSpaceId = defaultSpace.id
+      }
+    }
+
     const existingConfig = await prisma.systemConfig.findFirst({ where: { userId } })
     
     if (existingConfig) {
-      // 更新现有配置
       await prisma.systemConfig.update({
         where: { id: existingConfig.id },
         data: {
-          defaultSpaceId: systemConfig.defaultSpaceId || '',
+          defaultSpaceId: finalDefaultSpaceId,
           siteTitle: systemConfig.siteTitle || '',
           faviconUrl: systemConfig.faviconUrl || '',
           seoDescription: systemConfig.seoDescription || '',
@@ -228,11 +236,10 @@ async function importSystemConfig(userId: string, systemConfig: SystemConfig | n
       })
       result.details.systemConfig.updated++
     } else {
-      // 创建新配置
       await prisma.systemConfig.create({
         data: {
           userId,
-          defaultSpaceId: systemConfig.defaultSpaceId || '',
+          defaultSpaceId: finalDefaultSpaceId,
           siteTitle: systemConfig.siteTitle || '',
           faviconUrl: systemConfig.faviconUrl || '',
           seoDescription: systemConfig.seoDescription || '',
@@ -261,10 +268,12 @@ interface SpaceData {
 }
 
 // 导入空间
-async function importSpaces(userId: string, spaces: SpaceData[], result: ImportResult) {
+async function importSpaces(userId: string, spaces: SpaceData[], result: ImportResult): Promise<{ name: string; id: string }[]> {
+  const importedSpaces: { name: string; id: string }[] = []
+
   for (const spaceData of spaces) {
     try {
-      const existingSpace = await prisma.space.findFirst({
+      let existingSpace = await prisma.space.findFirst({
         where: { 
           userId,
           name: spaceData.name
@@ -272,11 +281,10 @@ async function importSpaces(userId: string, spaces: SpaceData[], result: ImportR
       })
 
       if (existingSpace) {
-        // 跳过已存在的空间（合并模式）
         result.details.spaces.skipped++
+        importedSpaces.push({ name: existingSpace.name, id: existingSpace.id })
       } else {
-        // 创建新空间
-        await prisma.space.create({
+        const newSpace = await prisma.space.create({
           data: {
             userId,
             name: spaceData.name,
@@ -284,10 +292,10 @@ async function importSpaces(userId: string, spaces: SpaceData[], result: ImportR
             iconUrl: spaceData.iconUrl || '',
             systemCardUrl: spaceData.systemCardUrl || '',
             isEncrypted: spaceData.isEncrypted || false
-            // 不导入密码哈希，保持安全
           }
         })
         result.details.spaces.created++
+        importedSpaces.push({ name: newSpace.name, id: newSpace.id })
       }
       
       result.successCount++
@@ -297,6 +305,8 @@ async function importSpaces(userId: string, spaces: SpaceData[], result: ImportR
       result.errorCount++
     }
   }
+
+  return importedSpaces
 }
 
 // 定义文件夹数据接口

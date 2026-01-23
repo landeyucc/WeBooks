@@ -708,16 +708,11 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        // 获取响应数据
-        const data = await response.json()
-        
-        // 创建JSON文件并触发下载
-        const jsonString = JSON.stringify(data, null, 2)
-        const blob = new Blob([jsonString], { type: 'application/json' })
+        const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `webooks_system_config_${new Date().toISOString().split('T')[0]}.json`
+        link.download = `Webooks_system_export_${new Date().toISOString().split('T')[0]}.json`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -769,6 +764,8 @@ export default function AdminDashboard() {
         importData = JSON.parse(fileContent)
       } catch {
         showError(t('invalidJsonFormat'))
+        setImportSystemFile(null)
+        setIsLoading(false)
         return
       }
 
@@ -788,6 +785,9 @@ export default function AdminDashboard() {
       if (response.ok) {
         const result = await response.json()
         setImportSystemResult(result)
+        setImportSystemFile(null)
+        const input = document.getElementById('system-import-file') as HTMLInputElement
+        if (input) input.value = ''
         showSuccess(t('importSystemConfigSuccess'))
       } else {
         const errorData = await response.json()
