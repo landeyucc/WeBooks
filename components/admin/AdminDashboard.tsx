@@ -697,18 +697,24 @@ export default function AdminDashboard() {
 
   // 处理系统参数导出
   const handleExportSystemConfig = async () => {
+    console.log('开始导出系统参数，token:', token ? `${token.substring(0, 20)}...` : 'null/undefined')
     setIsLoading(true)
 
     try {
       const response = await fetch('/api/system-export', {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       })
 
+      console.log('导出响应状态:', response.status)
+
       if (response.ok) {
+        console.log('导出成功，开始下载...')
         const blob = await response.blob()
+        console.log('Blob大小:', blob.size, '类型:', blob.type)
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
@@ -721,7 +727,8 @@ export default function AdminDashboard() {
         showSuccess(t('exportSystemConfigSuccess'))
       } else {
         const errorData = await response.json()
-        showError(errorData.message || t('exportFailed'))
+        console.error('导出失败:', errorData)
+        showError(errorData.message || errorData.error || t('exportFailed'))
       }
     } catch (error) {
       console.error('导出系统参数时出错:', error)
