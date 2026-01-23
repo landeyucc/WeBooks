@@ -1,60 +1,70 @@
-// 使用原生 fetch
-const API_BASE = process.env.API_BASE_URL || 'http://localhost:3000/api'
+const axios = require('axios')
 
-async function testFoldersAPI() {
-  console.log('=== 测试folders API修复效果 ===\n')
-  console.log(`🌐 API基础地址: ${API_BASE}`)
-  
+async function testExportAPI() {
   try {
-    // 测试GET /api/folders
-    console.log('1. 测试GET /api/folders:')
+    console.log('🔍 直接测试系统导出API...\n')
+
+    // 使用第一个用户的ID
+    const userId = '7a574630-0702-48ca-bdc8-f3d3b26654d9'
+
+    // 1. 先调用诊断API（使用userId参数）
+    console.log('1. 调用诊断API...')
+    const debugUrl = `http://localhost:3000/api/test-export-debug?userId=${userId}`
+    const debugResponse = await axios.get(debugUrl)
+    console.log('诊断结果:', JSON.stringify(debugResponse.data, null, 2))
+
+    // 2. 模拟前端调用导出API
+    console.log('\n2. 模拟前端调用导出API...')
     
-    const response = await fetch(`${API_BASE}/folders`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
+    // 注意：由于没有真实的token，我们无法直接测试导出API
+    // 但我们可以直接查询数据库来验证数据
+    
+    const { PrismaClient } = require('@prisma/client')
+    const prisma = new PrismaClient()
+
+    const bookmarks = await prisma.bookmark.findMany({
+      where: { userId },
+      take: 5,
+      select: {
+        title: true,
+        url: true,
+        description: true,
+        iconUrl: true,
+        space: { select: { name: true } },
+        folder: { select: { name: true } }
       }
     })
-    
-    console.log(`状态码: ${response.status}`)
-    console.log(`响应头:`, Object.fromEntries(response.headers.entries()))
-    
-    if (response.ok) {
-      const data = await response.json()
-      console.log('✅ API调用成功')
-      console.log(`返回文件夹数量: ${data.folders?.length || 0}`)
-      
-      if (data.folders && data.folders.length > 0) {
-        console.log('文件夹列表:')
-        data.folders.forEach((folder, index) => {
-          console.log(`  ${index + 1}. ${folder.name} (ID: ${folder.id})`)
-          console.log(`     - bookmarkCount: ${folder.bookmarkCount}`)
-          console.log(`     - createdAt: ${folder.createdAt}`)
-        })
-      } else {
-        console.log('❌ API返回空文件夹列表')
-      }
-    } else {
-      const errorText = await response.text()
-      console.log('❌ API调用失败')
-      console.log('错误响应:', errorText)
-    }
-    
-    console.log('\n=== 测试完成 ===')
-    console.log('🔧 修复说明:')
-    console.log('  1. 更新folders API使用智能认证逻辑')
-    console.log('  2. 修复Edge浏览器兼容性问题')  
-    console.log('  3. 统一所有API的认证处理方式')
-    console.log('  4. 添加详细日志便于调试')
-    
+
+    console.log('\n3. 数据库中的书签数据（用于比较导出结果）:')
+    console.log(JSON.stringify(bookmarks, null, 2))
+
+    // 4. 模拟导出数据结构
+    console.log('\n4. 模拟导出的bookmarks数组:')
+    const exportedBookmarks = bookmarks.map(b => ({
+      id: b.id,
+      title: b.title,
+      url: b.url,
+      description: b.description,
+      iconUrl: b.iconUrl,
+      spaceId: b.spaceId,
+      spaceName: b.space?.name || '',
+      folderId: b.folderId,
+      folderName: b.folder?.name || null,
+      userId: b.userId,
+      createdAt: b.createdAt
+    }))
+    console.log(JSON.stringify(exportedBookmarks, null, 2))
+
+    console.log('\n✅ 测试完成！如果数据库有数据但导出的JSON没有，说明问题在前端处理')
+
+    await prisma.$disconnect()
+
   } catch (error) {
-    console.error('测试过程中发生错误:', error.message)
-    console.log('💡 可能原因:')
-    console.log('  - 开发服务器未启动')
-    console.log('  - 端口3000被占用')
-    console.log('  - 网络连接问题')
+    console.error('❌ 测试失败:', error.message)
+    if (error.response) {
+      console.error('响应:', error.response.data)
+    }
   }
 }
 
-// 运行测试
-testFoldersAPI()
+testExportAPI()

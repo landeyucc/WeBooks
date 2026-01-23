@@ -697,7 +697,7 @@ export default function AdminDashboard() {
 
   // 处理系统参数导出
   const handleExportSystemConfig = async () => {
-    console.log('开始导出系统参数，token:', token ? `${token.substring(0, 20)}...` : 'null/undefined')
+    console.log('【导出开始】token:', token ? `${token.substring(0, 20)}...` : 'null')
     setIsLoading(true)
 
     try {
@@ -709,12 +709,32 @@ export default function AdminDashboard() {
         }
       })
 
-      console.log('导出响应状态:', response.status)
+      console.log('【导出响应】状态:', response.status)
 
       if (response.ok) {
-        console.log('导出成功，开始下载...')
-        const blob = await response.blob()
-        console.log('Blob大小:', blob.size, '类型:', blob.type)
+        // 获取原始文本内容进行调试
+        const text = await response.text()
+        console.log('【导出响应】文本长度:', text.length)
+        
+        // 检查是否包含description和iconUrl
+        const hasDescription = text.includes('"description":')
+        const hasIconUrl = text.includes('"iconUrl":')
+        console.log('【导出响应】包含description字段:', hasDescription)
+        console.log('【导出响应】包含iconUrl字段:', hasIconUrl)
+        
+        // 在控制台显示前3条书签数据
+        try {
+          const json = JSON.parse(text)
+          if (json.bookmarks && json.bookmarks.length > 0) {
+            console.log('【导出响应】第一条书签数据:')
+            console.log(JSON.stringify(json.bookmarks[0], null, 2))
+          }
+        } catch (e) {
+          console.error('【导出响应】JSON解析失败:', e)
+        }
+
+        // 创建Blob并下载
+        const blob = new Blob([text], { type: 'application/json' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
@@ -724,14 +744,15 @@ export default function AdminDashboard() {
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
 
+        console.log('【导出完成】文件已下载')
         showSuccess(t('exportSystemConfigSuccess'))
       } else {
         const errorData = await response.json()
-        console.error('导出失败:', errorData)
+        console.error('【导出失败】:', errorData)
         showError(errorData.message || errorData.error || t('exportFailed'))
       }
     } catch (error) {
-      console.error('导出系统参数时出错:', error)
+      console.error('【导出异常】:', error)
       showError(t('exportFailed') + '：' + t('networkError'))
     } finally {
       setIsLoading(false)

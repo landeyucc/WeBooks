@@ -67,38 +67,56 @@ export async function GET(request: NextRequest) {
     })
 
     // 获取所有文件夹
-    const folders = await prisma.folder.findMany({
+    const foldersRaw = await prisma.folder.findMany({
       where: { userId },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        iconUrl: true,
-        spaceId: true,
-        parentFolderId: true,
-        userId: true,
-        createdAt: true,
-        bookmarkCount: true
+      include: {
+        space: {
+          select: { id: true, name: true }
+        }
       },
       orderBy: { createdAt: 'asc' }
     })
 
+    const folders = foldersRaw.map(f => ({
+      id: f.id,
+      name: f.name,
+      description: f.description,
+      iconUrl: f.iconUrl,
+      spaceId: f.spaceId,
+      spaceName: f.space?.name || '',
+      parentFolderId: f.parentFolderId,
+      userId: f.userId,
+      createdAt: f.createdAt,
+      bookmarkCount: f.bookmarkCount
+    }))
+
     // 获取所有书签
-    const bookmarks = await prisma.bookmark.findMany({
+    const bookmarksRaw = await prisma.bookmark.findMany({
       where: { userId },
-      select: {
-        id: true,
-        title: true,
-        url: true,
-        description: true,
-        iconUrl: true,
-        spaceId: true,
-        folderId: true,
-        userId: true,
-        createdAt: true
+      include: {
+        space: {
+          select: { id: true, name: true }
+        },
+        folder: {
+          select: { id: true, name: true }
+        }
       },
       orderBy: { createdAt: 'asc' }
     })
+
+    const bookmarks = bookmarksRaw.map(b => ({
+      id: b.id,
+      title: b.title,
+      url: b.url,
+      description: b.description,
+      iconUrl: b.iconUrl,
+      spaceId: b.spaceId,
+      spaceName: b.space?.name || '',
+      folderId: b.folderId,
+      folderName: b.folder?.name || null,
+      userId: b.userId,
+      createdAt: b.createdAt
+    }))
 
     // 构建导出的数据结构
     const exportData = {

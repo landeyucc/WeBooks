@@ -381,6 +381,7 @@ interface BookmarkData {
   spaceName: string;
   folderName?: string;
   description?: string;
+  iconUrl?: string;
 }
 
 // 导入书签
@@ -431,6 +432,7 @@ async function importBookmarks(userId: string, bookmarks: BookmarkData[], result
             title: bookmarkData.title,
             url: bookmarkData.url,
             description: bookmarkData.description || '',
+            iconUrl: bookmarkData.iconUrl || '',
             spaceId: space.id,
             folderId: folder ? folder.id : null
           }
