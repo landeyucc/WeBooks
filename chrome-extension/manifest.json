@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "WeBooks Tool",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "通过快捷键快速保存当前网页到Webooks书签系统",
 	"permissions": ["activeTab", "storage", "commands"],
 	"host_permissions": ["http://localhost:3000/*", "https://*/*"],
