@@ -116,14 +116,14 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const hasApiKey = !!systemConfig.apiKey
+    const hasApiKey = !!systemConfig?.apiKey
 
     return NextResponse.json({
       success: true,
       message: hasApiKey ? 'API Key已存在' : '用户尚未配置API Key',
       hasApiKey,
       apiKey: hasApiKey ? systemConfig.apiKey : null,
-      maskedKey: hasApiKey ? systemConfig.apiKey!.substring(0, 10) + '...' : null,
+      maskedKey: hasApiKey && systemConfig.apiKey ? systemConfig.apiKey.substring(0, 10) + '...' : null,
       systemConfig: {
         id: systemConfig.id,
         userId: systemConfig.userId,

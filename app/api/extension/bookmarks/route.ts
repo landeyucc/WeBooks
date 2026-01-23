@@ -12,21 +12,36 @@ export const runtime = 'nodejs'
  * 仅支持POST操作（仅添加）
  */
 export async function POST(request: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7)
+  console.log(`[${requestId}] Extension API - POST 请求开始`)
+  
   try {
     // 验证API Key认证
     const authResult = await authenticateWithApiKey(request)
     
     if (authResult.response) {
+      console.log(`[${requestId}] 认证失败，返回错误响应`)
       return authResult.response
+    }
+
+    if (!authResult) {
+      console.log(`[${requestId}] 认证结果为null`)
+      return NextResponse.json(
+        { success: false, error: '认证系统错误', details: 'authResult为null' },
+        { status: 500 }
+      )
     }
 
     const userId = authResult.userId
     if (!userId) {
+      console.log(`[${requestId}] 用户ID为空`)
       return NextResponse.json(
-        { error: '认证失败' },
+        { success: false, error: '认证失败', details: '无法获取用户ID' },
         { status: 401 }
       )
     }
+
+    console.log(`[${requestId}] 认证成功，用户ID: ${userId}`)
 
     const { 
       title, 
@@ -41,12 +56,12 @@ export async function POST(request: NextRequest) {
     // 验证必需参数
     if (!url || !spaceId) {
       return NextResponse.json(
-        { error: '缺少必需参数：url和spaceId' },
+        { success: false, error: '缺少必需参数', details: '需要url和spaceId' },
         { status: 400 }
       )
     }
 
-    console.log(`Extension API - 添加书签: ${url}`)
+    console.log(`[${requestId}] Extension API - 添加书签: ${url}`)
 
     let bookmarkTitle = title
     let bookmarkDescription = description
@@ -140,20 +155,35 @@ export async function POST(request: NextRequest) {
  * 扩展API - 验证API Key是否有效
  */
 export async function GET(request: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7)
+  console.log(`[${requestId}] Extension API - GET 请求开始`)
+  
   try {
     const authResult = await authenticateWithApiKey(request)
     
     if (authResult.response) {
+      console.log(`[${requestId}] 认证失败，返回错误响应`)
       return authResult.response
+    }
+
+    if (!authResult) {
+      console.log(`[${requestId}] 认证结果为null`)
+      return NextResponse.json(
+        { success: false, error: '认证系统错误', details: 'authResult为null' },
+        { status: 500 }
+      )
     }
 
     const userId = authResult.userId
     if (!userId) {
+      console.log(`[${requestId}] 用户ID为空`)
       return NextResponse.json(
-        { error: '认证失败' },
+        { success: false, error: '认证失败', details: '无法获取用户ID' },
         { status: 401 }
       )
     }
+
+    console.log(`[${requestId}] 认证成功，用户ID: ${userId}`)
 
     // 获取用户基本信息
     const user = await prisma.user.findUnique({
@@ -166,11 +196,14 @@ export async function GET(request: NextRequest) {
     })
 
     if (!user) {
+      console.log(`[${requestId}] 用户不存在`)
       return NextResponse.json(
-        { error: '用户不存在' },
+        { success: false, error: '用户不存在' },
         { status: 404 }
       )
     }
+
+    console.log(`[${requestId}] 用户验证成功: ${user.username}`)
 
     return NextResponse.json({
       success: true,
@@ -179,7 +212,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Extension API - 验证API Key错误:', error)
+    console.error(`[${requestId}] Extension API - 验证API Key错误:`, error)
     return NextResponse.json(
       { 
         success: false,

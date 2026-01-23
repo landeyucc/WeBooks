@@ -32,7 +32,7 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
       return {
         userId: null,
         response: NextResponse.json(
-          { error: '未授权', details: '需要提供API Key' },
+          { success: false, error: '未授权', details: '需要提供API Key (x-api-key header)' },
           { status: 401 }
         )
       }
@@ -43,7 +43,7 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
       return {
         userId: null,
         response: NextResponse.json(
-          { error: '无效的API Key格式' },
+          { success: false, error: '无效的API Key格式', details: 'API Key必须以 webooks_ 开头，共40个字符' },
           { status: 401 }
         )
       }
@@ -58,7 +58,7 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
       return {
         userId: null,
         response: NextResponse.json(
-          { error: 'API Key无效或已过期' },
+          { success: false, error: 'API Key无效或已过期', details: '请检查API Key是否正确或重新生成' },
           { status: 401 }
         )
       }
@@ -70,7 +70,7 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
     return {
       userId: null,
       response: NextResponse.json(
-        { error: '认证失败' },
+        { success: false, error: '认证失败', details: error instanceof Error ? error.message : '数据库连接失败' },
         { status: 500 }
       )
     }
@@ -100,13 +100,18 @@ export async function generateUserApiKey(userId: string): Promise<string> {
  * 验证API Key是否存在且有效
  */
 export async function validateApiKey(apiKey: string): Promise<boolean> {
-  if (!isValidApiKeyFormat(apiKey)) {
+  try {
+    if (!isValidApiKeyFormat(apiKey)) {
+      return false
+    }
+
+    const systemConfig = await prisma.systemConfig.findFirst({
+      where: { apiKey }
+    })
+
+    return !!systemConfig
+  } catch (error) {
+    console.error('验证API Key时发生错误:', error)
     return false
   }
-
-  const systemConfig = await prisma.systemConfig.findFirst({
-    where: { apiKey }
-  })
-
-  return !!systemConfig
 }

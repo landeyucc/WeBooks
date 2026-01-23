@@ -394,18 +394,26 @@ class WebooksExtension {
         }
       })
 
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text()
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+          throw new Error('服务器返回了HTML页面而非API响应，请检查API URL是否正确')
+        }
+        throw new Error(`连接失败 (HTTP ${response.status}): ${responseText.substring(0, 100)}`)
+      }
+
       if (response.ok) {
         const result = await response.json()
         if (result.success) {
           this.showStatus('连接测试成功！服务器可达。', 'success')
-          // 连接成功后自动加载空间列表和系统默认空间
           await this.loadSpacesAndFolders()
         } else {
           throw new Error(result.error || 'API Key无效')
         }
       } else {
         const errorData = await response.json()
-        throw new Error(errorData.error || '连接失败')
+        throw new Error(errorData.error || `连接失败 (HTTP ${response.status})`)
       }
 
     } catch (error) {
@@ -581,12 +589,19 @@ class WebooksExtension {
         body: JSON.stringify(requestData)
       })
 
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text()
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+          throw new Error('服务器返回了HTML页面，请检查API URL是否正确')
+        }
+        throw new Error(`保存失败 (HTTP ${response.status}): ${responseText.substring(0, 100)}`)
+      }
+
       const result = await response.json()
 
       if (result.success) {
         this.showStatus('书签保存成功！🎉', 'success')
-        // 清空表单（可选）
-        // this.resetBookmarkForm()
       } else {
         throw new Error(result.error || '保存失败')
       }
