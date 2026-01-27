@@ -20,7 +20,7 @@ COPY . .
 RUN npx prisma generate
 
 # 构建应用
-RUN npm run build
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # 生产阶段
 FROM node:18-alpine AS production
@@ -59,6 +59,8 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV NODE_OPTIONS="--max-old-space-size=512"
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import RobustImage from './RobustImage'
 import LoadingSpinner from './LoadingSpinner'
@@ -30,40 +30,31 @@ interface BookmarkGridProps {
   searchQuery: string
 }
 
-// 验证图片URL格式是否正确
-const isValidImageUrl = (url: string): boolean => {
-  try {
-    // 清理URL，移除开头、末尾的多余空格、括号等字符
-    const cleanUrl = url.trim().replace(/^[\s(]+|[\s)]+$/g, '')
-    
-    // 检查是否为base64 data URI格式
-    if (cleanUrl.startsWith('data:')) {
-      // 检查是否为图片data URI
-      const dataUriMatch = cleanUrl.match(/^data:image\/(jpg|jpeg|png|gif|webp|svg|ico);base64,/i)
-      return !!dataUriMatch
-    }
-    
-    // 检查URL是否以 http:// 或 https:// 开头
-    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-      return false
-    }
-
-    // 尝试解析URL，失败则返回false
-    new URL(cleanUrl)
-    
-    // 检查是否为图片URL（有图片扩展名或包含图片相关参数）
-    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|ico)(\?.*)?$/i
-    return imageExtensions.test(cleanUrl)
-  } catch {
-    return false
-  }
-}
-
 interface Folder {
   id: string
   name: string
   spaceId: string
   parentFolderId: string | null
+}
+
+const PAGE_SIZE = 24
+
+const isValidImageUrl = (url: string): boolean => {
+  try {
+    const cleanUrl = url.trim().replace(/^[\s(]+|[\s)]+$/g, '')
+    if (cleanUrl.startsWith('data:')) {
+      const dataUriMatch = cleanUrl.match(/^data:image\/(jpg|jpeg|png|gif|webp|svg|ico);base64,/i)
+      return !!dataUriMatch
+    }
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      return false
+    }
+    new URL(cleanUrl)
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|ico)(\?.*)?$/i
+    return imageExtensions.test(cleanUrl)
+  } catch {
+    return false
+  }
 }
 
 export default function BookmarkGrid({ spaceId, folderId, searchQuery }: BookmarkGridProps) {
@@ -74,14 +65,16 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
   const [mousePosition, setMousePosition] = useState<{x: number, y: number} | null>(null)
   const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
-
-  // 使用useRef缓存上次请求的参数，避免重复请求
-  const lastRequestRef = useRef<string>('')
-
-  // 移动端检测
   const [isMobile, setIsMobile] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  // 获取文件夹完整路径
+  const lastRequestRef = useRef<string>('')
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+
   const getFolderPath = useCallback((folderId: string, foldersList: Folder[]): string[] => {
     const allFolders = foldersList || []
     const visited = new Set<string>()
@@ -104,7 +97,6 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     return buildPath(folderId)
   }, [])
 
-  // 按文件夹路径分组书签
   const groupBookmarksByFolder = useCallback((): { 
     groups: Record<string, Bookmark[]>, 
     folderPaths: Record<string, string[]> 
@@ -112,18 +104,14 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     const groups: Record<string, Bookmark[]> = {}
     const folderPaths: Record<string, string[]> = {}
 
-    // 无文件夹的书签
     groups[t('noFolder')] = []
     folderPaths[t('noFolder')] = []
 
-    // 有文件夹的书签
     bookmarks.forEach(bookmark => {
       if (bookmark.folderId) {
         const path = getFolderPath(bookmark.folderId, folders)
         
-        // 如果路径为空，视为无文件夹
         if (path.length === 0) {
-          console.warn(`书签 "${bookmark.title}" 的文件夹路径为空，将其归类为无文件夹`)
           groups[t('noFolder')].push(bookmark)
         } else {
           const pathKey = path.join('/')
@@ -142,204 +130,153 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     return { groups, folderPaths }
   }, [bookmarks, folders, getFolderPath, t])
 
-  // 递归获取所有子文件夹ID
-  const getAllChildFolderIds = useCallback((parentFolderId: string | null, allFolders: Folder[]): string[] => {
-    if (!parentFolderId) return []
+  const fetchBookmarks = useCallback(async (page: number, isLoadMore = false) => {
+    const requestKey = `${spaceId || ''}-${folderId || ''}-${searchQuery || ''}-${page}`
     
-    const childFolderIds: string[] = []
-    const visited = new Set<string>()
-    
-    const findChildren = (currentFolderId: string) => {
-      if (visited.has(currentFolderId)) return
-      visited.add(currentFolderId)
-      
-      const children = allFolders.filter(f => f.parentFolderId === currentFolderId)
-      children.forEach(child => {
-        childFolderIds.push(child.id)
-        findChildren(child.id)
-      })
-    }
-    
-    findChildren(parentFolderId)
-    return childFolderIds
-  }, [])
-
-  const fetchBookmarks = useCallback(async () => {
-    // 生成请求参数的关键字用于去重
-    const requestKey = `${spaceId || ''}-${folderId || ''}-${searchQuery || ''}`
-    
-    // 如果请求参数没有变化，跳过请求
-    if (lastRequestRef.current === requestKey && bookmarks.length > 0) {
+    if (!isLoadMore && lastRequestRef.current === requestKey && !isLoadMore) {
       return
     }
 
-    setLoading(true)
-    try {
-      // 首先获取所有文件夹数据
-      const params = new URLSearchParams()
-      if (spaceId) params.append('spaceId', spaceId)
+    if (isLoadMore) {
+      setIsLoadingMore(true)
+    } else {
+      setLoading(true)
+    }
 
-      // 根据认证状态决定是否使用Authorization头
+    try {
       const headers: Record<string, string> = {}
       if (token) {
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const foldersResponse = await fetch(`/api/folders?${params.toString()}`, { headers })
-      const foldersData = await foldersResponse.json()
-      const allFolders = foldersData.folders || []
-      setFolders(allFolders)
-      
-      // 如果选中了文件夹，获取该文件夹及其所有子文件夹的书签
-      const bookmarksParams = new URLSearchParams()
-      if (spaceId) bookmarksParams.append('spaceId', spaceId)
-      if (searchQuery) bookmarksParams.append('search', searchQuery)
-      
-      if (folderId) {
-        // 获取选中文件夹的直接书签
-        bookmarksParams.append('folderId', folderId)
-        const directBookmarksResponse = await fetch(`/api/bookmarks?${bookmarksParams.toString()}`, { headers })
-        const directBookmarksData = await directBookmarksResponse.json()
-        let allBookmarks = directBookmarksData.bookmarks || []
-        
-        // 递归获取所有子文件夹的书签
-        const childFolderIds = getAllChildFolderIds(folderId, allFolders)
-        
-        if (childFolderIds.length > 0) {
-          // 并行获取所有子文件夹的书签
-          const childBookmarksPromises = childFolderIds.map(childFolderId => {
-            const childParams = new URLSearchParams()
-            if (spaceId) childParams.append('spaceId', spaceId)
-            if (searchQuery) childParams.append('search', searchQuery)
-            childParams.append('folderId', childFolderId)
-            
-            return fetch(`/api/bookmarks?${childParams.toString()}`, { headers })
-              .then(response => response.json())
-              .then(data => data.bookmarks || [])
-              .catch(error => {
-                console.warn(`获取文件夹 ${childFolderId} 的书签失败:`, error)
-                return []
-              })
-          })
-          
-          const childBookmarksResults = await Promise.all(childBookmarksPromises)
-          const childBookmarks = childBookmarksResults.flat()
-          
-          // 合并所有书签
-          allBookmarks = [...allBookmarks, ...childBookmarks]
-        }
-        
-        setBookmarks(allBookmarks)
-      } else {
-        // 没有选中特定文件夹，获取所有书签
-        const allBookmarksParams = new URLSearchParams()
-        if (spaceId) allBookmarksParams.append('spaceId', spaceId)
-        if (searchQuery) allBookmarksParams.append('search', searchQuery)
-        
-        const allBookmarksResponse = await fetch(`/api/bookmarks?${allBookmarksParams.toString()}`, { headers })
-        const allBookmarksData = await allBookmarksResponse.json()
-        setBookmarks(allBookmarksData.bookmarks || [])
+      if (!isLoadMore) {
+        const foldersParams = new URLSearchParams()
+        if (spaceId) foldersParams.append('spaceId', spaceId)
+        const foldersResponse = await fetch(`/api/folders?${foldersParams.toString()}`, { headers })
+        const foldersData = await foldersResponse.json()
+        setFolders(foldersData.folders || [])
       }
+
+      const params = new URLSearchParams()
+      if (spaceId) params.append('spaceId', spaceId)
+      if (folderId) params.append('folderId', folderId)
+      if (searchQuery) params.append('search', searchQuery)
+      params.append('page', String(page))
+      params.append('limit', String(PAGE_SIZE))
+
+      const response = await fetch(`/api/bookmarks?${params.toString()}`, { headers })
+      const data = await response.json()
       
-      lastRequestRef.current = requestKey 
+      const newBookmarks = data.bookmarks || []
+      const pagination = data.pagination || {}
+
+      if (isLoadMore) {
+        setBookmarks(prev => [...prev, ...newBookmarks])
+      } else {
+        setBookmarks(newBookmarks)
+      }
+
+      setCurrentPage(pagination.page || 1)
+      setTotalPages(pagination.totalPages || 1)
+      setTotalCount(pagination.total || 0)
+      lastRequestRef.current = requestKey
     } catch (error) {
       console.error(t('fetchBookmarksFailed'), error)
     } finally {
       setLoading(false)
+      setIsLoadingMore(false)
     }
-  }, [spaceId, folderId, searchQuery, token, bookmarks.length, t, getAllChildFolderIds]) // 添加t函数依赖
+  }, [spaceId, folderId, searchQuery, token, t])
 
   useEffect(() => {
-    fetchBookmarks()
+    lastRequestRef.current = ''
+    setCurrentPage(1)
+    fetchBookmarks(1)
   }, [fetchBookmarks])
 
-  // 检测屏幕尺寸变化
+  useEffect(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && currentPage < totalPages && !isLoadingMore) {
+        fetchBookmarks(currentPage + 1, true)
+      }
+    }, { threshold: 0.1 })
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current)
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [currentPage, totalPages, isLoadingMore, fetchBookmarks])
+
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 768)
     }
-
-    // 初始检查
     checkScreenSize()
-
-    // 监听窗口大小变化
     window.addEventListener('resize', checkScreenSize)
-    
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
-  // 计算智能定位
-  const calculateTooltipPosition = (mouseX: number, mouseY: number) => {
-    const tooltipWidth = 320 // 提示框宽度 (w-80 = 320px)
-    const tooltipHeight = 200 // 提示框估计高度
-    const margin = 8 // 边缘安全距离
-    const gap = 8 // 与光标之间的距离
+  const calculateTooltipPosition = useCallback((mouseX: number, mouseY: number) => {
+    const tooltipWidth = 320
+    const tooltipHeight = 200
+    const margin = 8
+    const gap = 8
     
-    // 默认显示在下方
     let left = mouseX
     let top = mouseY + gap
     
-    // 垂直边界检查：如果下方空间不够，则显示在上方
     if (top + tooltipHeight > window.innerHeight - margin) {
       top = mouseY - tooltipHeight - gap
     }
     
-    // 水平边界检查
     if (left + tooltipWidth > window.innerWidth - margin) {
       left = mouseX - tooltipWidth
     }
     
-    // 确保不超出左边缘
     if (left < margin) {
       left = margin
     }
     
-    // 确保不超出上边缘
     if (top < margin && top < mouseY) {
       top = mouseY + gap  
     }
     
     return { left, top }
-  }
+  }, [])
 
-  // 处理鼠标悬浮开始 
   const handleMouseEnter = useCallback((e: React.MouseEvent, bookmarkId: string) => {
-    // 移动端禁用详细信息描述框
     if (isMobile) return
     
-    // 清理之前的定时器
     if (hoverTimeout) {
       clearTimeout(hoverTimeout)
     }
     
-    // 获取真实鼠标光标位置
     const mouseX = e.clientX
     const mouseY = e.clientY
     
     setMousePosition({ x: mouseX, y: mouseY })
     
-    // 优化：使用useCallback和setTimeout的引用保持稳定，避免频繁创建新的定时器
     const timeout = setTimeout(() => {
       setHoveredBookmarkId(bookmarkId)
     }, 300) 
     setHoverTimeout(timeout)
   }, [isMobile, hoverTimeout])
 
-  // 处理鼠标移动 - 实时更新光标位置
-  const handleMouseMove = (e: React.MouseEvent) => {
-    // 移动端禁用详细信息描述框
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isMobile) return
-    
-    // 实时更新鼠标光标位置
-    const mouseX = e.clientX
-    const mouseY = e.clientY
-    
-    setMousePosition({ x: mouseX, y: mouseY })
-  }
+    setMousePosition({ x: e.clientX, y: e.clientY })
+  }, [isMobile])
 
-  // 处理鼠标离开
-  const handleMouseLeave = () => {
-    // 移动端禁用详细信息描述框
+  const handleMouseLeave = useCallback(() => {
     if (isMobile) return
     
     if (hoverTimeout) {
@@ -348,11 +285,24 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     }
     setHoveredBookmarkId(null)
     setMousePosition(null)
-  }
+  }, [isMobile, hoverTimeout])
 
+  const { groups, folderPaths } = useMemo(() => groupBookmarksByFolder(), [groupBookmarksByFolder])
+  
+  const sortedGroups = useMemo(() => {
+    return Object.keys(groups)
+      .filter(groupKey => groups[groupKey].length > 0)
+      .sort((a, b) => {
+        if (a === t('noFolder')) return 1 
+        if (b === t('noFolder')) return -1
+        const depthA = folderPaths[a].length
+        const depthB = folderPaths[b].length
+        if (depthA !== depthB) return depthA - depthB
+        return a.localeCompare(b)
+      })
+  }, [groups, folderPaths, t])
 
-
-  if (loading) {
+  if (loading && bookmarks.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <LoadingSpinner size="lg" message={t('loading')} />
@@ -360,25 +310,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
     )
   }
 
-  // 按文件夹路径分组书签
-  const { groups, folderPaths } = groupBookmarksByFolder()
-  
-  // 获取所有非空分组，按文件夹层级排序
-  const sortedGroups = Object.keys(groups).filter(groupKey => groups[groupKey].length > 0).sort((a, b) => {
-    if (a === t('noFolder')) return 1 
-    if (b === t('noFolder')) return -1
-    
-    const depthA = folderPaths[a].length
-    const depthB = folderPaths[b].length
-    
-    // 浅层文件夹优先，然后按路径字典序排序
-    if (depthA !== depthB) {
-      return depthA - depthB
-    }
-    return a.localeCompare(b)
-  })
-
-  if (sortedGroups.length === 0) {
+  if (bookmarks.length === 0 && !loading) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-gray-500">
@@ -411,7 +343,6 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
 
         return (
           <div key={groupKey} className="space-y-4">
-            {/* 分组标题 */}
             <div className="flex items-center gap-3 px-2">
               <div className="flex items-center gap-2">
                 {groupKey === t('noFolder') ? (
@@ -437,7 +368,6 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
               </div>
             </div>
             
-            {/* 该分组下的书签网格 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {groupBookmarks.map((bookmark) => (
                 <div
@@ -454,7 +384,6 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
                     className="card p-4 block hover:scale-105 transition-transform duration-200"
                   >
                     <div className="flex items-start gap-3">
-                      {/* 图标 */}
                       <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                         {(() => {
                           if (!bookmark.iconUrl) return null
@@ -485,7 +414,6 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
                         </svg>
                       </div>
 
-                      {/* 内容 */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate mb-1">
                           {bookmark.title}
@@ -495,7 +423,6 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
                             {bookmark.description}
                           </p>
                         )}
-                        {/* 显示链接域名 */}
                         <div className="text-xs text-blue-600 dark:text-blue-400 truncate flex items-center">
                           <i className="fas fa-link mr-1"></i>
                           {new URL(bookmark.url).hostname}
@@ -504,7 +431,6 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
                     </div>
                   </a>
 
-                  {/* 自定义悬浮提示框 - 跟随鼠标位置定位 */}
                   {hoveredBookmarkId === bookmark.id && mousePosition && (
                     <div 
                       className="fixed z-[9999] w-80 bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-4 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600"
@@ -534,6 +460,22 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery }: Bookmar
           </div>
         )
       })}
+
+      <div ref={loadMoreRef} className="text-center py-4">
+        {isLoadingMore && (
+          <LoadingSpinner size="md" message={t('loadingMore')} />
+        )}
+        {!isLoadingMore && currentPage < totalPages && (
+          <p className="text-gray-500 text-sm">
+            {t('scrollToLoadMore')}
+          </p>
+        )}
+        {!isLoadingMore && currentPage >= totalPages && totalCount > 0 && (
+          <p className="text-gray-400 text-sm">
+            {t('showingAllBookmarks', { count: totalCount })}
+          </p>
+        )}
+      </div>
     </div>
   )
 }

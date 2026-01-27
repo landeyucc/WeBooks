@@ -5,10 +5,34 @@ import { getPublicUserId, getAuthenticatedUserId } from '@/lib/auth-helper'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// 获取书签
+const DEFAULT_PAGE_SIZE = 24
+const MAX_PAGE_SIZE = 100
+
+async function getAllChildFolderIds(parentFolderId: string, userId: string): Promise<string[]> {
+  const childFolderIds: string[] = []
+  const visited = new Set<string>()
+  
+  const findChildren = async (currentFolderId: string) => {
+    if (visited.has(currentFolderId)) return
+    visited.add(currentFolderId)
+    
+    const children = await prisma.folder.findMany({
+      where: { parentFolderId: currentFolderId, userId },
+      select: { id: true }
+    })
+    
+    for (const child of children) {
+      childFolderIds.push(child.id)
+      await findChildren(child.id)
+    }
+  }
+  
+  await findChildren(parentFolderId)
+  return childFolderIds
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // 公共访问或登录用户访问
     const targetUserId = await getPublicUserId(request)
     console.log('GET bookmarks - User ID:', targetUserId)
 
@@ -16,6 +40,16 @@ export async function GET(request: NextRequest) {
     const spaceId = searchParams.get('spaceId')
     const folderId = searchParams.get('folderId')
     const search = searchParams.get('search')
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = Math.min(parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE), 10), MAX_PAGE_SIZE)
+
+    let folderIds: string[] | null = null
+    
+    if (folderId) {
+      folderIds = [folderId]
+      const childIds = await getAllChildFolderIds(folderId, targetUserId)
+      folderIds = [...folderIds, ...childIds]
+    }
 
     const where: Record<string, unknown> = { userId: targetUserId }
     
@@ -23,8 +57,8 @@ export async function GET(request: NextRequest) {
       where.spaceId = spaceId
     }
     
-    if (folderId) {
-      where.folderId = folderId
+    if (folderIds && folderIds.length > 0) {
+      where.folderId = { in: folderIds }
     }
 
     if (search) {
@@ -35,26 +69,40 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const bookmarks = await prisma.bookmark.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        folder: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        space: {
-          select: {
-            id: true,
-            name: true
+    const [bookmarks, total] = await Promise.all([
+      prisma.bookmark.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          folder: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          space: {
+            select: {
+              id: true,
+              name: true
+            }
           }
         }
+      }),
+      prisma.bookmark.count({ where })
+    ])
+
+    return NextResponse.json({
+      bookmarks,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: page * limit < total
       }
     })
-
-    return NextResponse.json({ bookmarks })
   } catch (error) {
     console.error('获取书签错误:', error)
     return NextResponse.json(

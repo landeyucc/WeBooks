@@ -44,3 +44,4 @@ chrome-extension/webooks_v1.0.1.zip
 /.vscode
 /.env
 *.zip
+*.crx

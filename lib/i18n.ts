@@ -369,6 +369,9 @@ export const translations = {
     newApiKeyGenerateSuccess: '新API Key生成成功！',
     generateApiKeyFailed: '生成API Key失败',
     exportFailed: '导出失败',
+    loadingMore: '加载更多...',
+    scrollToLoadMore: '滚动加载更多',
+    showingAllBookmarks: '已显示全部 {count} 个书签',
   },
 
 
@@ -741,6 +744,9 @@ export const translations = {
     newApiKeyGenerateSuccess: 'New API Key generated successfully!',
     generateApiKeyFailed: 'Failed to generate API Key',
     exportFailed: 'Export failed',
+    loadingMore: 'Loading more...',
+    scrollToLoadMore: 'Scroll to load more',
+    showingAllBookmarks: 'Showing all {count} bookmarks',
   }
 }
 
