@@ -39,13 +39,17 @@ interface SidebarProps {
   selectedFolderId: string | null
   onSelectSpace: (spaceId: string | null) => void
   onSelectFolder: (folderId: string | null) => void
+  sortOrder: 'asc' | 'desc'
+  onSortOrderChange: (order: 'asc' | 'desc') => void
 }
 
 export default function Sidebar({
   selectedSpaceId,
   selectedFolderId,
   onSelectSpace,
-  onSelectFolder
+  onSelectFolder,
+  sortOrder,
+  onSortOrderChange
 }: SidebarProps) {
   const { t, theme, toggleTheme, language, setLanguage, isAuthenticated, token, collapsedFolders, toggleFolderCollapse, setCollapsedFolders } = useApp()
   const [spaces, setSpaces] = useState<Space[]>([])
@@ -241,7 +245,7 @@ export default function Sidebar({
 
   // 构建文件夹树
   const buildFolderTree = (folders: Folder[]) => {
-    const tree: Folder[] = []
+    const tree: (Folder & { children: Folder[] })[] = []
     const map = new Map<string, Folder & { children: Folder[] }>()
 
     folders.forEach(folder => {
@@ -262,7 +266,29 @@ export default function Sidebar({
       }
     })
 
+    const sortFolders = (items: (Folder & { children?: Folder[] })[]) => {
+      items.sort((a, b) => {
+        const isChineseA = /[\u4e00-\u9fa5]/.test(a.name)
+        const isChineseB = /[\u4e00-\u9fa5]/.test(b.name)
+        
+        if (isChineseA && !isChineseB) return 1
+        if (!isChineseA && isChineseB) return -1
+        
+        if (sortOrder === 'asc') {
+          return a.name.localeCompare(b.name, 'en')
+        } else {
+          return b.name.localeCompare(a.name, 'en')
+        }
+      })
+      
+      items.forEach(item => {
+        if (item.children && item.children.length > 0) {
+          sortFolders(item.children)
+        }
+      })
+    }
 
+    sortFolders(tree)
 
     return tree
   }
@@ -419,6 +445,17 @@ export default function Sidebar({
           placeholder={t('selectSpace') || '选择空间'}
           className="w-full"
         />
+      </div>
+
+      {/* 排序按钮 */}
+      <div className="px-6 pb-4 flex-shrink-0">
+        <button
+          onClick={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}
+          className="neu-button w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          <span>{t('sortOrder')}</span>
+          <i className={`fas fa-sort-alpha-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
+        </button>
       </div>
 
       {/* 文件夹列表 */}

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // 更新书签
 export async function PUT(
   request: NextRequest,

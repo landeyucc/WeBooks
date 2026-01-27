@@ -169,7 +169,7 @@ export default function BookmarkManager() {
     setLoading(true)
     try {
       const [bookmarksRes, spacesRes] = await Promise.all([
-        fetch('/api/bookmarks', {
+        fetch('/api/bookmarks?all=true', {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch('/api/spaces', {

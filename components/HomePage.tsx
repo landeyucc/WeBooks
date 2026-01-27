@@ -16,6 +16,7 @@ export default function HomePage() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMode, setSearchMode] = useState<'bookmarks' | 'engine'>('bookmarks')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   // 控制侧边栏显示状态 - 移动端默认关闭，桌面端默认开启
   const [isSidebarOpen, setIsSidebarOpen] = useState(true) 
 
@@ -171,6 +172,8 @@ export default function HomePage() {
           selectedFolderId={selectedFolderId}
           onSelectSpace={setSelectedSpaceId}
           onSelectFolder={setSelectedFolderId}
+          sortOrder={sortOrder}
+          onSortOrderChange={setSortOrder}
         />
       </div>
 
@@ -217,6 +220,8 @@ export default function HomePage() {
             spaceId={selectedSpaceId}
             folderId={selectedFolderId}
             searchQuery={searchMode === 'bookmarks' ? searchQuery : ''}
+            sortOrder={sortOrder}
+            onSortOrderChange={setSortOrder}
           />
         </main>
       </div>

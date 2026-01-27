@@ -70,6 +70,9 @@ export const translations = {
     bookmarkUrl: '网址',
     bookmarkDesc: '描述',
     iconUrl: '图标链接',
+    sortBy: '排序',
+    sortOrder: '顺序',
+    createdAt: '创建时间',
     visitWebsite: '访问网站',
     
     // 搜索引擎
@@ -370,8 +373,9 @@ export const translations = {
     generateApiKeyFailed: '生成API Key失败',
     exportFailed: '导出失败',
     loadingMore: '加载更多...',
+    loadMore: '加载更多',
     scrollToLoadMore: '滚动加载更多',
-    showingAllBookmarks: '已显示全部 {count} 个书签',
+    showingAllBookmarks: '已显示加载的 {count} 个书签',
   },
 
 
@@ -447,6 +451,9 @@ export const translations = {
     bookmarkUrl: 'URL',
     bookmarkDesc: 'Description',
     iconUrl: 'Icon URL',
+    sortBy: 'Sort by',
+    sortOrder: 'Order',
+    createdAt: 'Created at',
 
     visitWebsite: 'Visit Website',
     
@@ -745,8 +752,9 @@ export const translations = {
     generateApiKeyFailed: 'Failed to generate API Key',
     exportFailed: 'Export failed',
     loadingMore: 'Loading more...',
+    loadMore: 'Load more',
     scrollToLoadMore: 'Scroll to load more',
-    showingAllBookmarks: 'Showing all {count} bookmarks',
+    showingAllBookmarks: 'Showing loaded {count} bookmarks',
   }
 }
 
