@@ -185,157 +185,174 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
     })
   }, [folderGroups, fetchFolderBookmarks])
 
+  const isInitializing = useRef(false)
+  const initializationPromise = useRef<Promise<void> | null>(null)
+
   useEffect(() => {
     const initData = async () => {
+      if (isInitializing.current && initializationPromise.current) {
+        return initializationPromise.current
+      }
+
+      isInitializing.current = true
       setLoading(true)
-      try {
-        const headers: Record<string, string> = {}
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`
-        }
 
-        const foldersParams = new URLSearchParams()
-        if (spaceId) foldersParams.append('spaceId', spaceId)
-        if (folderId) foldersParams.append('parentFolderId', folderId)
-        
-        const foldersResponse = await fetch(`/api/folders?${foldersParams.toString()}`, { headers })
-        const foldersData = await foldersResponse.json()
-        const foldersList: Folder[] = foldersData.folders || []
-
-        const allChildIds = new Set<string>()
-        
-        const collectAllChildIds = (parentId: string) => {
-          const children = foldersList.filter(f => f.parentFolderId === parentId)
-          for (const child of children) {
-            allChildIds.add(child.id)
-            collectAllChildIds(child.id)
+      const initPromise = (async () => {
+        try {
+          const headers: Record<string, string> = {}
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`
           }
-        }
-        
-        if (folderId) {
-          allChildIds.add(folderId)
-          collectAllChildIds(folderId)
-        }
 
-        const topLevelFolders = folderId 
-          ? foldersList.filter(f => f.parentFolderId === folderId)
-          : foldersList.filter(f => !f.parentFolderId)
-
-        const groups: FolderGroup[] = []
-
-        if (folderId && topLevelFolders.length === 0) {
-          const clickedFolder = foldersList.find(f => f.id === folderId)
-          if (clickedFolder) {
-            groups.push({
-              pathKey: clickedFolder.name,
-              path: [clickedFolder.name],
-              folderIds: [folderId],
-              bookmarks: [],
-              isLoading: false,
-              hasMore: true,
-              page: 0
-            })
-          }
-        }
-
-        for (const folder of topLevelFolders) {
-          const currentPath = [folder.name]
-          const folderIds = [folder.id]
+          const foldersParams = new URLSearchParams()
+          if (spaceId) foldersParams.append('spaceId', spaceId)
+          if (folderId) foldersParams.append('parentFolderId', folderId)
           
-          const collectChildren = (parentId: string) => {
+          const foldersResponse = await fetch(`/api/folders?${foldersParams.toString()}`, { headers })
+          if (!foldersResponse.ok) throw new Error('Failed to fetch folders')
+          const foldersData = await foldersResponse.json()
+          const foldersList: Folder[] = foldersData.folders || []
+
+          const allChildIds = new Set<string>()
+          
+          const collectAllChildIds = (parentId: string) => {
             const children = foldersList.filter(f => f.parentFolderId === parentId)
             for (const child of children) {
-              folderIds.push(child.id)
-              collectChildren(child.id)
+              allChildIds.add(child.id)
+              collectAllChildIds(child.id)
             }
           }
-          collectChildren(folder.id)
+          
+          if (folderId) {
+            allChildIds.add(folderId)
+            collectAllChildIds(folderId)
+          }
 
-          const buildSubGroups = (parentId: string, basePath: string[]) => {
-            const children = foldersList.filter(f => f.parentFolderId === parentId)
-            for (const child of children) {
-              const childPath = [...basePath, child.name]
-              const childFolderIds = [child.id]
-              
-              const collectChildChildren = (id: string) => {
-                const subs = foldersList.filter(f => f.parentFolderId === id)
-                for (const sub of subs) {
-                  childFolderIds.push(sub.id)
-                  collectChildChildren(sub.id)
-                }
-              }
-              collectChildChildren(child.id)
+          const topLevelFolders = folderId 
+            ? foldersList.filter(f => f.parentFolderId === folderId)
+            : foldersList.filter(f => !f.parentFolderId)
 
+          const groups: FolderGroup[] = []
+
+          if (folderId && topLevelFolders.length === 0) {
+            const clickedFolder = foldersList.find(f => f.id === folderId)
+            if (clickedFolder) {
               groups.push({
-                pathKey: childPath.join('/'),
-                path: childPath,
-                folderIds: childFolderIds,
+                pathKey: clickedFolder.name,
+                path: [clickedFolder.name],
+                folderIds: [folderId],
                 bookmarks: [],
                 isLoading: false,
                 hasMore: true,
                 page: 0
               })
-
-              buildSubGroups(child.id, childPath)
             }
           }
 
-          groups.push({
-            pathKey: currentPath.join('/'),
-            path: currentPath,
-            folderIds,
+          for (const folder of topLevelFolders) {
+            const currentPath = [folder.name]
+            const folderIds = [folder.id]
+            
+            const collectChildren = (parentId: string) => {
+              const children = foldersList.filter(f => f.parentFolderId === parentId)
+              for (const child of children) {
+                folderIds.push(child.id)
+                collectChildren(child.id)
+              }
+            }
+            collectChildren(folder.id)
+
+            const buildSubGroups = (parentId: string, basePath: string[]) => {
+              const children = foldersList.filter(f => f.parentFolderId === parentId)
+              for (const child of children) {
+                const childPath = [...basePath, child.name]
+                const childFolderIds = [child.id]
+                
+                const collectChildChildren = (id: string) => {
+                  const subs = foldersList.filter(f => f.parentFolderId === id)
+                  for (const sub of subs) {
+                    childFolderIds.push(sub.id)
+                    collectChildChildren(sub.id)
+                  }
+                }
+                collectChildChildren(child.id)
+
+                groups.push({
+                  pathKey: childPath.join('/'),
+                  path: childPath,
+                  folderIds: childFolderIds,
+                  bookmarks: [],
+                  isLoading: false,
+                  hasMore: true,
+                  page: 0
+                })
+
+                buildSubGroups(child.id, childPath)
+              }
+            }
+
+            groups.push({
+              pathKey: currentPath.join('/'),
+              path: currentPath,
+              folderIds,
+              bookmarks: [],
+              isLoading: false,
+              hasMore: true,
+              page: 0
+            })
+
+            buildSubGroups(folder.id, currentPath)
+          }
+
+          const uncategorizedGroup: FolderGroup = {
+            pathKey: t('noFolder'),
+            path: [],
+            folderIds: [],
             bookmarks: [],
             isLoading: false,
             hasMore: true,
             page: 0
+          }
+
+          if (!folderId && allChildIds.size > 0) {
+            groups.push(uncategorizedGroup)
+          }
+
+          const sortedGroups = groups.sort((a, b) => {
+            if (a.pathKey === t('noFolder')) return 1
+            if (b.pathKey === t('noFolder')) return -1
+            const depthA = a.path.length
+            const depthB = b.path.length
+            if (depthA !== depthB) return depthA - depthB
+            
+            const aKey = a.pathKey
+            const bKey = b.pathKey
+            
+            const isChineseA = /[\u4e00-\u9fa5]/.test(aKey)
+            const isChineseB = /[\u4e00-\u9fa5]/.test(bKey)
+            
+            if (isChineseA && !isChineseB) return 1
+            if (!isChineseA && isChineseB) return -1
+            
+            if (sortOrder === 'asc') {
+              return aKey.localeCompare(bKey, 'en')
+            } else {
+              return bKey.localeCompare(aKey, 'en')
+            }
           })
 
-          buildSubGroups(folder.id, currentPath)
+          setFolderGroups(sortedGroups)
+        } catch (error) {
+          console.error(t('fetchBookmarksFailed'), error)
+          setFolderGroups([])
+        } finally {
+          setLoading(false)
+          isInitializing.current = false
         }
+      })()
 
-        const uncategorizedGroup: FolderGroup = {
-          pathKey: t('noFolder'),
-          path: [],
-          folderIds: [],
-          bookmarks: [],
-          isLoading: false,
-          hasMore: true,
-          page: 0
-        }
-
-        if (!folderId && allChildIds.size > 0) {
-          groups.push(uncategorizedGroup)
-        }
-
-        const sortedGroups = groups.sort((a, b) => {
-          if (a.pathKey === t('noFolder')) return 1
-          if (b.pathKey === t('noFolder')) return -1
-          const depthA = a.path.length
-          const depthB = b.path.length
-          if (depthA !== depthB) return depthA - depthB
-          
-          const aKey = a.pathKey
-          const bKey = b.pathKey
-          
-          const isChineseA = /[\u4e00-\u9fa5]/.test(aKey)
-          const isChineseB = /[\u4e00-\u9fa5]/.test(bKey)
-          
-          if (isChineseA && !isChineseB) return 1
-          if (!isChineseA && isChineseB) return -1
-          
-          if (sortOrder === 'asc') {
-            return aKey.localeCompare(bKey, 'en')
-          } else {
-            return bKey.localeCompare(aKey, 'en')
-          }
-        })
-
-        setFolderGroups(sortedGroups)
-      } catch (error) {
-        console.error(t('fetchBookmarksFailed'), error)
-      } finally {
-        setLoading(false)
-      }
+      initializationPromise.current = initPromise
+      return initPromise
     }
 
     initData()
