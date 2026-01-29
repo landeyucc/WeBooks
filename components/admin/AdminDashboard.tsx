@@ -1726,9 +1726,10 @@ export default function AdminDashboard() {
             </div>
             
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <p className="text-xs text-blue-800 dark:text-blue-200">
-                {t('passwordRequirementsText')}
-              </p>
+              <p 
+                className="text-xs text-blue-800 dark:text-blue-200"
+                dangerouslySetInnerHTML={{ __html: t('passwordRequirementsText') }}
+              />
             </div>
           </div>
         </div>
