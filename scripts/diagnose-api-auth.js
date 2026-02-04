@@ -12,7 +12,7 @@ const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key'
 const DEFAULT_USER_ID = process.env.DEFAULT_USER_ID || 'e123bdfa-c287-4068-9ea2-d1ebef8a11ed'
 
-async function diagnose() {
+async function runDiagnosis() {
   console.log('='.repeat(60))
   console.log('API认证诊断工具')
   console.log('='.repeat(60))
@@ -110,6 +110,6 @@ async function diagnose() {
   console.log('4. 检查浏览器控制台中的网络请求')
 }
 
-diagnase()
+runDiagnosis()
   .catch(console.error)
   .finally(() => prisma.$disconnect())
