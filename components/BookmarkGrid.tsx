@@ -2,9 +2,50 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useApp } from '@/contexts/AppContext'
-import RobustImage from './RobustImage'
 import LoadingSpinner from './LoadingSpinner'
-import { loadCache, saveCache } from '@/lib/cache-manager'
+import BookmarkCard from './BookmarkCard'
+
+// 缓存过期时间（毫秒）
+const BOOKMARK_CACHE_EXPIRY = 12 * 60 * 60 * 1000 // 12小时
+
+// 直接使用 localStorage 处理动态缓存键
+const loadBookmarkCache = (cacheKey: string): { data: unknown; timestamp: number } | null => {
+  try {
+    const cacheStr = localStorage.getItem(cacheKey)
+    if (!cacheStr) return null
+
+    const cacheItem = JSON.parse(cacheStr)
+    
+    // 检查缓存是否过期
+    if (Date.now() - cacheItem.timestamp > BOOKMARK_CACHE_EXPIRY) {
+      console.log('书签缓存已过期，清除:', cacheKey)
+      localStorage.removeItem(cacheKey)
+      return null
+    }
+
+    console.log('从缓存加载书签数据:', cacheKey)
+    return { data: cacheItem.data, timestamp: cacheItem.timestamp }
+  } catch (error) {
+    console.error('加载书签缓存失败:', error)
+    localStorage.removeItem(cacheKey)
+    return null
+  }
+}
+
+// 保存缓存数据
+const saveBookmarkCache = (cacheKey: string, data: unknown, version: string): void => {
+  try {
+    const cacheItem = {
+      data,
+      version,
+      timestamp: Date.now()
+    }
+    localStorage.setItem(cacheKey, JSON.stringify(cacheItem))
+    console.log('保存书签缓存:', cacheKey)
+  } catch (error) {
+    console.error('保存书签缓存失败:', error)
+  }
+}
 
 interface Bookmark {
   id: string
@@ -52,28 +93,12 @@ interface FolderGroup {
 
 const PAGE_SIZE = 24
 
-const isValidImageUrl = (url: string): boolean => {
-  try {
-    const cleanUrl = url.trim().replace(/^[\s(]+|[\s)]+$/g, '')
-    if (cleanUrl.startsWith('data:')) {
-      const dataUriMatch = cleanUrl.match(/^data:image\/(jpg|jpeg|png|gif|webp|svg|ico);base64,/i)
-      return !!dataUriMatch
-    }
-    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-      return false
-    }
-    new URL(cleanUrl)
-    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|ico)(\?.*)?$/i
-    return imageExtensions.test(cleanUrl)
-  } catch {
-    return false
-  }
-}
-
-export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrderChange }: BookmarkGridProps) {
+export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sortOrder, onSortOrderChange }: BookmarkGridProps) {
   const { t, token } = useApp()
   const [folderGroups, setFolderGroups] = useState<FolderGroup[]>([])
   const [loading, setLoading] = useState(true)
+  const [dataReady, setDataReady] = useState(false)
+  const [filteredBookmarks, setFilteredBookmarks] = useState<Bookmark[]>([])
   const [mousePosition, setMousePosition] = useState<{x: number, y: number} | null>(null)
   const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
@@ -102,10 +127,10 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
 
     // 检查缓存
     const cacheKey = `bookmarks_${group.pathKey}_${page}`
-    // 暂时使用any类型，实际应该为Bookmark[]类型
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cachedBookmarks = loadCache<Bookmark[]>(cacheKey as any)
-    if (cachedBookmarks) {
+    const cachedResult = loadBookmarkCache(cacheKey)
+    
+    if (cachedResult) {
+      const cachedBookmarks = cachedResult.data as Bookmark[]
       console.log('从缓存加载书签数据:', cachedBookmarks.length)
       setFolderGroups(prev => prev.map(g => {
         if (g.pathKey === group.pathKey) {
@@ -170,11 +195,9 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
       }))
 
       // 保存到缓存
-      const cacheKey = `bookmarks_${group.pathKey}_${page}`
+      const newCacheKey = `bookmarks_${group.pathKey}_${page}`
       console.log('保存书签数据到缓存:', newBookmarks.length)
-      // 这里使用当前时间戳作为版本，实际应该使用远程版本Key
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      saveCache(cacheKey as any, newBookmarks, Date.now().toString())
+      saveBookmarkCache(newCacheKey, newBookmarks, Date.now().toString())
     } catch (error) {
       console.error(t('fetchBookmarksFailed'), error)
       setFolderGroups(prev => prev.map(g => {
@@ -191,6 +214,7 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
   const loadVisibleGroups = useCallback(() => {
     if (typeof window === 'undefined') return
 
+    let loadCount = 0
     folderGroups.forEach((group) => {
       const element = groupRefs.current.get(group.pathKey)
       if (!element) return
@@ -210,17 +234,37 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
 
       if ((isVisible || isNearViewport) && !loadingRef.current.has(group.pathKey)) {
         if (group.page === 0 || (group.hasMore && group.bookmarks.length < (group.page * PAGE_SIZE))) {
+          loadCount++
           fetchFolderBookmarks(group, group.page + 1)
         }
       }
     })
+    
+    if (loadCount > 0) {
+      console.log('BookmarkGrid: loadVisibleGroups 加载了', loadCount, '个组')
+    }
   }, [folderGroups, fetchFolderBookmarks])
 
   const isInitializing = useRef(false)
   const initializationPromise = useRef<Promise<void> | null>(null)
+  const lastInitializedRef = useRef<{ spaceId: string | null; folderId: string | null; sortOrder: string } | null>(null)
 
   useEffect(() => {
     const initData = async () => {
+      // 检查是否真的是新的空间、文件夹或排序
+      const newKey = { spaceId, folderId, sortOrder }
+      const lastKey = lastInitializedRef.current
+      
+      // 如果空间ID、文件夹ID和排序都没变，跳过初始化
+      if (lastKey && lastKey.spaceId === spaceId && lastKey.folderId === folderId && lastKey.sortOrder === sortOrder) {
+        console.log('BookmarkGrid: 跳过初始化，数据未变化')
+        return
+      }
+      
+      // 记录新的初始化状态
+      lastInitializedRef.current = newKey
+      console.log('BookmarkGrid: 开始初始化', { spaceId, folderId })
+
       if (isInitializing.current && initializationPromise.current) {
         return initializationPromise.current
       }
@@ -373,9 +417,11 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
           })
 
           setFolderGroups(sortedGroups)
+          setDataReady(true)
         } catch (error) {
           console.error(t('fetchBookmarksFailed'), error)
           setFolderGroups([])
+          setDataReady(true)
         } finally {
           setLoading(false)
           isInitializing.current = false
@@ -445,6 +491,35 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
       if (scrollTimer) clearTimeout(scrollTimer)
     }
   }, [loadVisibleGroups])
+
+  useEffect(() => {
+    const filterBookmarks = () => {
+      if (!searchQuery.trim()) {
+        setFilteredBookmarks([])
+        return
+      }
+
+      const query = searchQuery.toLowerCase().trim()
+      const allBookmarks: Bookmark[] = []
+
+      folderGroups.forEach(group => {
+        group.bookmarks.forEach(bookmark => {
+          const matchTitle = bookmark.title.toLowerCase().includes(query)
+          const matchDescription = bookmark.description?.toLowerCase().includes(query)
+          const matchUrl = bookmark.url.toLowerCase().includes(query)
+          
+          if (matchTitle || matchDescription || matchUrl) {
+            allBookmarks.push(bookmark)
+          }
+        })
+      })
+
+      setFilteredBookmarks(allBookmarks)
+      console.log(`[BookmarkGrid] 搜索 "${searchQuery}" 找到 ${allBookmarks.length} 个书签`)
+    }
+
+    filterBookmarks()
+  }, [searchQuery, folderGroups])
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -575,7 +650,7 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
     return folderGroups.reduce((sum, g) => sum + g.bookmarks.length, 0)
   }, [folderGroups])
 
-  if (loading) {
+  if (loading || !dataReady) {
     return (
       <div className="flex items-center justify-center h-full">
         <LoadingSpinner size="lg" message={t('loading')} />
@@ -583,7 +658,10 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
     )
   }
 
-  if (folderGroups.length === 0 || folderGroups.every(g => g.bookmarks.length === 0 && g.pathKey !== t('noFolder'))) {
+  const hasAnyBookmarks = folderGroups.some(g => g.bookmarks.length > 0)
+  const hasUncategorized = folderGroups.some(g => g.pathKey === t('noFolder'))
+
+  if (!hasAnyBookmarks && (!hasUncategorized || folderGroups.every(g => g.bookmarks.length === 0))) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-gray-500">
@@ -610,7 +688,11 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          {t('showingAllBookmarks', { count: totalBookmarks })}
+          {searchQuery.trim() ? (
+            <span>{t('searchResultsFor', { query: searchQuery, count: filteredBookmarks.length })}</span>
+          ) : (
+            <span>{t('showingAllBookmarks', { count: totalBookmarks })}</span>
+          )}
         </div>
         <button
           onClick={toggleSort}
@@ -621,152 +703,121 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
         </button>
       </div>
       
-      {folderGroups.map((group) => {
-        const isUncategorized = group.pathKey === t('noFolder')
-        const shouldShow = !isUncategorized || group.pathKey === t('noFolder')
-
-        if (!shouldShow) return null
-
-        return (
-          <div 
-            key={group.pathKey} 
-            ref={(el) => {
-              if (el) groupRefs.current.set(group.pathKey, el)
-              else groupRefs.current.delete(group.pathKey)
-            }}
-            className="space-y-4"
-          >
-            <div className="flex items-center gap-3 px-2">
-              <div className="flex items-center gap-2">
-                {isUncategorized ? (
-                  <>
-                    <i className="fas fa-folder-open text-red-500 dark:text-red-400"></i>
-                    <h2 className="text-lg font-semibold">
-                      <span className="text-red-500 dark:text-red-400 font-bold">
-                        {t('uncategorizedBookmarks')}
-                      </span>
-                    </h2>
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-folder text-blue-500 dark:text-blue-400"></i>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {group.path.join(' / ')}
-                    </h2>
-                  </>
-                )}
-                <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
-                  {group.bookmarks.length}
-                </span>
+      {searchQuery.trim() ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredBookmarks.length > 0 ? (
+            filteredBookmarks.map((bookmark) => (
+              <BookmarkCard
+                key={bookmark.id}
+                bookmark={bookmark}
+                hoveredBookmarkId={hoveredBookmarkId}
+                mousePosition={mousePosition}
+                onMouseEnter={handleMouseEnter}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                calculateTooltipPosition={calculateTooltipPosition}
+                t={t}
+              />
+            ))
+          ) : (
+            <div className="col-span-full flex items-center justify-center h-64">
+              <div className="text-center text-gray-500">
+                <svg
+                  className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <p>{t('noSearchResults', { query: searchQuery })}</p>
               </div>
             </div>
-            
-            {group.bookmarks.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {group.bookmarks.map((bookmark) => (
-                  <div
-                    key={bookmark.id}
-                    className="relative"
-                    onMouseEnter={(e) => handleMouseEnter(e, bookmark.id)}
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={handleMouseLeave}
+          )}
+        </div>
+      ) : (
+        folderGroups.map((group) => {
+          const isUncategorized = group.pathKey === t('noFolder')
+          const shouldShow = !isUncategorized || group.pathKey === t('noFolder')
+
+          if (!shouldShow) return null
+
+          return (
+            <div 
+              key={group.pathKey} 
+              ref={(el) => {
+                if (el) groupRefs.current.set(group.pathKey, el)
+                else groupRefs.current.delete(group.pathKey)
+              }}
+              className="space-y-4"
+            >
+              <div className="flex items-center gap-3 px-2">
+                <div className="flex items-center gap-2">
+                  {isUncategorized ? (
+                    <>
+                      <i className="fas fa-folder-open text-red-500 dark:text-red-400"></i>
+                      <h2 className="text-lg font-semibold">
+                        <span className="text-red-500 dark:text-red-400 font-bold">
+                          {t('uncategorizedBookmarks')}
+                        </span>
+                      </h2>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-folder text-blue-500 dark:text-blue-400"></i>
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        {group.path.join(' / ')}
+                      </h2>
+                    </>
+                  )}
+                  <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
+                    {group.bookmarks.length}
+                  </span>
+                </div>
+              </div>
+              
+              {group.bookmarks.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {group.bookmarks.map((bookmark) => (
+                    <BookmarkCard
+                      key={bookmark.id}
+                      bookmark={bookmark}
+                      hoveredBookmarkId={hoveredBookmarkId}
+                      mousePosition={mousePosition}
+                      onMouseEnter={handleMouseEnter}
+                      onMouseMove={handleMouseMove}
+                      onMouseLeave={handleMouseLeave}
+                      calculateTooltipPosition={calculateTooltipPosition}
+                      t={t}
+                    />
+                  ))}
+                </div>
+              ) : group.isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner size="md" message={t('loading')} />
+                </div>
+              ) : null}
+
+              {group.hasMore && group.bookmarks.length > 0 && (
+                <div className="text-center py-2">
+                  <button
+                    onClick={() => loadMoreForGroup(group)}
+                    disabled={group.isLoading}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
                   >
-                    <a
-                      href={bookmark.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="card p-4 block hover:scale-105 transition-transform duration-200"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative">
-                          {bookmark.iconUrl && isValidImageUrl(bookmark.iconUrl.trim().replace(/^[\s(]+|[\s)]+$/g, '')) ? (
-                            <RobustImage
-                              src={bookmark.iconUrl.trim().replace(/^[\s(]+|[\s)]+$/g, '')}
-                              alt={bookmark.title}
-                              className="object-contain"
-                              onError={(e) => {
-                                e.currentTarget.classList.add('hidden')
-                              }}
-                            />
-                          ) : null}
-                          <svg
-                            className={`w-6 h-6 text-gray-400 absolute inset-0 m-auto ${bookmark.iconUrl && isValidImageUrl(bookmark.iconUrl.trim().replace(/^[\s(]+|[\s)]+$/g, '')) ? 'hidden' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                            />
-                          </svg>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate mb-1">
-                            {bookmark.title}
-                          </h3>
-                          {bookmark.description && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
-                              {bookmark.description}
-                            </p>
-                          )}
-                          <div className="text-xs text-blue-600 dark:text-blue-400 truncate flex items-center">
-                            <i className="fas fa-link mr-1"></i>
-                            {new URL(bookmark.url).hostname}
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-
-                    {hoveredBookmarkId === bookmark.id && mousePosition && (
-                      <div 
-                        className="fixed z-[9999] w-80 bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-4 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600"
-                        style={{
-                          left: calculateTooltipPosition(mousePosition.x, mousePosition.y).left,
-                          top: calculateTooltipPosition(mousePosition.x, mousePosition.y).top,
-                        }}
-                      >
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-sm text-gray-900 dark:text-white">{bookmark.title}</h4>
-                          {bookmark.description && (
-                            <p className="text-xs text-gray-600 dark:text-gray-300">{bookmark.description}</p>
-                          )}
-                          <div className="flex items-center gap-2 text-xs">
-                            <i className="fas fa-link text-blue-500 dark:text-blue-400"></i>
-                            <span className="text-blue-500 dark:text-blue-400 break-all">{bookmark.url}</span>
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {t('tooltipInfoDisplay')}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : group.isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner size="md" message={t('loading')} />
-              </div>
-            ) : null}
-
-            {group.hasMore && group.bookmarks.length > 0 && (
-              <div className="text-center py-2">
-                <button
-                  onClick={() => loadMoreForGroup(group)}
-                  disabled={group.isLoading}
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
-                >
-                  {group.isLoading ? t('loadingMore') : t('loadMore')}
-                </button>
-              </div>
-            )}
-          </div>
-        )
-      })}
+                    {group.isLoading ? t('loadingMore') : t('loadMore')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })
+      )}
     </div>
   )
 }

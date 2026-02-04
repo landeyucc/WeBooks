@@ -204,6 +204,8 @@ export const translations = {
     searchBookmarksPlaceholder: '搜索书签...',
     searchEnginePlaceholder: '搜索网络...',
     searchEngineMode: '搜索引擎',
+    searchResultsFor: '搜索 "{query}" 的结果 ({count} 个)',
+    noSearchResults: '未找到包含 "{query}" 的书签',
     
     // 语言切换
     switchToChinese: '中文',
@@ -376,6 +378,8 @@ export const translations = {
     loadMore: '加载更多',
     scrollToLoadMore: '滚动加载更多',
     showingAllBookmarks: '已显示加载的 {count} 个书签',
+    other: '其他',
+    order: '顺序',
   },
 
 
@@ -586,6 +590,8 @@ export const translations = {
     searchBookmarksPlaceholder: 'Search bookmarks...',
     searchEnginePlaceholder: 'Search web...',
     searchEngineMode: 'Search Engine',
+    searchResultsFor: 'Results for "{query}" ({count})',
+    noSearchResults: 'No bookmarks found for "{query}"',
     
     // Language switching
     switchToChinese: '中文',
@@ -755,6 +761,8 @@ export const translations = {
     loadMore: 'Load more',
     scrollToLoadMore: 'Scroll to load more',
     showingAllBookmarks: 'Showing loaded {count} bookmarks',
+    other: 'Other',
+    order: 'Order',
   }
 }
 

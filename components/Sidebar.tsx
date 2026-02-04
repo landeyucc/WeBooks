@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useApp } from '@/contexts/AppContext'
 import CustomSelect from './ui/CustomSelect'
 import PasswordModal from './PasswordModal'
+import FoldableSection from './ui/FoldableSection'
 import { ChevronDown, Folder, FolderOpen } from 'lucide-react'
 import { cacheManager, loadCache, saveCache } from '@/lib/cache-manager'
 
@@ -348,23 +349,31 @@ export default function Sidebar({
     const hasChildren = folder.children && folder.children.length > 0
     const isCollapsed = collapsedFolders.has(folder.id)
     const canCollapse = hasChildren
+    const isSelected = selectedFolderId === folder.id
 
     const handleFolderClick = (e: React.MouseEvent) => {
       const target = e.target as HTMLElement
       const isToggleButton = target.closest('.folder-toggle')
       
-      // 如果点击的是折叠按钮，执行折叠操作
+      // 如果点击的是折叠按钮，只执行折叠操作，不触发选择
       if (isToggleButton) {
         e.stopPropagation()
         toggleFolderCollapse(folder.id)
         return
       }
       
-      // 如果点击的是整个文件夹块，总是选择文件夹
+      // 如果点击的是文件夹块
       e.stopPropagation()
+      
+      // 如果当前文件夹已经是选中状态，不做任何操作（包括展开/收缩）
+      if (isSelected) {
+        return
+      }
+      
+      // 切换选择文件夹
       onSelectFolder(folder.id)
       
-      // 如果可以折叠且当前是折叠状态，同时展开文件夹
+      // 如果可以折叠且当前是折叠状态，自动展开
       if (canCollapse && isCollapsed) {
         toggleFolderCollapse(folder.id)
       }
@@ -374,7 +383,7 @@ export default function Sidebar({
       <div key={folder.id} className="folder-item">
         <div
           className={`folder-button neu-button w-full text-left py-2 mb-1 text-sm group ${
-            selectedFolderId === folder.id ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+            isSelected ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
           style={{ 
             paddingLeft: `${(level + 1) * 0.25 + 1}rem`,
@@ -386,10 +395,10 @@ export default function Sidebar({
           <div className="flex items-center justify-between">
             {/* 左侧内容 */}
             <div className="flex items-center flex-1 min-w-0 mr-2">
-              {/* 折叠/展开按钮 */}
+              {/* 折叠/展开按钮 - 独立处理，不触发选择 */}
               {canCollapse && (
-                <button
-                  className="folder-toggle w-4 h-4 mr-2 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 flex-shrink-0"
+                <div
+                  className="folder-toggle w-4 h-4 mr-2 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 flex-shrink-0 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     toggleFolderCollapse(folder.id)
@@ -398,7 +407,7 @@ export default function Sidebar({
                   <ChevronDown 
                     className={`w-3 h-3 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
                   />
-                </button>
+                </div>
               )}
               
               {/* 如果没有子文件夹，添加占位空间 */}
@@ -458,7 +467,7 @@ export default function Sidebar({
     <aside className="neu-base flex flex-col h-full transition-opacity duration-300 ease-in-out" style={{ width: 'calc(100% - 10px)', marginRight: '10px' }}>
       {/* 系统卡图展示 - 移动到最顶部 */}
       <div className="px-6 pt-6 pb-4 flex-shrink-0">
-        <div className="relative overflow-hidden rounded-lg" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
+        <div className="relative overflow-hidden rounded-lg flex items-center justify-center" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
           {(() => {
             const currentSpace = spaces.find(s => s.id === selectedSpaceId)
             if (currentSpace?.systemCardUrl) {
@@ -466,8 +475,7 @@ export default function Sidebar({
                   <Image
                     src={currentSpace.systemCardUrl}
                     alt={t('systemCardImage')}
-                    className="w-full h-full object-cover"
-                    style={{ width: '520px', height: '120px', maxWidth: '100%' }}
+                    className="w-auto h-full max-w-full object-contain"
                     unoptimized
                     width={520}
                     height={120}
@@ -475,7 +483,7 @@ export default function Sidebar({
                 )
             } else {
               return (
-                <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center" style={{ width: '520px', height: '120px', maxWidth: '100%' }}>
+                <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                   <span className="text-white font-bold text-xl">{t('webooks')}</span>
                 </div>
               )
@@ -498,23 +506,18 @@ export default function Sidebar({
         />
       </div>
 
-      {/* 排序按钮 */}
-      <div className="px-6 pb-4 flex-shrink-0">
-        <button
-          onClick={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}
-          className="neu-button w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          <span>{t('sortOrder')}</span>
-          <i className={`fas fa-sort-alpha-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
-        </button>
-      </div>
-
       {/* 文件夹列表容器 */}
       <div className="flex-1 overflow-hidden mx-3 mb-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 shadow-md">
         <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-500 scrollbar-track-transparent">
           <div className="p-3 space-y-1">
             <button
-              onClick={() => onSelectFolder(null)}
+              onClick={() => {
+                // 如果已经选中全部书签，不做任何操作
+                if (selectedFolderId === null) {
+                  return
+                }
+                onSelectFolder(null)
+              }}
               className={`neu-button w-full text-left py-2 mb-2 text-sm group ${
                 selectedFolderId === null ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
@@ -530,28 +533,44 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* 底部 - 设置 */}
-      <div className="p-6 space-y-3 flex-shrink-0">
-        <button
-          onClick={toggleTheme}
-          className="neu-button w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
+      {/* 底部 - 其他 */}
+      <div className="p-6 flex-shrink-0">
+        <FoldableSection
+          title={t('other')}
+          icon={<i className="fas fa-sliders-h mr-2"></i>}
+          defaultExpanded={false}
         >
-          {theme === 'light' ? <i className="fas fa-moon mr-2"></i> : <i className="fas fa-sun mr-2"></i>} {t('theme')}: {theme === 'light' ? t('light') : t('dark')}
-        </button>
-        <button
-          onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')}
-          className="neu-button w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
-        >
-          <i className="fas fa-language mr-2"></i> {language === 'zh' ? t('switchToChinese') : t('switchToEnglish')}
-        </button>
-        {isAuthenticated && (
-          <a
-            href="/admin"
-            className="btn-primary block w-full px-4 py-3 text-sm text-center"
+          <button
+            onClick={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="neu-button w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
           >
-            {t('admin')}
-          </a>
-        )}
+            <span>{t('order')}</span>
+            <span className="ml-auto">
+              <i className={`fas fa-sort-alpha-${sortOrder === 'asc' ? 'up' : 'down'} mr-2`}></i>
+              {sortOrder === 'asc' ? 'A-Z' : 'Z-A'}
+            </span>
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="neu-button w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
+          >
+            {theme === 'light' ? <i className="fas fa-moon mr-2"></i> : <i className="fas fa-sun mr-2"></i>} {t('theme')}: {theme === 'light' ? t('light') : t('dark')}
+          </button>
+          <button
+            onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')}
+            className="neu-button w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300"
+          >
+            <i className="fas fa-language mr-2"></i> {t('language')}: {language === 'zh' ? '中文' : 'English'}
+          </button>
+          {isAuthenticated && (
+            <a
+              href="/admin"
+              className="btn-primary block w-full px-4 py-3 text-sm text-center"
+            >
+              {t('admin')}
+            </a>
+          )}
+        </FoldableSection>
       </div>
 
       {/* 密码输入模态框 */}

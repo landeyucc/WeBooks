@@ -9,12 +9,10 @@ export const runtime = 'nodejs'
 // 获取系统配置
 export async function GET(request: NextRequest) {
   try {
-    // 检查是否有扩展API Key认证
     const authHeader = request.headers.get('x-api-key')
     let targetUserId = null
 
     if (authHeader && authHeader.startsWith('webooks_')) {
-      // 浏览器扩展的API Key认证
       const authResult = await authenticateWithApiKey(request)
       if (authResult.response) {
         return authResult.response
@@ -23,14 +21,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (!targetUserId) {
-      // 无认证或认证失败，获取第一个用户
       const user = await prisma.user.findFirst()
       if (!user) {
+        console.log('[system-config] 未找到用户，返回空配置')
         return NextResponse.json({
           id: null,
           defaultSpaceId: null,
           defaultSpace: null,
-          // 网站设置
           siteTitle: null,
           faviconUrl: null,
           seoDescription: null,
@@ -40,9 +37,9 @@ export async function GET(request: NextRequest) {
         })
       }
       targetUserId = user.id
+      console.log('[system-config] 使用第一个用户:', user.id)
     }
 
-    // 获取当前用户的配置记录
     const config = await prisma.systemConfig.findFirst({
       where: { userId: targetUserId },
       include: {
@@ -55,11 +52,17 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log('[system-config] 获取到配置:', {
+      id: config?.id,
+      siteTitle: config?.siteTitle,
+      seoDescription: config?.seoDescription,
+      keywords: config?.keywords
+    })
+
     return NextResponse.json({
       id: config?.id || null,
       defaultSpaceId: config?.defaultSpaceId || null,
       defaultSpace: config?.defaultSpace || null,
-      // 网站设置
       siteTitle: config?.siteTitle || null,
       faviconUrl: config?.faviconUrl || null,
       seoDescription: config?.seoDescription || null,
