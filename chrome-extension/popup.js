@@ -110,7 +110,7 @@ class WebooksExtension {
     try {
       const result = await chrome.storage.sync.get(['webooksConfig'])
       this.config = result.webooksConfig || {
-        apiUrl: 'http://localhost:3000',
+        apiUrl: '',
         autoScrape: true
       }
 
@@ -127,7 +127,7 @@ class WebooksExtension {
     } catch (error) {
       console.error('加载配置失败:', error)
       this.config = {
-        apiUrl: 'http://localhost:3000',
+        apiUrl: '',
         autoScrape: true
       }
     }
@@ -172,7 +172,7 @@ class WebooksExtension {
    * 填充配置表单
    */
   populateConfig() {
-    document.getElementById('apiUrl').value = this.config.apiUrl || 'http://localhost:3000'
+    document.getElementById('apiUrl').value = this.config.apiUrl || ''
     document.getElementById('apiKey').value = this.config.apiKey || ''
     // 自动抓取功能现在默认开启，不需要读取checkbox状态
   }

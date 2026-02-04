@@ -12,7 +12,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     if (!result.webooksConfig) {
       chrome.storage.sync.set({
         webooksConfig: {
-          apiUrl: 'http://localhost:3000',
+          // API URL需要用户在扩展设置中配置，默认为空
+          apiUrl: '',
           autoScrape: true
         }
       })
@@ -96,6 +97,11 @@ async function saveBookmark(url, pageInfo) {
       throw new Error('请先在扩展设置中配置API Key')
     }
 
+    // 检查API URL是否配置
+    if (!config.apiUrl) {
+      throw new Error('请先在扩展设置中配置API地址')
+    }
+
     const requestData = {
       title: pageInfo.title,
       url: url,
@@ -107,7 +113,8 @@ async function saveBookmark(url, pageInfo) {
     }
 
     // 发送到服务器
-    const response = await fetch(`${config.apiUrl || 'http://localhost:3000'}/api/extension/bookmarks`, {
+    const apiUrl = config.apiUrl.replace(/\/$/, '') // 移除末尾的斜杠
+    const response = await fetch(`${apiUrl}/api/extension/bookmarks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -121,7 +128,7 @@ async function saveBookmark(url, pageInfo) {
     if (apiResult.success) {
       showNotification('书签保存成功！', 'success')
     } else {
-      throw new Error(apiResult.error || '保存失败')
+      throw new Error(apiResult.error || apiResult.details || '保存失败')
     }
 
   } catch (error) {

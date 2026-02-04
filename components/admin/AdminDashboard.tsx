@@ -147,13 +147,26 @@ export default function AdminDashboard() {
 
   // 获取浏览器扩展API Key
   const fetchApiKey = useCallback(async () => {
+    if (!token) {
+      console.error('获取API Key失败: 未登录或token为空')
+      setApiKeyState(prev => ({ ...prev, isLoading: false }))
+      return
+    }
+    
     try {
       const response = await fetch('/api/extension/api-key', {
         headers: { Authorization: `Bearer ${token}` }
       })
+      console.log('获取API Key响应状态:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('获取API Key成功:', data)
         setApiKeyState(prev => ({ ...prev, current: data.apiKey || '', isLoading: false }))
+      } else {
+        const errorData = await response.json()
+        console.error('获取API Key失败:', errorData)
+        setApiKeyState(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
       console.error('获取API Key失败:', error)
@@ -163,6 +176,11 @@ export default function AdminDashboard() {
 
   // 生成新的浏览器扩展API Key
   const generateApiKey = async () => {
+    if (!token) {
+      showError('请先登录后再生成API Key')
+      return
+    }
+    
     setApiKeyState(prev => ({ ...prev, isLoading: true }))
     try {
       const response = await fetch('/api/extension/api-key', {
@@ -172,17 +190,22 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${token}` 
         }
       })
+      console.log('生成API Key响应状态:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('生成API Key成功:', data)
         setApiKeyState(prev => ({ ...prev, current: data.apiKey, isLoading: false }))
         showSuccess('新API Key生成成功！')
       } else {
-        showError('生成API Key失败')
+        const errorData = await response.json()
+        console.error('生成API Key失败:', response.status, errorData)
+        showError(`生成API Key失败: ${errorData.error || errorData.details || '未知错误'}`)
         setApiKeyState(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
       console.error('生成API Key失败:', error)
-      showError('生成API Key失败')
+      showError('生成API Key失败: 网络错误')
       setApiKeyState(prev => ({ ...prev, isLoading: false }))
     }
   }

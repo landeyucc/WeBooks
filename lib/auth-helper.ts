@@ -12,8 +12,11 @@ export async function getAuthenticatedUserId(request: NextRequest): Promise<{
 }> {
   const userId = getUserIdFromRequest(request)
   
+  console.log('getAuthenticatedUserId - 提取的用户ID:', userId)
+  
   // 如果没有token，返回错误
   if (!userId) {
+    console.log('getAuthenticatedUserId - 无有效的用户ID，返回401错误')
     return {
       userId: null,
       response: NextResponse.json(
@@ -29,9 +32,13 @@ export async function getAuthenticatedUserId(request: NextRequest): Promise<{
       where: { id: userId }
     })
     
+    console.log('getAuthenticatedUserId - 数据库查询用户结果:', user ? `找到用户 ${user.username}` : '用户不存在')
+    
     if (!user) {
       // 单用户模式下，如果token中的用户不存在，使用第一个用户
       const firstUser = await prisma.user.findFirst()
+      console.log('getAuthenticatedUserId - 查找第一个用户:', firstUser ? firstUser.id : '没有用户')
+      
       if (!firstUser) {
         return {
           userId: null,
