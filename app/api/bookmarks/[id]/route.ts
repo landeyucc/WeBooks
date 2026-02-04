@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
+import { updateVersionKey } from '@/lib/version-manager'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -69,6 +70,9 @@ export async function PUT(
       }
     })
 
+    // 更新书签版本Key
+    await updateVersionKey('bookmarks')
+
     return NextResponse.json({ bookmark })
   } catch (error) {
     console.error('更新书签错误:', error)
@@ -131,6 +135,9 @@ export async function DELETE(
         }
       })
     }
+
+    // 更新书签版本Key
+    await updateVersionKey('bookmarks')
 
     return NextResponse.json({ success: true })
   } catch (error) {

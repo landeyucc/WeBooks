@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId, getPublicUserId } from '@/lib/auth-helper'
+import { authenticateWithApiKey } from '@/lib/extension-auth'
 import bcrypt from 'bcryptjs'
+import { updateVersionKey } from '@/lib/version-manager'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -9,7 +11,24 @@ export const runtime = 'nodejs'
 // 获取所有空间
 export async function GET(request: NextRequest) {
   try {
-    const targetUserId = await getPublicUserId(request)
+    // 检查是否有扩展API Key认证
+    const authHeader = request.headers.get('x-api-key')
+    let targetUserId = null
+
+    if (authHeader && authHeader.startsWith('webooks_')) {
+      // 浏览器扩展的API Key认证
+      const authResult = await authenticateWithApiKey(request)
+      if (authResult.response) {
+        return authResult.response
+      }
+      targetUserId = authResult.userId
+    }
+
+    if (!targetUserId) {
+      // 无认证或认证失败，使用公共用户ID
+      targetUserId = await getPublicUserId(request)
+    }
+
     console.log('GET spaces - User ID:', targetUserId)
 
     const spaces = await prisma.space.findMany({
@@ -95,6 +114,9 @@ export async function POST(request: NextRequest) {
         userId
       }
     })
+
+    // 更新空间版本Key
+    await updateVersionKey('spaces')
 
     return NextResponse.json({ space })
   } catch (error) {

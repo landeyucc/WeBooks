@@ -77,18 +77,19 @@ model Bookmark {
 }
 
 model SystemConfig {
-  id             String   @id @default(uuid())
-  userId         String   @unique @map("user_id")
-  defaultSpaceId String?  @map("default_space_id")
-  siteTitle      String?  @map("site_title")
-  faviconUrl     String?  @map("favicon_url")
-  seoDescription String?  @map("seo_description")
-  keywords       String?
-  apiKey         String?  @unique @map("api_key")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  defaultSpace   Space?   @relation(fields: [defaultSpaceId], references: [id])
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  defaultSpaceId  String?  @map("default_space_id")
+  siteTitle       String?  @map("site_title")
+  faviconUrl      String?  @map("favicon_url")
+  seoDescription  String?  @map("seo_description")
+  keywords        String?
+  apiKey          String?  @unique @map("api_key")
+  extensionApiKey String?  @unique @map("extension_api_key")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  defaultSpace    Space?   @relation(fields: [defaultSpaceId], references: [id])
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("system_configs")
 }

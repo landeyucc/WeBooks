@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import RobustImage from './RobustImage'
 import LoadingSpinner from './LoadingSpinner'
+import { loadCache, saveCache } from '@/lib/cache-manager'
 
 interface Bookmark {
   id: string
@@ -99,6 +100,29 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
       return
     }
 
+    // 检查缓存
+    const cacheKey = `bookmarks_${group.pathKey}_${page}`
+    // 暂时使用any类型，实际应该为Bookmark[]类型
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cachedBookmarks = loadCache<Bookmark[]>(cacheKey as any)
+    if (cachedBookmarks) {
+      console.log('从缓存加载书签数据:', cachedBookmarks.length)
+      setFolderGroups(prev => prev.map(g => {
+        if (g.pathKey === group.pathKey) {
+          return {
+            ...g,
+            bookmarks: page === 1 ? cachedBookmarks : [...g.bookmarks, ...cachedBookmarks],
+            page,
+            isLoading: false,
+            hasMore: cachedBookmarks.length >= PAGE_SIZE
+          }
+        }
+        return g
+      }))
+      loadingRef.current.delete(group.pathKey)
+      return
+    }
+
     loadingRef.current.add(group.pathKey)
 
     setFolderGroups(prev => prev.map(g => {
@@ -144,6 +168,13 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
         }
         return g
       }))
+
+      // 保存到缓存
+      const cacheKey = `bookmarks_${group.pathKey}_${page}`
+      console.log('保存书签数据到缓存:', newBookmarks.length)
+      // 这里使用当前时间戳作为版本，实际应该使用远程版本Key
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      saveCache(cacheKey as any, newBookmarks, Date.now().toString())
     } catch (error) {
       console.error(t('fetchBookmarksFailed'), error)
       setFolderGroups(prev => prev.map(g => {
@@ -647,23 +678,19 @@ export default function BookmarkGrid({ spaceId, folderId, sortOrder, onSortOrder
                       className="card p-4 block hover:scale-105 transition-transform duration-200"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                          {(() => {
-                            if (!bookmark.iconUrl) return null
-                            const cleanUrl = bookmark.iconUrl.trim().replace(/^[\s(]+|[\s)]+$/g, '')
-                            return isValidImageUrl(cleanUrl) ? (
-                              <RobustImage
-                                src={cleanUrl}
-                                alt={bookmark.title}
-                                className="object-contain"
-                                onError={(e) => {
-                                  e.currentTarget.nextElementSibling!.classList.remove('hidden')
-                                }}
-                              />
-                            ) : null
-                          })()}
+                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative">
+                          {bookmark.iconUrl && isValidImageUrl(bookmark.iconUrl.trim().replace(/^[\s(]+|[\s)]+$/g, '')) ? (
+                            <RobustImage
+                              src={bookmark.iconUrl.trim().replace(/^[\s(]+|[\s)]+$/g, '')}
+                              alt={bookmark.title}
+                              className="object-contain"
+                              onError={(e) => {
+                                e.currentTarget.classList.add('hidden')
+                              }}
+                            />
+                          ) : null}
                           <svg
-                            className={`w-6 h-6 text-gray-400 ${bookmark.iconUrl ? 'hidden' : ''}`}
+                            className={`w-6 h-6 text-gray-400 absolute inset-0 m-auto ${bookmark.iconUrl && isValidImageUrl(bookmark.iconUrl.trim().replace(/^[\s(]+|[\s)]+$/g, '')) ? 'hidden' : ''}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserIdFromRequest } from '@/lib/auth'
+import { updateVersionKey } from '@/lib/version-manager'
 
 // 更新文件夹
 export async function PUT(
@@ -30,6 +31,9 @@ export async function PUT(
         parentFolderId
       }
     })
+
+    // 更新文件夹版本Key
+    await updateVersionKey('folders')
 
     return NextResponse.json({ folder })
   } catch (error) {
@@ -61,6 +65,9 @@ export async function DELETE(
         userId
       }
     })
+
+    // 更新文件夹版本Key
+    await updateVersionKey('folders')
 
     return NextResponse.json({ success: true })
   } catch (error) {

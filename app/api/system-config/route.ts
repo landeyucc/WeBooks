@@ -1,31 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { authenticateWithApiKey } from '@/lib/extension-auth'
+import { updateVersionKey } from '@/lib/version-manager'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 // 获取系统配置
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const user = await prisma.user.findFirst()
-    if (!user) {
-      return NextResponse.json({
-        id: null,
-        defaultSpaceId: null,
-        defaultSpace: null,
-        // 网站设置
-        siteTitle: null,
-        faviconUrl: null,
-        seoDescription: null,
-        keywords: null,
-        createdAt: null,
-        updatedAt: null
-      })
+    // 检查是否有扩展API Key认证
+    const authHeader = request.headers.get('x-api-key')
+    let targetUserId = null
+
+    if (authHeader && authHeader.startsWith('webooks_')) {
+      // 浏览器扩展的API Key认证
+      const authResult = await authenticateWithApiKey(request)
+      if (authResult.response) {
+        return authResult.response
+      }
+      targetUserId = authResult.userId
+    }
+
+    if (!targetUserId) {
+      // 无认证或认证失败，获取第一个用户
+      const user = await prisma.user.findFirst()
+      if (!user) {
+        return NextResponse.json({
+          id: null,
+          defaultSpaceId: null,
+          defaultSpace: null,
+          // 网站设置
+          siteTitle: null,
+          faviconUrl: null,
+          seoDescription: null,
+          keywords: null,
+          createdAt: null,
+          updatedAt: null
+        })
+      }
+      targetUserId = user.id
     }
 
     // 获取当前用户的配置记录
     const config = await prisma.systemConfig.findFirst({
-      where: { userId: user.id },
+      where: { userId: targetUserId },
       include: {
         defaultSpace: {
           select: {
@@ -144,6 +163,9 @@ export async function PUT(request: NextRequest) {
         }
       })
     }
+
+    // 更新系统版本Key
+    await updateVersionKey('system')
 
     return NextResponse.json({
       id: config.id,

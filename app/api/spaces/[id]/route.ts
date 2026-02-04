@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthenticatedUserId } from '@/lib/auth-helper'
 import bcrypt from 'bcryptjs'
+import { updateVersionKey } from '@/lib/version-manager'
 
 // 更新空间
 export async function PUT(
@@ -83,6 +84,9 @@ export async function PUT(
       },
       data: updateData
     })
+
+    // 更新空间版本Key
+    await updateVersionKey('spaces')
 
     return NextResponse.json({ space })
   } catch (error) {
@@ -170,6 +174,11 @@ export async function DELETE(
         }
       })
     })
+
+    // 更新版本Key
+    await updateVersionKey('spaces')
+    await updateVersionKey('folders')
+    await updateVersionKey('bookmarks')
 
     return NextResponse.json({ success: true })
   } catch (error) {

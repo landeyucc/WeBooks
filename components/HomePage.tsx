@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import BookmarkGrid from '@/components/BookmarkGrid'
 import InitModal from '@/components/InitModal'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { cacheManager, getLatestVersionKeys, loadCache, isForceRefresh } from '@/lib/cache-manager'
 
 export default function HomePage() {
   const { token, loading, t } = useApp()
@@ -28,6 +29,8 @@ export default function HomePage() {
   
   // 跟踪默认空间初始化状态
   const defaultSpaceInit = useRef(false)
+  // 缓存初始化状态
+  const [cacheInitialized, setCacheInitialized] = useState(false)
 
   // 检测屏幕尺寸变化
   const checkScreenSize = useCallback(() => {
@@ -62,9 +65,59 @@ export default function HomePage() {
     }
   }, [t])
 
+  // 缓存初始化函数
+  const initCache = useCallback(async () => {
+    try {
+      console.log('开始初始化缓存...')
+      const startTime = performance.now()
+
+      // 检查是否为强制刷新
+      const forceRefresh = isForceRefresh()
+      console.log('是否强制刷新:', forceRefresh)
+
+      // 获取远程版本Key
+      const remoteVersion = await getLatestVersionKeys()
+      const localVersion = cacheManager.getLocalVersionKeys()
+
+      console.log('远程版本:', remoteVersion)
+      console.log('本地版本:', localVersion)
+
+      // 版本比对
+      const versionMatch = cacheManager.isVersionMatch(localVersion, remoteVersion)
+      console.log('版本是否匹配:', versionMatch)
+
+      // 如果版本匹配且不是强制刷新，从缓存加载系统配置
+      if (versionMatch && !forceRefresh) {
+        console.log('从缓存加载系统配置...')
+        const cachedSystemConfig = loadCache<unknown>('system')
+        if (cachedSystemConfig) {
+          console.log('缓存加载成功:', cachedSystemConfig)
+        }
+      }
+
+      // 保存最新版本Key
+      if (remoteVersion) {
+        cacheManager.saveVersionKeys(remoteVersion)
+      }
+
+      const endTime = performance.now()
+      console.log('缓存初始化完成，耗时:', endTime - startTime, 'ms')
+    } catch (error) {
+      console.error('缓存初始化失败:', error)
+    } finally {
+      setCacheInitialized(true)
+    }
+  }, [])
+
   useEffect(() => {
     checkInitStatus()
   }, [checkInitStatus])
+
+  useEffect(() => {
+    initCache()
+    // 初始化页面刷新处理
+    cacheManager.handlePageRefresh()
+  }, [initCache])
 
   // 设置默认空间逻辑
   const setDefaultSpace = useCallback(async () => {
@@ -133,7 +186,7 @@ export default function HomePage() {
 
   useEffect(() => {
     
-    if (!checkingInit && !loading && !needsInit && !selectedSpaceId && !defaultSpaceInit.current) {
+    if (!checkingInit && !loading && !needsInit && cacheInitialized && !selectedSpaceId && !defaultSpaceInit.current) {
       defaultSpaceInit.current = true 
       const timeoutId = setTimeout(() => {
         setDefaultSpace()
@@ -142,7 +195,7 @@ export default function HomePage() {
         clearTimeout(timeoutId)
       }
     }
-  }, [checkingInit, loading, needsInit, selectedSpaceId, setDefaultSpace]) 
+  }, [checkingInit, loading, needsInit, cacheInitialized, selectedSpaceId, setDefaultSpace]) 
 
   if (checkingInit || loading) {
     return (

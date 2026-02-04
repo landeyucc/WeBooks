@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateWithApiKey } from '@/lib/extension-auth'
 import { fetchWebsiteMetadata } from '@/lib/scraper'
+import { updateVersionKey } from '@/lib/version-manager'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -129,6 +130,9 @@ export async function POST(request: NextRequest) {
         }
       })
     }
+
+    // 更新书签版本Key
+    await updateVersionKey('bookmarks')
 
     console.log(`Extension API - 书签添加成功: ${bookmark.id}`)
 

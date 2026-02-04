@@ -6,6 +6,7 @@ import { useApp } from '@/contexts/AppContext'
 import CustomSelect from './ui/CustomSelect'
 import PasswordModal from './PasswordModal'
 import { ChevronDown, Folder, FolderOpen } from 'lucide-react'
+import { cacheManager, loadCache, saveCache } from '@/lib/cache-manager'
 
 
 interface Space {
@@ -147,6 +148,25 @@ export default function Sidebar({
 
   const fetchSpaces = useCallback(async () => {
     try {
+      // 获取远程版本Key
+      const remoteVersion = await cacheManager.getLatestVersionKeys()
+      const localVersion = cacheManager.getLocalVersionKeys()
+      
+      // 检查是否从缓存加载
+      const versionMatch = cacheManager.isTypeVersionMatch(localVersion, remoteVersion, 'spaces')
+      
+      if (versionMatch) {
+        console.log('从缓存加载空间数据...')
+        const cachedSpaces = loadCache<Space[]>('spaces')
+        if (cachedSpaces) {
+          console.log('缓存加载成功，空间数量:', cachedSpaces.length)
+          setSpaces(cachedSpaces)
+          return
+        }
+      }
+
+      // 从API获取
+      console.log('从API获取空间数据...')
       // 根据认证状态决定是否使用Authorization头
       const headers: Record<string, string> = {}
       if (token) {
@@ -168,6 +188,11 @@ export default function Sidebar({
       
       setSpaces(spacesData)
       
+      // 保存到缓存
+      if (remoteVersion) {
+        console.log('保存空间数据到缓存...')
+        saveCache('spaces', spacesData, remoteVersion.spaces)
+      }
       
     } catch (error) {
       console.error(t('fetchSpacesFailed'), error)
@@ -178,6 +203,25 @@ export default function Sidebar({
 
   const fetchFolders = useCallback(async (spaceId: string) => {
     try {
+      // 获取远程版本Key
+      const remoteVersion = await cacheManager.getLatestVersionKeys()
+      const localVersion = cacheManager.getLocalVersionKeys()
+      
+      // 检查是否从缓存加载
+      const versionMatch = cacheManager.isTypeVersionMatch(localVersion, remoteVersion, 'folders')
+      
+      if (versionMatch) {
+        console.log('从缓存加载文件夹数据...')
+        const cachedFolders = loadCache<Folder[]>('folders')
+        if (cachedFolders) {
+          console.log('缓存加载成功，文件夹数量:', cachedFolders.length)
+          setFolders(cachedFolders)
+          return
+        }
+      }
+
+      // 从API获取
+      console.log('从API获取文件夹数据...')
       // 根据认证状态决定是否使用Authorization头
       const headers: Record<string, string> = {}
       if (token) {
@@ -199,6 +243,13 @@ export default function Sidebar({
       }
       
       setFolders(foldersData)
+      
+      // 保存到缓存
+      if (remoteVersion) {
+        console.log('保存文件夹数据到缓存...')
+        saveCache('folders', foldersData, remoteVersion.folders)
+      }
+      
     } catch (error) {
       console.error(t('fetchFoldersFailedSide'), error)
       // 如果出错时则确保设置一个空数组
@@ -458,22 +509,24 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* 文件夹列表 */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin px-3">
-        <div className="py-3 space-y-1">
-          <button
-            onClick={() => onSelectFolder(null)}
-            className={`neu-button w-full text-left py-2 mb-2 text-sm group ${
-              selectedFolderId === null ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-            }`}
-            style={{ paddingLeft: '1rem' }}
-          >
-            <div className="flex items-center">
-              <Folder className="w-4 h-4 mr-2 text-gray-400" />
-              <span className="flex-1">{t('allBookmarks')}</span>
-            </div>
-          </button>
-          {folderTree.map(folder => renderFolder(folder))}
+      {/* 文件夹列表容器 */}
+      <div className="flex-1 overflow-hidden mx-3 mb-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 shadow-md">
+        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-500 scrollbar-track-transparent">
+          <div className="p-3 space-y-1">
+            <button
+              onClick={() => onSelectFolder(null)}
+              className={`neu-button w-full text-left py-2 mb-2 text-sm group ${
+                selectedFolderId === null ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+              style={{ paddingLeft: '1rem' }}
+            >
+              <div className="flex items-center">
+                <Folder className="w-4 h-4 mr-2 text-gray-400" />
+                <span className="flex-1">{t('allBookmarks')}</span>
+              </div>
+            </button>
+            {folderTree.map(folder => renderFolder(folder))}
+          </div>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getPublicUserId, getAuthenticatedUserId } from '@/lib/auth-helper'
 import { authenticateWithApiKey } from '@/lib/extension-auth'
+import { updateVersionKey } from '@/lib/version-manager'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -178,6 +179,9 @@ export async function POST(request: NextRequest) {
         userId
       }
     })
+
+    // 更新文件夹版本Key
+    await updateVersionKey('folders')
 
     return NextResponse.json({ folder })
   } catch (error) {

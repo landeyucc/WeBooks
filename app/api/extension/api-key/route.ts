@@ -31,36 +31,29 @@ export async function POST(request: NextRequest) {
     // 生成新的API Key
     const apiKey = await generateUserApiKey(userId)
 
-    // 获取用户的SystemConfig以验证
+    // 获取用户的SystemConfig以验证（generateUserApiKey已确保存在）
     const systemConfig = await prisma.systemConfig.findUnique({
       where: { userId },
       select: {
         id: true,
         userId: true,
-        apiKey: true,
+        extensionApiKey: true,
         createdAt: true,
         updatedAt: true
       }
     })
-
-    if (!systemConfig) {
-      return NextResponse.json(
-        { error: '系统配置不存在' },
-        { status: 500 }
-      )
-    }
 
     return NextResponse.json({
       success: true,
       message: 'API Key生成成功',
       apiKey: apiKey,
       maskedKey: apiKey.substring(0, 10) + '...',
-      systemConfig: {
+      systemConfig: systemConfig ? {
         id: systemConfig.id,
         userId: systemConfig.userId,
         createdAt: systemConfig.createdAt,
         updatedAt: systemConfig.updatedAt
-      }
+      } : null
     })
 
   } catch (error) {
@@ -102,7 +95,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         userId: true,
-        apiKey: true,
+        extensionApiKey: true,
         createdAt: true,
         updatedAt: true
       }
@@ -116,14 +109,14 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const hasApiKey = !!systemConfig?.apiKey
+    const hasApiKey = !!systemConfig?.extensionApiKey
 
     return NextResponse.json({
       success: true,
       message: hasApiKey ? 'API Key已存在' : '用户尚未配置API Key',
       hasApiKey,
-      apiKey: hasApiKey ? systemConfig.apiKey : null,
-      maskedKey: hasApiKey && systemConfig.apiKey ? systemConfig.apiKey.substring(0, 10) + '...' : null,
+      apiKey: hasApiKey ? systemConfig.extensionApiKey : null,
+      maskedKey: hasApiKey && systemConfig.extensionApiKey ? systemConfig.extensionApiKey.substring(0, 10) + '...' : null,
       systemConfig: {
         id: systemConfig.id,
         userId: systemConfig.userId,

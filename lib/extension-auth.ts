@@ -52,7 +52,7 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
 
     console.log('authenticateWithApiKey - 开始查询数据库...')
     const systemConfig = await prisma.systemConfig.findFirst({
-      where: { apiKey }
+      where: { extensionApiKey: apiKey }
     })
     console.log('authenticateWithApiKey - 数据库查询完成，结果:', systemConfig ? `找到记录 userId=${systemConfig.userId}` : '未找到')
 
@@ -90,10 +90,10 @@ export async function generateUserApiKey(userId: string): Promise<string> {
   // 更新用户的SystemConfig
   await prisma.systemConfig.upsert({
     where: { userId },
-    update: { apiKey },
+    update: { extensionApiKey: apiKey },
     create: {
       userId,
-      apiKey
+      extensionApiKey: apiKey
     }
   })
 
@@ -110,7 +110,7 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
     }
 
     const systemConfig = await prisma.systemConfig.findFirst({
-      where: { apiKey }
+      where: { extensionApiKey: apiKey }
     })
 
     return !!systemConfig
