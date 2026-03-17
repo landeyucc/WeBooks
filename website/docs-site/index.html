@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,7 @@
     <link rel="stylesheet" href="../assets/css/docs-site.css">
     <link rel="shortcut icon" href="../assets/icon/WeBooks.ico" type="image/x-icon">
 </head>
+
 <body>
     <header class="docs-header">
         <nav class="docs-nav">
@@ -130,7 +132,8 @@
                     <div class="features-list">
                         <h3>核心特性</h3>
                         <ul>
-                            <li><strong>智能书签导入</strong>：支持 NETSCAPE-Bookmark-file-1 格式，自动识别 Chrome、Edge、Firefox 等浏览器导出的书签</li>
+                            <li><strong>智能书签导入</strong>：支持 NETSCAPE-Bookmark-file-1 格式，自动识别 Chrome、Edge、Firefox
+                                等浏览器导出的书签</li>
                             <li><strong>分类管理</strong>：灵活的空间（Space）和文件夹（Folder）组织结构</li>
                             <li><strong>高级搜索</strong>：全文搜索书签标题、描述和 URL，支持标签筛选</li>
                             <li><strong>标签系统</strong>：多标签分类，支持快速筛选和批量操作</li>
@@ -205,7 +208,7 @@
                             <div class="step-number">1</div>
                             <div class="step-content">
                                 <h4>克隆项目</h4>
-                                <pre><code>git clone https://github.com/yourusername/webooks.git
+                                <pre><code>git clone https://github.com/landeyucc/webooks.git
 cd webooks</code></pre>
                             </div>
                         </div>
@@ -256,13 +259,13 @@ npm start</code></pre>
 
     <script>
         // 高亮当前页面的导航链接
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const currentPage = window.location.pathname.split('/').pop() || 'index.html';
             const sidebarLinks = document.querySelectorAll('.docs-sidebar a');
-            
+
             sidebarLinks.forEach(link => {
                 const linkPage = link.getAttribute('href').split('#')[0].split('?')[0];
-                if (linkPage === currentPage || 
+                if (linkPage === currentPage ||
                     (currentPage === '' && linkPage === 'index.html') ||
                     (currentPage === 'index.html' && linkPage === 'index.html')) {
                     link.classList.add('active');
@@ -275,4 +278,5 @@ npm start</code></pre>
         });
     </script>
 </body>
+
 </html>
