@@ -29,8 +29,6 @@ export async function GET(request: NextRequest) {
       targetUserId = await getPublicUserId(request)
     }
 
-    console.log('GET spaces - User ID:', targetUserId)
-
     const spaces = await prisma.space.findMany({
       where: { userId: targetUserId },
       orderBy: { createdAt: 'asc' },
@@ -45,10 +43,9 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ spaces })
-  } catch (error) {
-    console.error('获取空间错误:', error)
+  } catch {
     return NextResponse.json(
-      { error: '获取空间失败', details: String(error) },
+      { error: '获取空间失败' },
       { status: 500 }
     )
   }
@@ -119,10 +116,9 @@ export async function POST(request: NextRequest) {
     await updateVersionKey('spaces')
 
     return NextResponse.json({ space })
-  } catch (error) {
-    console.error('创建空间错误:', error)
+  } catch {
     return NextResponse.json(
-      { error: '创建空间失败', details: String(error) },
+      { error: '创建空间失败' },
       { status: 500 }
     )
   }

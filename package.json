@@ -3,16 +3,18 @@
   "version": "0.1.2",
   "private": true,
   "scripts": {
-    "dev": "node scripts/init-database.js && next dev",
-    "build": "next build",
-    "start": "node scripts/init-database.js &&next start",
+    "dev": "node scripts/generate-prisma-schema.js && node scripts/init-database.js && next dev",
+    "build": "node scripts/generate-prisma-schema.js && next build",
+    "start": "node scripts/generate-prisma-schema.js && node scripts/init-database.js && next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
-    "prisma:push": "prisma db push",
-    "prisma:studio": "prisma studio",
-    "db:init": "prisma db push",
-    "db:reset": "prisma db push && node test-script/reset-database.js",
-    "deploy": "prisma generate && prisma db push && next build"
+    "postinstall": "node scripts/generate-prisma-schema.js && prisma generate",
+    "prisma:schema": "node scripts/generate-prisma-schema.js",
+    "prisma:push": "node scripts/generate-prisma-schema.js && prisma db push",
+    "prisma:studio": "node scripts/generate-prisma-schema.js && prisma studio",
+    "prisma:generate": "node scripts/generate-prisma-schema.js && prisma generate",
+    "db:init": "node scripts/generate-prisma-schema.js && prisma db push",
+    "db:reset": "node scripts/generate-prisma-schema.js && prisma db push && node test-script/reset-database.js",
+    "deploy": "node scripts/generate-prisma-schema.js && prisma generate && prisma db push && next build"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

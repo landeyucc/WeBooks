@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { useApp } from '@/contexts/AppContext'
 import CustomSelect from './ui/CustomSelect'
@@ -53,9 +53,23 @@ export default function Sidebar({
   sortOrder,
   onSortOrderChange
 }: SidebarProps) {
-  const { t, theme, toggleTheme, language, setLanguage, isAuthenticated, token, collapsedFolders, toggleFolderCollapse, setCollapsedFolders } = useApp()
+  const { t, theme, toggleTheme, language, setLanguage, isAuthenticated, token, collapsedFolders, toggleFolderCollapse, setCollapsedFolders, currentSpaceData } = useApp()
   const [spaces, setSpaces] = useState<Space[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
+
+  // 直接从 currentSpaceData 计算未分类书签数量
+  const uncategorizedBookmarkCount = useMemo(() => {
+    if (!currentSpaceData?.bookmarks) return 0
+    
+    const folderIds = new Set(currentSpaceData.folders?.map(f => f.id) || [])
+    
+    const uncategorized = currentSpaceData.bookmarks.filter(b => {
+      // 处理 null、undefined、空字符串，以及 folderId 指向不存在文件夹的情况
+      return !b.folderId || b.folderId === '' || !folderIds.has(b.folderId)
+    })
+    
+    return uncategorized.length
+  }, [currentSpaceData?.bookmarks, currentSpaceData?.folders])
 
   // 跟踪是否已经为当前空间设置了默认折叠状态
   const [isInitialCollapsedSet, setIsInitialCollapsedSet] = useState(false)
@@ -510,6 +524,7 @@ export default function Sidebar({
       <div className="flex-1 overflow-hidden mx-3 mb-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 shadow-md">
         <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-500 scrollbar-track-transparent">
           <div className="p-3 space-y-1">
+            {/* 所有书签按钮 */}
             <button
               onClick={() => {
                 // 如果已经选中全部书签，不做任何操作
@@ -528,6 +543,50 @@ export default function Sidebar({
                 <span className="flex-1">{t('allBookmarks')}</span>
               </div>
             </button>
+            
+            {/* 未分类书签虚拟文件夹 - 作为所有书签的子文件夹 */}
+            {selectedFolderId === null && uncategorizedBookmarkCount > 0 && (
+              <button
+                onClick={() => {
+                  // 未分类书签是虚拟文件夹，点击不做任何选择操作
+                  // 只是视觉上的展示
+                }}
+                className="neu-button w-full text-left py-2 mb-1 text-sm group cursor-default"
+                style={{ paddingLeft: '1.5rem' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center flex-1 min-w-0 mr-2">
+                    {/* 占位空间 */}
+                    <div className="w-4 mr-2 flex-shrink-0" />
+                    
+                    {/* 文件夹图标 - 红色 */}
+                    <div className="folder-icon mr-2 flex-shrink-0">
+                      <FolderOpen className="w-4 h-4 text-red-500" />
+                    </div>
+                    
+                    {/* 文件夹名称 - 红色文字 */}
+                    <span className="folder-name truncate text-red-500 dark:text-red-400 font-semibold">
+                      {t('uncategorizedBookmarks')}
+                    </span>
+                  </div>
+                  
+                  {/* 右侧徽章 - 红色背景 */}
+                  <div className="flex items-center space-x-1 flex-shrink-0">
+                    <span className="bookmark-count-badge bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs px-1.5 py-0.5 rounded-full">
+                      {uncategorizedBookmarkCount}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            )}
+            
+            {/* 如果没有未分类书签，也显示一个提示 */}
+            {selectedFolderId === null && uncategorizedBookmarkCount === 0 && currentSpaceData && (
+              <div className="text-xs text-gray-400 py-2" style={{ paddingLeft: '1.5rem' }}>
+                暂无未分类书签
+              </div>
+            )}
+            
             {folderTree.map(folder => renderFolder(folder))}
           </div>
         </div>

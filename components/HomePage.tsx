@@ -4,13 +4,13 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'
-import BookmarkGrid from '@/components/BookmarkGrid'
+import OptimizedBookmarkGrid from '@/components/OptimizedBookmarkGrid'
 import InitModal from '@/components/InitModal'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { cacheManager, getLatestVersionKeys, loadCache, isForceRefresh } from '@/lib/cache-manager'
 
 export default function HomePage() {
-  const { token, loading, t } = useApp()
+  const { token, loading, t, loadSpaceData } = useApp()
   const [needsInit, setNeedsInit] = useState(false)
   const [checkingInit, setCheckingInit] = useState(true)
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null)
@@ -32,6 +32,9 @@ export default function HomePage() {
   const defaultSpaceInit = useRef(false)
   // 缓存初始化状态
   const [cacheInitialized, setCacheInitialized] = useState(false)
+  
+  // 用于跟踪上一个加载的空间ID，避免重复加载
+  const lastLoadedSpaceId = useRef<string | null>(null)
 
   // 检测屏幕尺寸变化
   const checkScreenSize = useCallback(() => {
@@ -185,6 +188,15 @@ export default function HomePage() {
     }
   }, [token, selectedSpaceId]) // 移除不必要的isAuthenticated和user依赖和t依赖 
 
+  // 监听空间选择变化，自动加载空间数据
+  useEffect(() => {
+    if (selectedSpaceId && selectedSpaceId !== lastLoadedSpaceId.current) {
+      console.log('空间变化，加载新数据:', selectedSpaceId)
+      lastLoadedSpaceId.current = selectedSpaceId
+      loadSpaceData(selectedSpaceId)
+    }
+  }, [selectedSpaceId, loadSpaceData])
+
   useEffect(() => {
     
     if (!checkingInit && !loading && !needsInit && cacheInitialized && !selectedSpaceId && !defaultSpaceInit.current) {
@@ -269,15 +281,15 @@ export default function HomePage() {
         </div>
 
         {/* 书签网格 */}
-        <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <BookmarkGrid
-            spaceId={selectedSpaceId}
-            folderId={selectedFolderId}
-            searchQuery={searchMode === 'bookmarks' ? searchQuery : ''}
-            sortOrder={sortOrder}
-            onSortOrderChange={setSortOrder}
-          />
-        </main>
+      <main className="flex-1 overflow-y-auto scrollbar-thin">
+        <OptimizedBookmarkGrid
+          spaceId={selectedSpaceId}
+          folderId={selectedFolderId}
+          searchQuery={searchMode === 'bookmarks' ? searchQuery : ''}
+          sortOrder={sortOrder}
+          onSortOrderChange={setSortOrder}
+        />
+      </main>
       </div>
     </div>
   )

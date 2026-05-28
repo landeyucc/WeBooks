@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
     } else {
       targetUserId = await getPublicUserId(request)
     }
-    console.log('GET folders - User ID:', targetUserId)
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -126,8 +125,7 @@ export async function GET(request: NextRequest) {
     }))
 
     return NextResponse.json({ folders: formattedFolders })
-  } catch (error) {
-    console.error('获取文件夹错误:', error)
+  } catch {
     return NextResponse.json(
       { error: '获取文件夹失败' },
       { status: 500 }
@@ -165,8 +163,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('POST folders - User ID:', userId)
-
     const { name, description, iconUrl, spaceId, parentFolderId } = await request.json()
 
     const folder = await prisma.folder.create({
@@ -184,8 +180,7 @@ export async function POST(request: NextRequest) {
     await updateVersionKey('folders')
 
     return NextResponse.json({ folder })
-  } catch (error) {
-    console.error('创建文件夹错误:', error)
+  } catch {
     return NextResponse.json(
       { error: '创建文件夹失败' },
       { status: 500 }

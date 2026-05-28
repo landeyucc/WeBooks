@@ -380,6 +380,8 @@ export const translations = {
     showingAllBookmarks: '已显示加载的 {count} 个书签',
     other: '其他',
     order: '顺序',
+    loadingSpaceData: '加载空间数据中...',
+    selectSpaceFirst: '请先选择空间',
   },
 
 
@@ -763,6 +765,8 @@ export const translations = {
     showingAllBookmarks: 'Showing loaded {count} bookmarks',
     other: 'Other',
     order: 'Order',
+    loadingSpaceData: 'Loading space data...',
+    selectSpaceFirst: 'Please select a space first',
   }
 }
 

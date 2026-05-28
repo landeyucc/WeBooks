@@ -45,3 +45,4 @@ chrome-extension/webooks_v1.0.1.zip
 /.env
 *.zip
 *.crx
+/test-script

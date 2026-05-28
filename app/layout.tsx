@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProvider } from "@/contexts/AppContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { CustomDialogProvider } from "@/components/CustomDialogProvider";
+import { ThemeLoader } from "@/components/ThemeLoader";
 import { getSystemConfig } from "./lib/server-config";
 
 const geistSans = localFont({
@@ -58,6 +59,7 @@ export default async function RootLayout({
       >
         <ErrorBoundary>
           <AppProvider>
+            <ThemeLoader />
             <CustomDialogProvider>
               {children}
             </CustomDialogProvider>

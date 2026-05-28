@@ -81,7 +81,7 @@ interface FolderData {
 export default function AdminDashboard() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { logout, user, t, token, isAuthenticated } = useApp()
+  const { logout, user, t, token, isAuthenticated, themeType, setThemeType, theme, toggleTheme } = useApp()
   const { showSuccess, showError, showWarning, notifications } = useNotifications()
   const [activeTab, setActiveTab] = useState<TabType>('spaces')
   
@@ -1488,6 +1488,98 @@ export default function AdminDashboard() {
                     >
                       {t('clear')}
                     </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 主题设置 */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">主题设置</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  选择你喜欢的主题风格和配色方案
+                </p>
+                
+                <div className="space-y-4">
+                  {/* 主题类型选择 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      主题风格
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setThemeType('neumorphism')}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          themeType === 'neumorphism'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center"
+                               style={{ boxShadow: '3px 3px 6px rgba(0,0,0,0.1), -3px -3px 6px rgba(255,255,255,0.8)' }}>
+                            <span className="text-gray-600 dark:text-gray-300">拟态</span>
+                          </div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Neumorphism</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">柔和拟态风格</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setThemeType('skyblue')}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          themeType === 'skyblue'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
+                               style={{ boxShadow: '0 4px 6px rgba(59, 130, 246, 0.3)' }}>
+                            <span className="text-white">天蓝</span>
+                          </div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Sky Blue</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">现代扁平风格</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 明暗模式切换 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      明暗模式
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => theme === 'dark' && toggleTheme()}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          theme === 'light'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">浅色模式</span>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => theme === 'light' && toggleTheme()}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          theme === 'dark'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <svg className="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">深色模式</span>
+                        </div>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

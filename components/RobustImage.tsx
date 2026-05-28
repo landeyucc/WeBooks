@@ -20,8 +20,10 @@ export default function RobustImage({
   onError,
   ...imageProps
 }: RobustImageProps) {
-  const [imgError, setImgError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [currentSrc, setCurrentSrc] = useState(src);
+  const [showFallback, setShowFallback] = useState(false);
+  const maxRetries = 2;
 
   // 清理 URL
   const cleanUrl = currentSrc.trim().replace(/^[\s(]+|[\s)]+$/g, '');
@@ -47,22 +49,33 @@ export default function RobustImage({
   };
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (!imgError && fallbackSrc) {
-      setImgError(true);
+    // 如果已经显示占位符，直接返回
+    if (showFallback) return;
+    
+    // 如果有 fallbackSrc 且还没尝试过，先尝试 fallbackSrc
+    if (retryCount === 0 && fallbackSrc && currentSrc !== fallbackSrc) {
+      setRetryCount(1);
       setCurrentSrc(fallbackSrc);
       return;
     }
     
+    // 如果已达到最大重试次数，显示占位符
+    if (retryCount >= maxRetries) {
+      setShowFallback(true);
+      return;
+    }
+    
+    // 否则增加重试次数，再次尝试
+    setRetryCount(prev => prev + 1);
+    
     // 如果有自定义错误处理器则调用它
     if (onError) {
       onError(e);
-    } else {
-      console.warn(`Failed to load image: ${currentSrc}`);
     }
   };
 
-  // 如果 URL 无效，返回默认占位符
-  if (!isValidImageUrl(cleanUrl)) {
+  // 显示占位符
+  if (showFallback || !isValidImageUrl(cleanUrl)) {
     return (
       <div className={`flex items-center justify-center bg-gray-200 dark:bg-gray-600 ${className}`}>
         <svg
@@ -88,6 +101,7 @@ export default function RobustImage({
 
   return (
     <Image
+      key={`${currentSrc}-${retryCount}`}
       src={cleanUrl}
       alt={alt}
       className={className}

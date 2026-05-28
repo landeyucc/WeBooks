@@ -24,22 +24,13 @@ export async function getSystemConfig() {
     const keywords = config.keywords?.trim() || "书签管理,浏览器书签,bookmark manager";
     const faviconUrl = config.faviconUrl?.trim() || "/favicon.ico";
 
-    console.log('[server-config] 获取系统配置:', { 
-      id: config.id,
-      siteTitle, 
-      seoDescription, 
-      keywords,
-      updatedAt: config.updatedAt 
-    });
-
     return {
       siteTitle,
       seoDescription,
       keywords,
       faviconUrl
     };
-  } catch (error) {
-    console.error('[server-config] 获取系统配置失败:', error);
+  } catch {
     return {
       siteTitle: "Webooks",
       seoDescription: "现代化的拟态浏览器书签管理系统",

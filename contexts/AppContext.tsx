@@ -2,11 +2,24 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { translations, Language, TranslationKey } from '@/lib/i18n'
+import type { Space, Folder, Bookmark } from '@prisma/client'
 
 interface User {
   id: string
   username: string
   email: string | null
+}
+
+interface FolderNode extends Folder {
+  children: FolderNode[]
+  bookmarks: Bookmark[]
+}
+
+interface SpaceData {
+  space: Space
+  folders: Folder[]
+  bookmarks: Bookmark[]
+  folderTree: FolderNode[]
 }
 
 interface AppContextType {
@@ -19,7 +32,9 @@ interface AppContextType {
   
   // Theme
   theme: 'light' | 'dark'
+  themeType: 'neumorphism' | 'skyblue'
   toggleTheme: () => void
+  setThemeType: (type: 'neumorphism' | 'skyblue') => void
   
   // Language
   language: Language
@@ -34,6 +49,12 @@ interface AppContextType {
   collapsedFolders: Set<string>
   toggleFolderCollapse: (folderId: string) => void
   setCollapsedFolders: (folders: Set<string>) => void
+  
+  // Space data management
+  currentSpaceData: SpaceData | null
+  loadSpaceData: (spaceId: string) => Promise<void>
+  clearSpaceData: () => void
+  isLoadingSpaceData: boolean
 }
 
 // 默认值定义
@@ -44,7 +65,9 @@ const defaultContextValue: AppContextType = {
   logout: () => {},
   isAuthenticated: false,
   theme: 'light',
+  themeType: 'neumorphism',
   toggleTheme: () => {},
+  setThemeType: () => {},
   language: 'zh',
   setLanguage: () => {},
   t: (key: string, params?: Record<string, string | number>) => {
@@ -63,7 +86,11 @@ const defaultContextValue: AppContextType = {
   setLoading: () => {},
   collapsedFolders: new Set<string>(),
   toggleFolderCollapse: () => {},
-  setCollapsedFolders: () => {}
+  setCollapsedFolders: () => {},
+  currentSpaceData: null,
+  loadSpaceData: async () => {},
+  clearSpaceData: () => {},
+  isLoadingSpaceData: false
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -72,10 +99,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [themeType, setThemeTypeState] = useState<'neumorphism' | 'skyblue'>('neumorphism')
   const [language, setLanguageState] = useState<Language>('zh')
   const [loading, setLoading] = useState(true)
   const [collapsedFolders, setCollapsedFoldersState] = useState<Set<string>>(new Set())
   const [isClient, setIsClient] = useState(false)
+  
+  // Space data management
+  const [currentSpaceData, setCurrentSpaceData] = useState<SpaceData | null>(null)
+  const [isLoadingSpaceData, setIsLoadingSpaceData] = useState(false)
 
   // 确保只在客户端运行localStorage相关操作
   useEffect(() => {
@@ -94,8 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           try {
             setToken(savedToken)
             setUser(JSON.parse(savedUser))
-          } catch (error) {
-            console.error('解析用户信息失败:', error)
+          } catch {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
           }
@@ -106,6 +137,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (savedTheme) {
           setTheme(savedTheme)
           document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+        }
+
+        // 加载主题类型
+        const savedThemeType = localStorage.getItem('themeType') as 'neumorphism' | 'skyblue' | null
+        if (savedThemeType) {
+          setThemeTypeState(savedThemeType)
+          document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
+          document.documentElement.classList.add(`theme-${savedThemeType}`)
+        } else {
+          document.documentElement.classList.add('theme-neumorphism')
         }
 
         // 加载语言
@@ -120,14 +161,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           try {
             const folders = JSON.parse(savedCollapsedFolders)
             setCollapsedFoldersState(new Set(folders))
-          } catch (error) {
-            console.error('解析折叠状态失败:', error)
+          } catch {
             localStorage.removeItem('collapsedFolders')
           }
         }
         
-      } catch (error) {
-        console.error('AppContext初始化失败:', error)
+      } catch {
       } finally {
         setLoading(false)
       }
@@ -162,6 +201,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle('dark', newTheme === 'dark')
   }
 
+  const setThemeType = (type: 'neumorphism' | 'skyblue') => {
+    setThemeTypeState(type)
+    localStorage.setItem('themeType', type)
+    document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
+    document.documentElement.classList.add(`theme-${type}`)
+  }
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang)
     localStorage.setItem('language', lang)
@@ -181,6 +227,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setCollapsedFolders = (folders: Set<string>) => {
     setCollapsedFoldersState(folders)
+  }
+
+  // 空间数据加载函数
+  const loadSpaceData = async (spaceId: string) => {
+    if (!spaceId) return
+    
+    setIsLoadingSpaceData(true)
+    try {
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      
+      const response = await fetch(`/api/spaces/${spaceId}/data`, { headers })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const spaceData = await response.json()
+      
+      setCurrentSpaceData(spaceData)
+    } catch {
+      setCurrentSpaceData(null)
+    } finally {
+      setIsLoadingSpaceData(false)
+    }
+  }
+
+  // 清除空间数据
+  const clearSpaceData = () => {
+    setCurrentSpaceData(null)
   }
 
   const t = (key: TranslationKey, params?: Record<string, string | number>): string => {
@@ -204,7 +282,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logout,
     isAuthenticated: !!token,
     theme,
+    themeType,
     toggleTheme,
+    setThemeType,
     language,
     setLanguage,
     t,
@@ -212,7 +292,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLoading,
     collapsedFolders,
     toggleFolderCollapse,
-    setCollapsedFolders
+    setCollapsedFolders,
+    currentSpaceData,
+    loadSpaceData,
+    clearSpaceData,
+    isLoadingSpaceData
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

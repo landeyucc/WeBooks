@@ -107,8 +107,37 @@ npm start
 ### 主要配置项
 
 #### 数据库配置
+
+**支持的数据库类型**：
+- **PostgreSQL**（默认，推荐生产环境）
+- **SQLite**（轻量级，适合开发和小型部署）
+
+**PostgreSQL 配置**：
 ```env
+DATABASE_TYPE=postgresql
 DATABASE_URL="postgresql://username:password@localhost:5432/webooks"
+```
+
+**SQLite 配置**：
+```env
+DATABASE_TYPE=sqlite
+SQLITE_DATABASE_PATH="./data/webooks.db"
+DATABASE_URL="file:./data/webooks.db"
+```
+
+**数据库切换说明**：
+- 修改 `DATABASE_TYPE` 环境变量即可切换数据库类型
+- SQLite 模式下会自动创建数据目录和数据库文件
+- 两种数据库模式使用相同的 Prisma schema，代码无需修改
+- 可以通过 `getDatabaseProvider()`、`isSQLiteMode()`、`isPostgreSQLMode()` 等函数在代码中检测当前数据库类型
+
+**迁移和初始化**：
+```bash
+# 初始化数据库（会自动识别当前配置的数据库类型）
+npm run db:init
+
+# 运行 SQLite 模式测试
+node test-script/test-sqlite-mode.js
 ```
 
 #### 应用配置
