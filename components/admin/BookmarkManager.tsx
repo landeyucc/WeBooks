@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useApp } from '../../contexts/AppContext'
 import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
@@ -62,6 +62,66 @@ export default function BookmarkManager() {
 
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
+  // ========== 预构建索引 (优化性能) ==========
+
+  // 文件夹索引: folderId -> Folder (O(1) 查找)
+  const folderMap = useMemo(() => {
+    const map = new Map<string, Folder>()
+    for (const folder of folders) {
+      map.set(folder.id, folder)
+    }
+    return map
+  }, [folders])
+
+  // 文件夹路径索引: folderId -> string[] (预计算所有路径)
+  const folderPathsMap = useMemo(() => {
+    const paths = new Map<string, string[]>()
+    const visited = new Set<string>()
+
+    const buildPath = (folderId: string): string[] => {
+      if (visited.has(folderId)) return []
+      visited.add(folderId)
+
+      const folder = folderMap.get(folderId)
+      if (!folder) return []
+
+      if (!folder.parentFolderId) {
+        return [folder.name]
+      }
+
+      const parentPath = buildPath(folder.parentFolderId)
+      return [...parentPath, folder.name]
+    }
+
+    for (const folder of folders) {
+      if (!paths.has(folder.id)) {
+        paths.set(folder.id, buildPath(folder.id))
+      }
+    }
+
+    return paths
+  }, [folders, folderMap])
+
+  // 获取文件夹路径 (O(1))
+  const getFolderPath = useCallback((folderId: string, foldersList?: Folder[]): string[] => {
+    // 如果传了特定的 foldersList（特定空间过滤后的），使用动态计算；否则用预构建索引
+    if (foldersList && foldersList !== folders) {
+      const tempMap = new Map<string, Folder>()
+      foldersList.forEach(f => tempMap.set(f.id, f))
+      const visited = new Set<string>()
+      const buildPath = (currentId: string): string[] => {
+        if (visited.has(currentId)) return []
+        visited.add(currentId)
+        const folder = tempMap.get(currentId)
+        if (!folder) return []
+        if (!folder.parentFolderId) return [folder.name]
+        return [...buildPath(folder.parentFolderId), folder.name]
+      }
+      return buildPath(folderId)
+    }
+    return folderPathsMap.get(folderId) || []
+  }, [folders, folderPathsMap])
+
   // 批量操作相关函数
   const toggleBatchMode = () => {
     setBatchMode(!batchMode)
@@ -82,7 +142,6 @@ export default function BookmarkManager() {
   }
 
   const selectAllInGroup = (groupKey: string) => {
-    const { groups } = groupedBookmarks()
     const groupBookmarks = groups[groupKey] || []
     const newSelected = new Set(selectedBookmarks)
     
@@ -367,83 +426,70 @@ export default function BookmarkManager() {
   }
 
   // 获取当前显示的书签数量
-  const getFilteredBookmarksCount = () => {
+  const filteredBookmarksCount = useMemo(() => {
     if (selectedSpaceId === 'all') {
       return bookmarks.length
     }
     return bookmarks.filter(bookmark => bookmark.spaceId === selectedSpaceId).length
-  }
+  }, [bookmarks, selectedSpaceId])
 
-  // 过滤文件夹
-  const getFilteredFolders = () => {
+  // 过滤后的文件夹 (useMemo)
+  const filteredFolders = useMemo(() => {
     if (selectedSpaceId === 'all') {
       return folders
     }
     return folders.filter(folder => folder.spaceId === selectedSpaceId)
-  }
+  }, [folders, selectedSpaceId])
 
-  // 按文件夹路径分组书签
-  const groupedBookmarks = () => {
-    const filteredBookmarks = getFilteredBookmarks()
-    const filteredFolders = getFilteredFolders()
-    
-    const groups: { [key: string]: Bookmark[] } = {}
-    const folderPaths: { [key: string]: string[] } = {}
+  // 获取过滤后的书签 (useMemo)
+  const filteredBookmarks = useMemo(() => {
+    if (selectedSpaceId === 'all') {
+      return bookmarks
+    }
+    return bookmarks.filter(bookmark => bookmark.spaceId === selectedSpaceId)
+  }, [bookmarks, selectedSpaceId])
 
-    // 无文件夹的书签
-    groups[t('noFolder')] = []
-    folderPaths[t('noFolder')] = []
+  // 按文件夹路径分组书签 (useMemo 缓存，避免每次渲染重新分组)
+  const { groups, folderPaths } = useMemo(() => {
+    const result: { [key: string]: Bookmark[] } = {}
+    const paths: { [key: string]: string[] } = {}
 
-    // 有文件夹的书签
+    result[t('noFolder')] = []
+    paths[t('noFolder')] = []
+
     filteredBookmarks.forEach(bookmark => {
       if (bookmark.folderId) {
         const path = getFolderPath(bookmark.folderId, filteredFolders)
         const pathKey = path.join('/')
         
-        if (!groups[pathKey]) {
-          groups[pathKey] = []
-          folderPaths[pathKey] = path
+        if (!result[pathKey]) {
+          result[pathKey] = []
+          paths[pathKey] = path
         }
-        groups[pathKey].push(bookmark)
+        result[pathKey].push(bookmark)
       } else {
-        groups[t('noFolder')].push(bookmark)
+        result[t('noFolder')].push(bookmark)
       }
     })
 
-    return { groups, folderPaths }
-  }
+    return { groups: result, folderPaths: paths }
+  }, [filteredBookmarks, filteredFolders, getFolderPath, t])
 
-  // 获取过滤后的书签
-  const getFilteredBookmarks = () => {
-    if (selectedSpaceId === 'all') {
-      return bookmarks
-    }
-    return bookmarks.filter(bookmark => bookmark.spaceId === selectedSpaceId)
-  }
-
-  // 获取文件夹的完整路径（使用完整文件夹列表以支持跨空间层级）
-  const getFolderPath = useCallback((folderId: string, foldersList?: Folder[]): string[] => {
-    // 优先使用传入的foldersList，否则使用当前folders状态
-    const allFolders = foldersList || folders || []
-    const visited = new Set<string>()
-    
-    const buildPath = (currentFolderId: string): string[] => {
-      if (visited.has(currentFolderId)) return [] // 防止循环引用
-      visited.add(currentFolderId)
+  // 按文件夹层级深度排序组
+  const sortedGroups = useMemo(() => {
+    return Object.keys(groups).sort((a, b) => {
+      if (a === t('noFolder')) return 1 
+      if (b === t('noFolder')) return -1
       
-      const folder = allFolders.find(f => f.id === currentFolderId)
-      if (!folder) return []
+      const depthA = folderPaths[a].length
+      const depthB = folderPaths[b].length
       
-      if (!folder.parentFolderId) {
-        return [folder.name]
+      if (depthA !== depthB) {
+        return depthA - depthB
       }
-      
-      const parentPath = buildPath(folder.parentFolderId)
-      return [...parentPath, folder.name]
-    }
-    
-    return buildPath(folderId)
-  }, [folders])
+      return a.localeCompare(b, 'zh-Hans-CN')
+    })
+  }, [groups, folderPaths, t])
 
   if (loading) {
     return (
@@ -453,23 +499,6 @@ export default function BookmarkManager() {
     )
   }
 
-  const { groups, folderPaths } = groupedBookmarks()
-
-  // 按文件夹层级深度排序组
-  const sortedGroups = Object.keys(groups).sort((a, b) => {
-    if (a === t('noFolder')) return 1 
-    if (b === t('noFolder')) return -1
-    
-    const depthA = folderPaths[a].length
-    const depthB = folderPaths[b].length
-    
-    // 浅层文件夹优先，然后按路径字典序排序
-    if (depthA !== depthB) {
-      return depthA - depthB
-    }
-    return a.localeCompare(b)
-  })
-
   return (
     <div>
       {/* 通知系统 */}
@@ -477,7 +506,7 @@ export default function BookmarkManager() {
       
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          {t('bookmarks')} ({getFilteredBookmarksCount()})
+          {t('bookmarks')} ({filteredBookmarksCount})
         </h2>
         <div className="flex items-center gap-3">
           <CustomSelect
@@ -492,6 +521,7 @@ export default function BookmarkManager() {
             ]}
             placeholder={t('selectSpace')}
             disabled={loading}
+            className="min-w-[220px]"
           />
           <button onClick={handleCreate} className="btn-primary">
             {t('createBookmark')}
@@ -520,7 +550,7 @@ export default function BookmarkManager() {
             <div key={groupKey} className="neu-card">
               <div className="px-6 py-4 border-b border-gray-200/50">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="text-lg font-semibold flex items-center min-w-0">
                     {groupKey === t('noFolder') ? (
                       <>
                         <i className="fas fa-folder-open text-red-500 dark:text-red-400 mr-2"></i>
@@ -530,11 +560,13 @@ export default function BookmarkManager() {
                       </>
                     ) : (
                       <>
-                        <i className="fas fa-folder text-blue-500 dark:text-blue-400 mr-2"></i>
-                        {folderPath.join(' / ')}
+                        <i className="fas fa-folder text-blue-500 dark:text-blue-400 mr-2 flex-shrink-0"></i>
+                        <span className="whitespace-nowrap overflow-x-auto scrollbar-thin">
+                          {folderPath.join(' / ')}
+                        </span>
                       </>
                     )}
-                    <span className="ml-2 text-sm text-gray-500">
+                    <span className="ml-2 text-sm text-gray-500 flex-shrink-0">
                       ({groupBookmarks.length})
                     </span>
                   </h3>

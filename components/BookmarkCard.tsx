@@ -12,6 +12,7 @@ interface BookmarkCardProps {
     folder?: {
       name: string
     } | null
+    folderPath?: string | null
   }
   hoveredBookmarkId: string | null
   mousePosition: { x: number, y: number } | null
@@ -124,10 +125,10 @@ export default function BookmarkCard({
               <i className="fas fa-link text-blue-500 dark:text-blue-400"></i>
               <span className="text-blue-500 dark:text-blue-400 break-all">{bookmark.url}</span>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <i className="fas fa-folder text-blue-500 dark:text-blue-400"></i>
-              <span className="text-blue-500 dark:text-blue-400">
-                {bookmark.folder?.name || t('uncategorizedBookmarks')}
+            <div className="flex items-center gap-2 text-xs overflow-hidden">
+              <i className="fas fa-folder text-blue-500 dark:text-blue-400 flex-shrink-0"></i>
+              <span className="text-blue-500 dark:text-blue-400 whitespace-nowrap overflow-x-auto scrollbar-thin">
+                {bookmark.folderPath || bookmark.folder?.name || t('uncategorizedBookmarks')}
               </span>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">

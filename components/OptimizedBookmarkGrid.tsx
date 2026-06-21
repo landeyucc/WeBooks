@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import LoadingSpinner from './LoadingSpinner'
 import BookmarkCard from './BookmarkCard'
@@ -25,8 +25,12 @@ interface Folder {
 interface FolderGroup {
   pathKey: string
   path: string[]
-  folderIds: string[]
-  bookmarks: Bookmark[]
+  folderId: string | null
+  folderName: string
+  directBookmarks: Bookmark[]
+  totalBookmarks: number
+  hasChildren: boolean
+  children: FolderGroup[]
 }
 
 interface OptimizedBookmarkGridProps {
@@ -52,9 +56,39 @@ export default function OptimizedBookmarkGrid({
   const [sortBy] = useState<'title' | 'createdAt'>('title')
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [showBackToTop, setShowBackToTop] = useState(false)
+  const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // 从空间数据中获取文件夹和书签
-  const { folders = [], bookmarks = [] } = currentSpaceData || {}
+  // 从空间数据中获取文件夹和书签 - 使用 useMemo 稳定引用
+  const folders = useMemo(() => currentSpaceData?.folders ?? [], [currentSpaceData])
+  const bookmarks = useMemo(() => currentSpaceData?.bookmarks ?? [], [currentSpaceData])
+
+  // 预构建索引：避免多次 O(n) filter 操作
+  const { childFolderIndex, bookmarkFolderIndex, folderMap } = useMemo(() => {
+    const childFolderIndex = new Map<string | null, Folder[]>()
+    const bookmarkFolderIndex = new Map<string, Bookmark[]>()
+    const folderMap = new Map<string, Folder>()
+
+    // 构建 parentFolderId -> children[] 的索引
+    for (const folder of folders) {
+      folderMap.set(folder.id, folder)
+      const parentId = folder.parentFolderId
+      if (!childFolderIndex.has(parentId)) {
+        childFolderIndex.set(parentId, [])
+      }
+      childFolderIndex.get(parentId)!.push(folder)
+    }
+
+    // 构建 folderId -> bookmarks[] 的索引
+    for (const bookmark of bookmarks) {
+      const fid = bookmark.folderId
+      if (!bookmarkFolderIndex.has(fid ?? '')) {
+        bookmarkFolderIndex.set(fid ?? '', [])
+      }
+      bookmarkFolderIndex.get(fid ?? '')!.push(bookmark)
+    }
+
+    return { childFolderIndex, bookmarkFolderIndex, folderMap }
+  }, [folders, bookmarks])
 
   // 排序书签的辅助函数（用于搜索结果）
   const sortBookmarks = useCallback((bookmarksToSort: Bookmark[]) => {
@@ -62,197 +96,190 @@ export default function OptimizedBookmarkGrid({
       const aTitle = a.title.toLowerCase()
       const bTitle = b.title.toLowerCase()
       
-      const isChineseA = /[\u4e00-\u9fa5]/.test(aTitle)
-      const isChineseB = /[\u4e00-\u9fa5]/.test(bTitle)
-      
-      if (isChineseA && !isChineseB) return 1
-      if (!isChineseA && isChineseB) return -1
-      
       if (sortOrder === 'asc') {
-        return aTitle.localeCompare(bTitle, 'zh-CN')
+        return aTitle.localeCompare(bTitle, 'zh-Hans-CN')
       } else {
-        return bTitle.localeCompare(aTitle, 'zh-CN')
+        return bTitle.localeCompare(aTitle, 'zh-Hans-CN')
       }
     })
   }, [sortOrder])
 
-  // 构建文件夹组
+  // 构建文件夹组 - 树形嵌套结构（使用预构建索引避免多次 O(n) filter）
   const folderGroups = useMemo(() => {
     if (!folders.length && !bookmarks.length) return []
 
-    const groups: FolderGroup[] = []
-    const allChildIds = new Set<string>()
-    
-    // 排序书签的辅助函数（内部实现，避免循环依赖）
-    const sortBookmarksInternal = (bookmarksToSort: Bookmark[]) => {
-      return [...bookmarksToSort].sort((a, b) => {
-        const aTitle = a.title.toLowerCase()
-        const bTitle = b.title.toLowerCase()
-        
-        const isChineseA = /[\u4e00-\u9fa5]/.test(aTitle)
-        const isChineseB = /[\u4e00-\u9fa5]/.test(bTitle)
-        
-        if (isChineseA && !isChineseB) return 1
-        if (!isChineseA && isChineseB) return -1
-        
+    // 递归构建文件夹组（树形结构）- 使用索引 O(1) 查找
+    const buildFolderTree = (
+      parentFolderId: string | null,
+      basePath: string[] = []
+    ): FolderGroup[] => {
+      const childFolders = childFolderIndex.get(parentFolderId) ?? []
+
+      const groups: FolderGroup[] = []
+      for (const folder of childFolders) {
+        const currentPath = [...basePath, folder.name]
+
+        // 使用预构建索引 O(1) 查找
+        const directBookmarksList = bookmarkFolderIndex.get(folder.id) ?? []
+
+        // 递归构建子文件夹组
+        const children = buildFolderTree(folder.id, currentPath)
+
+        // 计算包含子文件夹的总书签数
+        const totalCount =
+          directBookmarksList.length +
+          children.reduce((sum, child) => sum + child.totalBookmarks, 0)
+
+        groups.push({
+          pathKey: currentPath.join('/'),
+          path: currentPath,
+          folderId: folder.id,
+          folderName: folder.name,
+          directBookmarks: sortBookmarks(directBookmarksList),
+          totalBookmarks: totalCount,
+          hasChildren: children.length > 0,
+          children: children,
+        })
+      }
+
+      // 排序同层级文件夹 - 按字母顺序
+      groups.sort((a, b) => {
+        const aKey = a.folderName.toLowerCase()
+        const bKey = b.folderName.toLowerCase()
+
         if (sortOrder === 'asc') {
-          return aTitle.localeCompare(bTitle, 'zh-CN')
+          return aKey.localeCompare(bKey, 'zh-Hans-CN')
         } else {
-          return bTitle.localeCompare(aTitle, 'zh-CN')
+          return bKey.localeCompare(aKey, 'zh-Hans-CN')
         }
       })
-    }
-    
-    // 递归收集所有子文件夹ID
-    const collectAllChildIds = (parentId: string) => {
-      const children = folders.filter(f => f.parentFolderId === parentId)
-      for (const child of children) {
-        allChildIds.add(child.id)
-        collectAllChildIds(child.id)
-      }
-    }
-    
-    if (folderId) {
-      allChildIds.add(folderId)
-      collectAllChildIds(folderId)
+
+      return groups
     }
 
-    // 筛选出需要处理的文件夹
-    let targetFolders: Folder[] = []
-    
+    let tree: FolderGroup[] = []
+
     if (folderId) {
       // 如果选择了文件夹，只显示该文件夹及其子文件夹
-      targetFolders = folders.filter(f => allChildIds.has(f.id))
+      const selectedFolder = folderMap.get(folderId)
+      if (selectedFolder) {
+        // 从根向上构建路径
+        const pathSegments: string[] = []
+        let current: Folder | undefined = selectedFolder
+        while (current) {
+          pathSegments.unshift(current.name)
+          current = current.parentFolderId
+            ? folderMap.get(current.parentFolderId)
+            : undefined
+        }
+
+        // 构建选中文件夹的直接书签和子组
+        const directBookmarksList = bookmarkFolderIndex.get(folderId) ?? []
+        const children = buildFolderTree(folderId, pathSegments)
+        const totalCount =
+          directBookmarksList.length +
+          children.reduce((sum, child) => sum + child.totalBookmarks, 0)
+
+        tree = [
+          {
+            pathKey: pathSegments.join('/'),
+            path: pathSegments,
+            folderId: folderId,
+            folderName: selectedFolder.name,
+            directBookmarks: sortBookmarks(directBookmarksList),
+            totalBookmarks: totalCount,
+            hasChildren: children.length > 0,
+            children: children,
+          },
+        ]
+      }
     } else {
-      // 如果没有选择文件夹，显示所有顶层文件夹
-      targetFolders = folders.filter(f => !f.parentFolderId)
-    }
+      // 如果没有选择文件夹，从顶层文件夹开始构建
+      tree = buildFolderTree(null, [])
 
-    // 递归构建文件夹路径和组
-    const buildGroup = (folder: Folder, basePath: string[] = []): FolderGroup => {
-      const currentPath = [...basePath, folder.name]
-      const folderIds = [folder.id]
-      
-      // 收集所有子文件夹ID
-      const collectChildren = (parentId: string) => {
-        const children = folders.filter(f => f.parentFolderId === parentId)
-        for (const child of children) {
-          folderIds.push(child.id)
-          collectChildren(child.id)
-        }
-      }
-      collectChildren(folder.id)
-
-      // 收集该文件夹及其子文件夹下的所有书签
-      const groupBookmarks = bookmarks.filter(b => 
-        folderIds.includes(b.folderId || '')
-      )
-
-      return {
-        pathKey: currentPath.join('/'),
-        path: currentPath,
-        folderIds,
-        bookmarks: sortBookmarksInternal(groupBookmarks)
-      }
-    }
-
-    // 构建顶层文件夹组
-    for (const folder of targetFolders) {
-      groups.push(buildGroup(folder))
-      
-      // 递归构建子文件夹组
-      const buildSubGroups = (parentId: string, basePath: string[]) => {
-        const children = folders.filter(f => f.parentFolderId === parentId)
-        for (const child of children) {
-          groups.push(buildGroup(child, basePath))
-          buildSubGroups(child.id, [...basePath, child.name])
-        }
-      }
-      buildSubGroups(folder.id, [folder.name])
-    }
-
-    // 只有在没有选择文件夹时，才添加未分类组（无论是否有其他文件夹）
-    if (!folderId) {
-      const uncategorizedBookmarks = bookmarks.filter(b => !b.folderId)
+      // 添加未分类组（使用索引查找）
+      const uncategorizedBookmarks = bookmarkFolderIndex.get('') ?? []
       if (uncategorizedBookmarks.length > 0) {
-        groups.push({
+        tree.push({
           pathKey: t('noFolder'),
           path: [],
-          folderIds: [],
-          bookmarks: sortBookmarksInternal(uncategorizedBookmarks)
+          folderId: null,
+          folderName: t('uncategorizedBookmarks'),
+          directBookmarks: sortBookmarks(uncategorizedBookmarks),
+          totalBookmarks: uncategorizedBookmarks.length,
+          hasChildren: false,
+          children: [],
         })
       }
     }
 
-    // 排序组
-    const sortedGroups = groups.sort((a, b) => {
-      if (a.pathKey === t('noFolder')) return 1
-      if (b.pathKey === t('noFolder')) return -1
-      const depthA = a.path.length
-      const depthB = b.path.length
-      if (depthA !== depthB) return depthA - depthB
-      
-      const aKey = a.pathKey
-      const bKey = b.pathKey
-      
-      const isChineseA = /[\u4e00-\u9fa5]/.test(aKey)
-      const isChineseB = /[\u4e00-\u9fa5]/.test(bKey)
-      
-      if (isChineseA && !isChineseB) return 1
-      if (!isChineseA && isChineseB) return -1
-      
-      if (sortOrder === 'asc') {
-        return aKey.localeCompare(bKey, 'zh-CN')
-      } else {
-        return bKey.localeCompare(aKey, 'zh-CN')
-      }
-    })
+    return tree
+  }, [folders, bookmarks, folderId, sortOrder, childFolderIndex, bookmarkFolderIndex, folderMap, sortBookmarks, t])
 
-    return sortedGroups
-  }, [folders, bookmarks, folderId, sortOrder, t])
-
-  // 计算总书签数
+  // 计算总书签数（使用预构建索引，避免 O(n) filter）
   const totalBookmarks = useMemo(() => {
     // 如果没有选择文件夹，显示所有书签总数
     if (!folderId) {
       return bookmarks.length
     }
-    // 如果选择了文件夹，直接计算该文件夹及其子文件夹的书签数（避免重复计算）
+    // 使用 childFolderIndex 递归收集子文件夹 ID
     const allChildIds = new Set<string>()
     const collectAllChildIds = (parentId: string) => {
       allChildIds.add(parentId)
-      const children = folders.filter(f => f.parentFolderId === parentId)
+      const children = childFolderIndex.get(parentId) ?? []
       for (const child of children) {
         collectAllChildIds(child.id)
       }
     }
     collectAllChildIds(folderId)
-    
-    return bookmarks.filter(b => b.folderId && allChildIds.has(b.folderId)).length
-  }, [folderId, bookmarks, folders])
 
-  // 搜索过滤
+    // 使用 bookmarkFolderIndex 累加书签数
+    let count = 0
+    const idsArray = Array.from(allChildIds)
+    for (let i = 0; i < idsArray.length; i++) {
+      count += (bookmarkFolderIndex.get(idsArray[i]) ?? []).length
+    }
+    return count
+  }, [folderId, bookmarks.length, childFolderIndex, bookmarkFolderIndex])
+
+  // 搜索过滤（debounced）
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredBookmarks([])
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current)
+        searchTimerRef.current = null
+      }
       return
     }
 
-    const query = searchQuery.toLowerCase().trim()
-    const allBookmarks: Bookmark[] = []
+    // 防抖：用户停止输入 200ms 后才执行搜索
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current)
+    }
+    searchTimerRef.current = setTimeout(() => {
+      const query = searchQuery.toLowerCase().trim()
+      const allBookmarks: Bookmark[] = []
 
-    // 直接从所有书签中搜索，不受文件夹筛选影响
-    bookmarks.forEach(bookmark => {
-      const matchTitle = bookmark.title.toLowerCase().includes(query)
-      const matchDescription = bookmark.description?.toLowerCase().includes(query)
-      const matchUrl = bookmark.url.toLowerCase().includes(query)
-      
-      if (matchTitle || matchDescription || matchUrl) {
-        allBookmarks.push(bookmark)
+      // 直接从所有书签中搜索
+      bookmarks.forEach(bookmark => {
+        const matchTitle = bookmark.title.toLowerCase().includes(query)
+        const matchDescription = bookmark.description?.toLowerCase().includes(query)
+        const matchUrl = bookmark.url.toLowerCase().includes(query)
+        
+        if (matchTitle || matchDescription || matchUrl) {
+          allBookmarks.push(bookmark)
+        }
+      })
+
+      setFilteredBookmarks(sortBookmarks(allBookmarks))
+    }, 200)
+
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current)
       }
-    })
-
-    setFilteredBookmarks(sortBookmarks(allBookmarks))
+    }
   }, [searchQuery, bookmarks, sortBookmarks])
 
   // 响应式和滚动监听
@@ -284,13 +311,27 @@ export default function OptimizedBookmarkGrid({
 
   // 一键折叠/展开所有
   const toggleAllGroups = useCallback(() => {
-    const allCollapsed = folderGroups.every(group => collapsedGroups.has(group.pathKey))
-    if (allCollapsed) {
-      setCollapsedGroups(new Set())
-    } else {
-      setCollapsedGroups(new Set(folderGroups.map(group => group.pathKey)))
+    const collectAllKeys = (groups: FolderGroup[]): string[] => {
+      const keys: string[] = []
+      for (const g of groups) {
+        keys.push(g.pathKey)
+        if (g.children && g.children.length > 0) {
+          keys.push(...collectAllKeys(g.children))
+        }
+      }
+      return keys
     }
-  }, [folderGroups, collapsedGroups])
+
+    setCollapsedGroups(prev => {
+      const allKeys = collectAllKeys(folderGroups)
+      const allCollapsed = allKeys.every(key => prev.has(key))
+      if (allCollapsed) {
+        return new Set()
+      } else {
+        return new Set(allKeys)
+      }
+    })
+  }, [folderGroups])
 
   // 工具函数
   const calculateTooltipPosition = useCallback((mouseX: number, mouseY: number) => {
@@ -377,6 +418,17 @@ export default function OptimizedBookmarkGrid({
     })
   }, [])
 
+  const buildFolderPath = useCallback((folderId: string | null, foldersList: Folder[]): string => {
+    if (!folderId) return ''
+    const path: string[] = []
+    let current: Folder | undefined = foldersList.find(f => f.id === folderId)
+    while (current) {
+      path.unshift(current.name)
+      current = current.parentFolderId ? foldersList.find(f => f.id === current!.parentFolderId) : undefined
+    }
+    return path.join(' / ')
+  }, [])
+
   // 加载状态
   if (isLoadingSpaceData) {
     return (
@@ -450,8 +502,36 @@ export default function OptimizedBookmarkGrid({
               onClick={toggleAllGroups}
               className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
             >
-              <span>{folderGroups.every(group => collapsedGroups.has(group.pathKey)) ? '展开全部' : '折叠全部'}</span>
-              <i className={`fas fa-${folderGroups.every(group => collapsedGroups.has(group.pathKey)) ? 'expand' : 'compress'}`}></i>
+              <span>{(() => {
+                const collectAllKeys = (groups: FolderGroup[]): string[] => {
+                  const keys: string[] = []
+                  for (const g of groups) {
+                    keys.push(g.pathKey)
+                    if (g.children && g.children.length > 0) {
+                      keys.push(...collectAllKeys(g.children))
+                    }
+                  }
+                  return keys
+                }
+                const allKeys = collectAllKeys(folderGroups)
+                const allCollapsed = allKeys.length > 0 && allKeys.every(key => collapsedGroups.has(key))
+                return allCollapsed ? '展开全部' : '折叠全部'
+              })()}</span>
+              <i className={`fas fa-${(() => {
+                const collectAllKeys = (groups: FolderGroup[]): string[] => {
+                  const keys: string[] = []
+                  for (const g of groups) {
+                    keys.push(g.pathKey)
+                    if (g.children && g.children.length > 0) {
+                      keys.push(...collectAllKeys(g.children))
+                    }
+                  }
+                  return keys
+                }
+                const allKeys = collectAllKeys(folderGroups)
+                const allCollapsed = allKeys.length > 0 && allKeys.every(key => collapsedGroups.has(key))
+                return allCollapsed ? 'expand' : 'compress'
+              })()}`}></i>
             </button>
           )}
           <button
@@ -469,7 +549,8 @@ export default function OptimizedBookmarkGrid({
           {filteredBookmarks.length > 0 ? (
             filteredBookmarks.map((bookmark) => {
               const folder = folders.find(f => f.id === bookmark.folderId)
-              const bookmarkWithFolder = { ...bookmark, folder: folder || null }
+              const folderPath = buildFolderPath(bookmark.folderId, folders)
+              const bookmarkWithFolder = { ...bookmark, folder: folder || null, folderPath }
               return (
                 <BookmarkCard
                   key={bookmark.id}
@@ -506,65 +587,130 @@ export default function OptimizedBookmarkGrid({
           )}
         </div>
       ) : (
-        folderGroups.map((group) => {
-          const isUncategorized = group.pathKey === t('noFolder')
-          const isCollapsed = collapsedGroups.has(group.pathKey)
+        (() => {
+          const renderFolderGroup = (
+            group: FolderGroup,
+            level: number
+          ): React.ReactNode => {
+            const isUncategorized = group.folderId === null
+            const isCollapsed = collapsedGroups.has(group.pathKey)
+            const isTopLevel = level === 0
+            const hasContent =
+              group.directBookmarks.length > 0 || group.children.length > 0
 
-          return (
-            <div key={group.pathKey} className="space-y-4">
-              <div 
-                className="flex items-center gap-3 px-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors py-2"
-                onClick={() => toggleGroupCollapse(group.pathKey)}
+            return (
+              <div
+                key={group.pathKey}
+                className="space-y-3"
               >
-                <div className="flex items-center gap-2">
-                  <i className={`fas fa-chevron-${isCollapsed ? 'right' : 'down'} text-gray-400 transition-transform w-4`}></i>
-                  {isUncategorized ? (
-                    <>
-                      <i className="fas fa-folder-open text-red-500 dark:text-red-400"></i>
-                      <h2 className="text-lg font-semibold">
-                        <span className="text-red-500 dark:text-red-400 font-bold">
-                          {t('uncategorizedBookmarks')}
-                        </span>
-                      </h2>
-                    </>
-                  ) : (
-                    <>
-                      <i className={`fas fa-${isCollapsed ? 'folder' : 'folder-open'} text-blue-500 dark:text-blue-400`}></i>
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        {group.path.join(' / ')}
-                      </h2>
-                    </>
-                  )}
-                  <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
-                    {group.bookmarks.length}
-                  </span>
+                <div
+                  className="flex items-center gap-2 px-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors py-2 min-w-0"
+                  onClick={() => toggleGroupCollapse(group.pathKey)}
+                  style={{ paddingLeft: `calc(0.5rem + ${level * 1.5}rem)` }}
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <i
+                      className={`fas fa-chevron-${
+                        isCollapsed ? 'right' : 'down'
+                      } text-gray-400 transition-transform w-4 flex-shrink-0`}
+                    ></i>
+                    {isUncategorized ? (
+                      <>
+                        <i className="fas fa-folder-open text-red-500 dark:text-red-400 flex-shrink-0"></i>
+                        <h2
+                          className={`${
+                            isTopLevel ? 'text-lg' : 'text-base'
+                          } font-semibold flex items-center gap-2`}
+                        >
+                          <span className="text-red-500 dark:text-red-400 font-bold">
+                            {group.folderName}
+                          </span>
+                        </h2>
+                      </>
+                    ) : (
+                      <>
+                        <i
+                          className={`fas fa-${
+                            isCollapsed ? 'folder' : 'folder-open'
+                          } ${
+                            isTopLevel
+                              ? 'text-blue-500 dark:text-blue-400'
+                              : 'text-blue-400 dark:text-blue-300'
+                          } flex-shrink-0`}
+                        ></i>
+                        <h2
+                          className={`${
+                            isTopLevel ? 'text-lg' : 'text-sm'
+                          } font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap overflow-x-auto scrollbar-thin`}
+                          title={group.path.join(' / ')}
+                        >
+                          {isTopLevel
+                            ? group.path.join(' / ')
+                            : group.folderName}
+                        </h2>
+                      </>
+                    )}
+                    <span
+                      className={`${
+                        isTopLevel ? 'text-sm' : 'text-xs'
+                      } text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-md flex-shrink-0`}
+                    >
+                      {group.totalBookmarks}
+                    </span>
+                  </div>
                 </div>
+
+                {!isCollapsed && hasContent && (
+                  <div className="space-y-4">
+                    {group.directBookmarks.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {group.directBookmarks.map((bookmark) => {
+                          const folder = folders.find(
+                            (f) => f.id === bookmark.folderId
+                          )
+                          const folderPath = buildFolderPath(
+                            bookmark.folderId,
+                            folders
+                          )
+                          const bookmarkWithFolder = {
+                            ...bookmark,
+                            folder: folder || null,
+                            folderPath,
+                          }
+                          return (
+                            <BookmarkCard
+                              key={bookmark.id}
+                              bookmark={bookmarkWithFolder}
+                              hoveredBookmarkId={hoveredBookmarkId}
+                              mousePosition={mousePosition}
+                              onMouseEnter={handleMouseEnter}
+                              onMouseMove={handleMouseMove}
+                              onMouseLeave={handleMouseLeave}
+                              calculateTooltipPosition={
+                                calculateTooltipPosition
+                              }
+                              t={t}
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {group.children.length > 0 && (
+                      <div className="space-y-3">
+                        {group.children.map((child) =>
+                          renderFolderGroup(child, level + 1)
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              
-              {!isCollapsed && group.bookmarks.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {group.bookmarks.map((bookmark) => {
-                    const folder = folders.find(f => f.id === bookmark.folderId)
-                    const bookmarkWithFolder = { ...bookmark, folder: folder || null }
-                    return (
-                      <BookmarkCard
-                        key={bookmark.id}
-                        bookmark={bookmarkWithFolder}
-                        hoveredBookmarkId={hoveredBookmarkId}
-                        mousePosition={mousePosition}
-                        onMouseEnter={handleMouseEnter}
-                        onMouseMove={handleMouseMove}
-                        onMouseLeave={handleMouseLeave}
-                        calculateTooltipPosition={calculateTooltipPosition}
-                        t={t}
-                      />
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })
+            )
+          }
+
+          return folderGroups.map((g) => renderFolderGroup(g, 0))
+        })()
       )}
       
       {/* 返回顶部按钮 */}

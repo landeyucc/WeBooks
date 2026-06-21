@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useApp } from '../../contexts/AppContext'
 import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
@@ -39,6 +39,44 @@ export default function FolderManager() {
   })
 
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('all')
+
+  // 预构建索引 Map: folderId -> Folder (O(1) 查找)
+  const folderMap = useMemo(() => {
+    const map = new Map<string, Folder>()
+    for (const folder of folders) {
+      map.set(folder.id, folder)
+    }
+    return map
+  }, [folders])
+
+  // 预构建文件夹路径 Map: folderId -> string[]
+  const folderPathsMap = useMemo(() => {
+    const paths = new Map<string, string[]>()
+    const visited = new Set<string>()
+
+    const buildPath = (folderId: string): string[] => {
+      if (visited.has(folderId)) return []
+      visited.add(folderId)
+
+      const folder = folderMap.get(folderId)
+      if (!folder) return []
+
+      if (!folder.parentFolderId) {
+        return [folder.name]
+      }
+
+      const parentPath = buildPath(folder.parentFolderId)
+      return [...parentPath, folder.name]
+    }
+
+    for (const folder of folders) {
+      if (!paths.has(folder.id)) {
+        paths.set(folder.id, buildPath(folder.id))
+      }
+    }
+
+    return paths
+  }, [folders, folderMap])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -167,104 +205,39 @@ export default function FolderManager() {
 
 
 
-  // 获取文件夹的完整路径
+  // 获取文件夹的完整路径 (O(1)，从预构建 Map 查找)
   const getFolderPath = useCallback((folderId: string): string[] => {
-    const visited = new Set<string>()
-    
-    const buildPath = (currentFolderId: string): string[] => {
-      if (visited.has(currentFolderId)) return [] // 防止循环引用
-      visited.add(currentFolderId)
-      
-      const folder = folders.find(f => f.id === currentFolderId)
-      if (!folder) return []
-      
-      if (!folder.parentFolderId) {
-        return [folder.name]
-      }
-      
-      const parentPath = buildPath(folder.parentFolderId)
-      return [...parentPath, folder.name]
-    }
-    
-    return buildPath(folderId)
-  }, [folders])
+    return folderPathsMap.get(folderId) || []
+  }, [folderPathsMap])
 
+  // 获取父文件夹路径字符串 (O(1))
   const getParentFolderName = useCallback((parentId: string | null) => {
     if (!parentId) return '-'
-    const path = getFolderPath(parentId)
-    return path.length > 0 ? path.join(' / ') : '-'
-  }, [getFolderPath])
+    const path = folderPathsMap.get(parentId)
+    return path && path.length > 0 ? path.join(' / ') : '-'
+  }, [folderPathsMap])
 
-  // 自定义排序函数 - 按父文件夹优先，然后文件名（字母数字优先）
-  const sortFolders = useCallback((folders: Folder[]) => {
-    return [...folders].sort((a, b) => {
-      // 首先按父文件夹排序
+  // 过滤后的文件夹 (useMemo 缓存)
+  const filteredFolders = useMemo(() => {
+    if (selectedSpaceId === 'all') return folders
+    return folders.filter(folder => folder.spaceId === selectedSpaceId)
+  }, [folders, selectedSpaceId])
+
+  // 排序后的文件夹 (useMemo 缓存，使用预构建的路径 Map 避免 O(n) 查找)
+  const sortedFolders = useMemo(() => {
+    return [...filteredFolders].sort((a, b) => {
       const aParentName = getParentFolderName(a.parentFolderId)
       const bParentName = getParentFolderName(b.parentFolderId)
       
       const parentResult = aParentName.localeCompare(bParentName)
-      if (parentResult !== 0) {
-        return parentResult
-      }
+      if (parentResult !== 0) return parentResult
       
-      // 同级文件夹按文件名排序，字母数字优先
-      const aName = a.name
-      const bName = b.name
-      
-      // 自定义比较函数：字母数字优先，中文符号保持原有顺序
-      const compareWithPriority = (str1: string, str2: string) => {
-        // 检查是否包含字母数字
-        const hasAlnum1 = /[a-zA-Z0-9]/.test(str1)
-        const hasAlnum2 = /[a-zA-Z0-9]/.test(str2)
-        
-        // 如果一个有字母数字，一个没有，优先显示有字母数字的
-        if (hasAlnum1 && !hasAlnum2) return -1
-        if (!hasAlnum1 && hasAlnum2) return 1
-        
-        // 如果都有字母数字或都没有，使用localeCompare排序
-        return str1.localeCompare(str2)
-      }
-      
-      const nameResult = compareWithPriority(aName, bName)
-      return nameResult
+      return a.name.localeCompare(b.name, 'zh-Hans-CN')
     })
-  }, [getParentFolderName])
+  }, [filteredFolders, getParentFolderName])
 
-  // 计算文件夹的层级深度
-  const getFolderDepth = (folderId: string): number => {
-    const visited = new Set<string>()
-    
-    const calculateDepth = (currentFolderId: string): number => {
-      if (visited.has(currentFolderId)) return 0 
-      visited.add(currentFolderId)
-      
-      const folder = folders.find(f => f.id === currentFolderId)
-      if (!folder || !folder.parentFolderId) return 0
-      
-      return 1 + calculateDepth(folder.parentFolderId)
-    }
-    
-    return calculateDepth(folderId)
-  }
-
-  // 获取当前显示的文件夹数量
-  const getFilteredFoldersCount = () => {
-    if (selectedSpaceId === 'all') {
-      return folders.length
-    }
-    return folders.filter(folder => folder.spaceId === selectedSpaceId).length
-  }
-
-  // 过滤文件夹
-  const getFilteredFolders = () => {
-    if (selectedSpaceId === 'all') {
-      return folders
-    }
-    return folders.filter(folder => folder.spaceId === selectedSpaceId)
-  }
-
-  // 使用新的多级排序函数
-  const sortedFolders = sortFolders(getFilteredFolders())
+  // 当前显示的文件夹数量
+  const filteredFoldersCount = filteredFolders.length
 
   if (loading) {
     return (
@@ -281,7 +254,7 @@ export default function FolderManager() {
       
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          {t('folders')} ({getFilteredFoldersCount()})
+          {t('folders')} ({filteredFoldersCount})
         </h2>
         <div className="flex items-center gap-3">
           {/* 空间切换按钮 */}
@@ -297,6 +270,7 @@ export default function FolderManager() {
             ]}
             placeholder="选择空间"
             disabled={loading}
+            className="min-w-[220px]"
           />
           <button onClick={handleCreate} className="btn-primary">
             {t('createFolder')}
@@ -334,28 +308,22 @@ export default function FolderManager() {
             </thead>
             <tbody className="divide-y divide-gray-200/50 dark:divide-gray-700/50">
               {sortedFolders.map((folder) => {
-                const depth = getFolderDepth(folder.id)
-                const indentLevel = Math.min(depth, 5) // 最多缩进5级，避免过深影响布局
-                
                 return (
                   <tr key={folder.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center">
-                        <span 
-                          style={{ marginLeft: `${indentLevel * 20}px` }}
-                          className="inline-block"
-                        >
-                          {folder.name}
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <div className="flex items-center min-w-0">
+                        <i className="fas fa-folder text-blue-500 dark:text-blue-400 mr-2 flex-shrink-0"></i>
+                        <span className="whitespace-nowrap overflow-x-auto scrollbar-thin">
+                          {getFolderPath(folder.id).join(' / ')}
                         </span>
-                        {folder.parentFolderId && (
-                          <span className="ml-2 text-xs text-gray-500">
-                            {t('subFolder')}
-                          </span>
-                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {getParentFolderName(folder.parentFolderId)}
+                    <td className="px-6 py-4 text-sm">
+                      <div className="min-w-0 max-w-xs">
+                        <span className="whitespace-nowrap overflow-x-auto scrollbar-thin block">
+                          {getParentFolderName(folder.parentFolderId)}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {folder.bookmarkCount}

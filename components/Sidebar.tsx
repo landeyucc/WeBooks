@@ -295,12 +295,10 @@ export default function Sidebar({
   // 只在首次加载每个空间的文件夹时设置默认折叠状态
   useEffect(() => {
     if (folders.length > 0 && !isInitialCollapsedSet) {
-      // 为所有有父目录的文件夹设置折叠状态
+      // 默认将所有文件夹设为折叠状态
       const newCollapsedIds = new Set<string>()
       folders.forEach(folder => {
-        if (folder.parentFolderId) {
-          newCollapsedIds.add(folder.id)
-        }
+        newCollapsedIds.add(folder.id)
       })
       
       // 设置新的折叠状态
@@ -309,13 +307,36 @@ export default function Sidebar({
     }
   }, [folders, isInitialCollapsedSet, setCollapsedFolders])
 
-  // 构建文件夹树
-  const buildFolderTree = (folders: Folder[]) => {
-    const tree: (Folder & { children: Folder[] })[] = []
-    const map = new Map<string, Folder & { children: Folder[] }>()
+  // 预构建索引：用于快速查找子文件夹，避免多次 O(n) filter
+  const childFolderIndex = useMemo(() => {
+    const index = new Map<string | null, Folder[]>()
+    for (const folder of folders) {
+      const parentId = folder.parentFolderId
+      if (!index.has(parentId)) {
+        index.set(parentId, [])
+      }
+      index.get(parentId)!.push(folder)
+    }
+    return index
+  }, [folders])
+
+  // 计算文件夹的总书签数（包括所有子文件夹）- 使用索引优化
+  const computeTotalBookmarks = useCallback((folder: Folder): number => {
+    let total = folder.bookmarkCount || folder._count?.bookmarks || 0
+    const children = childFolderIndex.get(folder.id) ?? []
+    for (const child of children) {
+      total += computeTotalBookmarks(child)
+    }
+    return total
+  }, [childFolderIndex])
+
+  // 构建文件夹树 - 使用 useMemo 缓存，避免每次渲染重新计算
+  const folderTree = useMemo(() => {
+    const tree: (Folder & { children: Folder[]; computedTotal?: number })[] = []
+    const map = new Map<string, Folder & { children: Folder[]; computedTotal?: number }>()
 
     folders.forEach(folder => {
-      map.set(folder.id, { ...folder, children: [] })
+      map.set(folder.id, { ...folder, children: [], computedTotal: computeTotalBookmarks(folder) })
     })
 
     folders.forEach(folder => {
@@ -334,16 +355,13 @@ export default function Sidebar({
 
     const sortFolders = (items: (Folder & { children?: Folder[] })[]) => {
       items.sort((a, b) => {
-        const isChineseA = /[\u4e00-\u9fa5]/.test(a.name)
-        const isChineseB = /[\u4e00-\u9fa5]/.test(b.name)
-        
-        if (isChineseA && !isChineseB) return 1
-        if (!isChineseA && isChineseB) return -1
+        const aKey = a.name.toLowerCase()
+        const bKey = b.name.toLowerCase()
         
         if (sortOrder === 'asc') {
-          return a.name.localeCompare(b.name, 'en')
+          return aKey.localeCompare(bKey, 'zh-Hans-CN')
         } else {
-          return b.name.localeCompare(a.name, 'en')
+          return bKey.localeCompare(aKey, 'zh-Hans-CN')
         }
       })
       
@@ -357,13 +375,15 @@ export default function Sidebar({
     sortFolders(tree)
 
     return tree
-  }
+  }, [folders, sortOrder, computeTotalBookmarks])
 
-  const renderFolder = (folder: Folder & { children?: Folder[] }, level: number = 0) => {
+  const renderFolder = (folder: Folder & { children?: Folder[]; computedTotal?: number }, level: number = 0) => {
     const hasChildren = folder.children && folder.children.length > 0
     const isCollapsed = collapsedFolders.has(folder.id)
     const canCollapse = hasChildren
     const isSelected = selectedFolderId === folder.id
+    const totalBookmarks = folder.computedTotal || folder.totalBookmarks || folder._count?.bookmarks || 0
+    const childCount = folder.children?.length || folder._count?.childFolders || 0
 
     const handleFolderClick = (e: React.MouseEvent) => {
       const target = e.target as HTMLElement
@@ -393,17 +413,19 @@ export default function Sidebar({
       }
     }
 
+    const isChildLevel = level > 0
+
     return (
       <div key={folder.id} className="folder-item">
         <div
-          className={`folder-button neu-button w-full text-left py-2 mb-1 text-sm group ${
-            isSelected ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+          className={`folder-button neu-button w-full text-left py-2 mb-1 group ${
+            isSelected 
+              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+              : isChildLevel
+                ? 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
-          style={{ 
-            paddingLeft: `${(level + 1) * 0.25 + 1}rem`,
-            marginLeft: level > 0 ? `${level * 0.25}rem` : '0',
-            width: level > 0 ? `calc(100% - ${level * 0.25}rem - 0.25rem)` : '100%'
-          }}
+          style={{ paddingLeft: `${0.75 + level * 1}rem` }}
           onClick={handleFolderClick}
         >
           <div className="flex items-center justify-between">
@@ -412,7 +434,7 @@ export default function Sidebar({
               {/* 折叠/展开按钮 - 独立处理，不触发选择 */}
               {canCollapse && (
                 <div
-                  className="folder-toggle w-4 h-4 mr-2 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 flex-shrink-0 cursor-pointer"
+                  className="folder-toggle w-4 h-4 mr-1.5 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 flex-shrink-0 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     toggleFolderCollapse(folder.id)
@@ -425,37 +447,39 @@ export default function Sidebar({
               )}
               
               {/* 如果没有子文件夹，添加占位空间 */}
-              {!canCollapse && <div className="w-4 mr-2 flex-shrink-0" />}
+              {!canCollapse && <div className="w-5 mr-1 flex-shrink-0" />}
               
               {/* 文件夹图标 */}
               <div className="folder-icon mr-2 flex-shrink-0">
                 {hasChildren ? (
                   isCollapsed ? (
-                    <Folder className="w-4 h-4 text-blue-500" />
+                    <Folder className={`${isChildLevel ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-blue-500`} />
                   ) : (
-                    <FolderOpen className="w-4 h-4 text-blue-500" />
+                    <FolderOpen className={`${isChildLevel ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-blue-500`} />
                   )
                 ) : (
-                  <Folder className="w-4 h-4 text-gray-400" />
+                  <Folder className={`${isChildLevel ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-gray-400`} />
                 )}
               </div>
               
-              {/* 文件夹名称 */}
-              <span className="folder-name truncate">{folder.name}</span>
+              {/* 文件夹名称 - 根据层级调整字体大小 */}
+              <span className={`folder-name truncate ${isChildLevel ? 'text-xs' : 'text-sm'} font-medium`}>
+                {folder.name}
+              </span>
             </div>
             
             {/* 右侧徽章 - 向右调整位置 */}
             <div className="flex items-center space-x-1 flex-shrink-0">
               {/* 文件夹数量徽章 - 蓝色背景 */}
               {hasChildren && (
-                <span className="folder-count-badge bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs px-1.5 py-0.5 rounded-full">
-                  {folder.children?.length || 0}
+                <span className={`folder-count-badge bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ${isChildLevel ? 'text-xs px-1 py-0.5' : 'text-xs px-1.5 py-0.5'} rounded-full`}>
+                  {childCount}
                 </span>
               )}
               
               {/* 书签数量徽章 - 绿色背景 */}
-              <span className="bookmark-count-badge bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs px-1.5 py-0.5 rounded-full">
-                {folder.totalBookmarks || folder._count?.bookmarks || 0}
+              <span className={`bookmark-count-badge bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 ${isChildLevel ? 'text-xs px-1 py-0.5' : 'text-xs px-1.5 py-0.5'} rounded-full`}>
+                {totalBookmarks}
               </span>
             </div>
           </div>
@@ -464,7 +488,7 @@ export default function Sidebar({
         {/* 子文件夹列表 - 带动画 */}
         {hasChildren && (
           <div className={`folder-children transition-all duration-300 ease-in-out ${
-            isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-96 opacity-100 overflow-hidden'
+            isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[1000px] opacity-100 overflow-hidden'
           }`}>
             <div className="folder-children-inner">
               {folder.children?.map(child => renderFolder(child, level + 1)) || []}
@@ -474,8 +498,6 @@ export default function Sidebar({
       </div>
     )
   }
-
-  const folderTree = buildFolderTree(folders)
 
   return (
     <aside className="neu-base flex flex-col h-full transition-opacity duration-300 ease-in-out" style={{ width: 'calc(100% - 10px)', marginRight: '10px' }}>
@@ -544,8 +566,8 @@ export default function Sidebar({
               </div>
             </button>
             
-            {/* 未分类书签虚拟文件夹 - 作为所有书签的子文件夹 */}
-            {selectedFolderId === null && uncategorizedBookmarkCount > 0 && (
+            {/* 未分类书签虚拟文件夹 - 始终显示 */}
+            {uncategorizedBookmarkCount > 0 && (
               <button
                 onClick={() => {
                   // 未分类书签是虚拟文件夹，点击不做任何选择操作
@@ -580,8 +602,8 @@ export default function Sidebar({
               </button>
             )}
             
-            {/* 如果没有未分类书签，也显示一个提示 */}
-            {selectedFolderId === null && uncategorizedBookmarkCount === 0 && currentSpaceData && (
+            {/* 如果没有未分类书签，也显示一个提示 - 始终显示 */}
+            {uncategorizedBookmarkCount === 0 && currentSpaceData && (
               <div className="text-xs text-gray-400 py-2" style={{ paddingLeft: '1.5rem' }}>
                 暂无未分类书签
               </div>

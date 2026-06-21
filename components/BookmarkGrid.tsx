@@ -96,6 +96,7 @@ const PAGE_SIZE = 24
 export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sortOrder, onSortOrderChange }: BookmarkGridProps) {
   const { t, token } = useApp()
   const [folderGroups, setFolderGroups] = useState<FolderGroup[]>([])
+  const [allFolders, setAllFolders] = useState<Folder[]>([])
   const [loading, setLoading] = useState(true)
   const [dataReady, setDataReady] = useState(false)
   const [filteredBookmarks, setFilteredBookmarks] = useState<Bookmark[]>([])
@@ -287,6 +288,7 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sort
           if (!foldersResponse.ok) throw new Error('Failed to fetch folders')
           const foldersData = await foldersResponse.json()
           const foldersList: Folder[] = foldersData.folders || []
+          setAllFolders(foldersList)
 
           const allChildIds = new Set<string>()
           
@@ -400,19 +402,13 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sort
             const depthB = b.path.length
             if (depthA !== depthB) return depthA - depthB
             
-            const aKey = a.pathKey
-            const bKey = b.pathKey
-            
-            const isChineseA = /[\u4e00-\u9fa5]/.test(aKey)
-            const isChineseB = /[\u4e00-\u9fa5]/.test(bKey)
-            
-            if (isChineseA && !isChineseB) return 1
-            if (!isChineseA && isChineseB) return -1
+            const aKey = a.pathKey.toLowerCase()
+            const bKey = b.pathKey.toLowerCase()
             
             if (sortOrder === 'asc') {
-              return aKey.localeCompare(bKey, 'en')
+              return aKey.localeCompare(bKey, 'zh-Hans-CN')
             } else {
-              return bKey.localeCompare(aKey, 'en')
+              return bKey.localeCompare(aKey, 'zh-Hans-CN')
             }
           })
 
@@ -579,6 +575,17 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sort
     return { left, top }
   }, [])
 
+  const buildFolderPath = useCallback((folderId: string | null, foldersList: Folder[]): string => {
+    if (!folderId) return ''
+    const path: string[] = []
+    let current: Folder | undefined = foldersList.find(f => f.id === folderId)
+    while (current) {
+      path.unshift(current.name)
+      current = current.parentFolderId ? foldersList.find(f => f.id === current!.parentFolderId) : undefined
+    }
+    return path.join(' / ')
+  }, [])
+
   const handleMouseEnter = useCallback((e: React.MouseEvent, bookmarkId: string) => {
     if (isMobile) return
     
@@ -706,19 +713,23 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sort
       {searchQuery.trim() ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredBookmarks.length > 0 ? (
-            filteredBookmarks.map((bookmark) => (
-              <BookmarkCard
-                key={bookmark.id}
-                bookmark={bookmark}
-                hoveredBookmarkId={hoveredBookmarkId}
-                mousePosition={mousePosition}
-                onMouseEnter={handleMouseEnter}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                calculateTooltipPosition={calculateTooltipPosition}
-                t={t}
-              />
-            ))
+            filteredBookmarks.map((bookmark) => {
+              const folderPath = buildFolderPath(bookmark.folderId, allFolders)
+              const bookmarkWithFolderPath = { ...bookmark, folderPath }
+              return (
+                <BookmarkCard
+                  key={bookmark.id}
+                  bookmark={bookmarkWithFolderPath}
+                  hoveredBookmarkId={hoveredBookmarkId}
+                  mousePosition={mousePosition}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseMove={handleMouseMove}
+                  onMouseLeave={handleMouseLeave}
+                  calculateTooltipPosition={calculateTooltipPosition}
+                  t={t}
+                />
+              )
+            })
           ) : (
             <div className="col-span-full flex items-center justify-center h-64">
               <div className="text-center text-gray-500">
@@ -756,8 +767,8 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sort
               }}
               className="space-y-4"
             >
-              <div className="flex items-center gap-3 px-2">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 px-2 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
                   {isUncategorized ? (
                     <>
                       <i className="fas fa-folder-open text-red-500 dark:text-red-400"></i>
@@ -769,8 +780,8 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sort
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-folder text-blue-500 dark:text-blue-400"></i>
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      <i className="fas fa-folder text-blue-500 dark:text-blue-400 flex-shrink-0"></i>
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap overflow-x-auto scrollbar-thin">
                         {group.path.join(' / ')}
                       </h2>
                     </>
@@ -783,19 +794,23 @@ export default function BookmarkGrid({ spaceId, folderId, searchQuery = '', sort
               
               {group.bookmarks.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {group.bookmarks.map((bookmark) => (
-                    <BookmarkCard
-                      key={bookmark.id}
-                      bookmark={bookmark}
-                      hoveredBookmarkId={hoveredBookmarkId}
-                      mousePosition={mousePosition}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseMove={handleMouseMove}
-                      onMouseLeave={handleMouseLeave}
-                      calculateTooltipPosition={calculateTooltipPosition}
-                      t={t}
-                    />
-                  ))}
+                  {group.bookmarks.map((bookmark) => {
+                    const folderPath = buildFolderPath(bookmark.folderId, allFolders)
+                    const bookmarkWithFolderPath = { ...bookmark, folderPath }
+                    return (
+                      <BookmarkCard
+                        key={bookmark.id}
+                        bookmark={bookmarkWithFolderPath}
+                        hoveredBookmarkId={hoveredBookmarkId}
+                        mousePosition={mousePosition}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={handleMouseLeave}
+                        calculateTooltipPosition={calculateTooltipPosition}
+                        t={t}
+                      />
+                    )
+                  })}
                 </div>
               ) : group.isLoading ? (
                 <div className="flex items-center justify-center py-8">

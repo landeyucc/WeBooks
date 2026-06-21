@@ -56,7 +56,9 @@ export async function GET(request: NextRequest) {
       id: config?.id,
       siteTitle: config?.siteTitle,
       seoDescription: config?.seoDescription,
-      keywords: config?.keywords
+      keywords: config?.keywords,
+      defaultTheme: config?.defaultTheme,
+      defaultThemeType: config?.defaultThemeType
     })
 
     return NextResponse.json({
@@ -67,6 +69,8 @@ export async function GET(request: NextRequest) {
       faviconUrl: config?.faviconUrl || null,
       seoDescription: config?.seoDescription || null,
       keywords: config?.keywords || null,
+      defaultTheme: config?.defaultTheme || null,
+      defaultThemeType: config?.defaultThemeType || null,
       createdAt: config?.createdAt || null,
       updatedAt: config?.updatedAt || null
     })
@@ -82,13 +86,16 @@ export async function GET(request: NextRequest) {
 // 更新系统配置
 export async function PUT(request: NextRequest) {
   try {
-    const { 
-      defaultSpaceId, 
-      siteTitle, 
-      faviconUrl, 
-      seoDescription, 
-      keywords 
-    } = await request.json()
+    const body = await request.json()
+    const {
+      defaultSpaceId,
+      siteTitle,
+      faviconUrl,
+      seoDescription,
+      keywords,
+      defaultTheme,
+      defaultThemeType
+    } = body
 
     // 先确保存在一个用户
     let user = await prisma.user.findFirst()
@@ -97,7 +104,7 @@ export async function PUT(request: NextRequest) {
       user = await prisma.user.create({
         data: {
           username: 'admin',
-          passwordHash: 'default_hash' 
+          passwordHash: 'default_hash'
         }
       })
     }
@@ -105,12 +112,12 @@ export async function PUT(request: NextRequest) {
     // 检查defaultSpaceId是否存在且属于当前用户
     if (defaultSpaceId) {
       const space = await prisma.space.findUnique({
-        where: { 
+        where: {
           id: defaultSpaceId,
           userId: user.id
         }
       })
-      
+
       if (!space) {
         return NextResponse.json(
           { error: '指定的空间不存在或不属于当前用户' },
@@ -119,23 +126,27 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // 仅构建已提供（非 undefined）的字段，避免 PUT 部分更新时把其他字段置 null
+    const updateData: Record<string, unknown> = {}
+    if (defaultSpaceId !== undefined) updateData.defaultSpaceId = defaultSpaceId
+    if (siteTitle !== undefined) updateData.siteTitle = siteTitle
+    if (faviconUrl !== undefined) updateData.faviconUrl = faviconUrl
+    if (seoDescription !== undefined) updateData.seoDescription = seoDescription
+    if (keywords !== undefined) updateData.keywords = keywords
+    if (defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
+    if (defaultThemeType !== undefined) updateData.defaultThemeType = defaultThemeType
+
     // 更新现有配置或创建新配置
     const existingConfig = await prisma.systemConfig.findFirst({
       where: { userId: user.id }
     })
-    
+
     let config
     if (existingConfig) {
-      // 如果存在现有配置则更新
+      // 如果存在现有配置则更新（仅更新提供的字段）
       config = await prisma.systemConfig.update({
         where: { id: existingConfig.id },
-        data: { 
-          defaultSpaceId,
-          siteTitle,
-          faviconUrl,
-          seoDescription,
-          keywords
-        },
+        data: updateData,
         include: {
           defaultSpace: {
             select: {
@@ -148,13 +159,9 @@ export async function PUT(request: NextRequest) {
     } else {
       // 如果没有现有配置则创建新配置
       config = await prisma.systemConfig.create({
-        data: { 
+        data: {
           userId: user.id,
-          defaultSpaceId,
-          siteTitle,
-          faviconUrl,
-          seoDescription,
-          keywords
+          ...updateData
         },
         include: {
           defaultSpace: {
@@ -179,6 +186,9 @@ export async function PUT(request: NextRequest) {
       faviconUrl: config.faviconUrl,
       seoDescription: config.seoDescription,
       keywords: config.keywords,
+      // 全局主题设置
+      defaultTheme: config.defaultTheme,
+      defaultThemeType: config.defaultThemeType,
       createdAt: config.createdAt,
       updatedAt: config.updatedAt
     })

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import CustomSelect from '../ui/CustomSelect'
 import BookmarkManager from './BookmarkManager'
@@ -62,16 +62,7 @@ interface FolderData {
   id: string
   name: string
   spaceId?: string
-  space?: {
-    id: string
-    name: string
-  }
-}
-
-interface FolderData {
-  id: string
-  name: string
-  spaceId?: string
+  parentFolderId?: string | null
   space?: {
     id: string
     name: string
@@ -81,7 +72,7 @@ interface FolderData {
 export default function AdminDashboard() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { logout, user, t, token, isAuthenticated, themeType, setThemeType, theme, toggleTheme } = useApp()
+  const { logout, user, t, token, isAuthenticated } = useApp()
   const { showSuccess, showError, showWarning, notifications } = useNotifications()
   const [activeTab, setActiveTab] = useState<TabType>('spaces')
   
@@ -117,6 +108,8 @@ export default function AdminDashboard() {
   const [faviconUrl, setFaviconUrl] = useState<string>('')
   const [seoDescription, setSeoDescription] = useState<string>('')
   const [keywords, setKeywords] = useState<string>('')
+  const [defaultTheme, setDefaultTheme] = useState<'light' | 'dark'>('light')
+  const [defaultThemeType, setDefaultThemeType] = useState<'neumorphism' | 'skyblue'>('neumorphism')
   const [isLoading, setIsLoading] = useState(false)
   
   // 书签导入导出相关状态
@@ -144,6 +137,8 @@ export default function AdminDashboard() {
 
   // 添加请求去重缓存ref，避免重复API调用
   const lastRequestRef = useRef<string>('')
+  const spacesCacheTimestampRef = useRef<number>(0)
+  const foldersLoadedRef = useRef<boolean>(false)
 
   // 获取浏览器扩展API Key
   const fetchApiKey = useCallback(async () => {
@@ -248,10 +243,12 @@ export default function AdminDashboard() {
 
   // 获取空间数据
   const fetchSpaces = useCallback(async () => {
-    // 添加请求去重逻辑，避免重复API调用
     const requestKey = `spaces-${isAuthenticated}-${token}`
     if (lastRequestRef.current === requestKey) {
-      return
+      const now = Date.now()
+      if (now - spacesCacheTimestampRef.current < 5 * 60 * 1000) {
+        return
+      }
     }
     lastRequestRef.current = requestKey
 
@@ -262,28 +259,22 @@ export default function AdminDashboard() {
       if (response.ok) {
         const data = await response.json()
         
-        // 处理API返回的格式 {spaces: [...]} 或直接数组格式
-        let spacesData = []
+        let spacesData: Space[] = []
         if (data && typeof data === 'object') {
           if (Array.isArray(data)) {
-            // 如果直接返回数组
-            spacesData = data
+          spacesData = data
           } else if (data.spaces && Array.isArray(data.spaces)) {
-            // 如果返回的是 {spaces: [...]}
-            spacesData = data.spaces
+          spacesData = data.spaces
           } else if (Array.isArray(data.data)) {
-            // 如果返回的是 {data: [...]}
-            spacesData = data.data
+          spacesData = data.data
           }
         }
         
         setSpaces(spacesData)
+        spacesCacheTimestampRef.current = Date.now()
         
-        // 如果没有选中的空间，默认选择第一个
-        if (spacesData.length > 0) {
-          if (!selectedSpaceId) {
-            setSelectedSpaceId(spacesData[0].id)
-          }
+        if (spacesData.length > 0 && !selectedSpaceId) {
+          setSelectedSpaceId(spacesData[0].id)
         }
       } else {
         console.error(t('adminSpacesDataFetchFailed'), response.status)
@@ -310,6 +301,13 @@ export default function AdminDashboard() {
         setFaviconUrl(data.faviconUrl || '')
         setSeoDescription(data.seoDescription || '')
         setKeywords(data.keywords || '')
+        // 读取全局默认主题
+        if (data.defaultTheme) {
+          setDefaultTheme(data.defaultTheme as 'light' | 'dark')
+        }
+        if (data.defaultThemeType) {
+          setDefaultThemeType(data.defaultThemeType as 'neumorphism' | 'skyblue')
+        }
       }
     } catch (error) {
       console.error(t('adminFetchSystemConfigFailed'), error)
@@ -326,15 +324,28 @@ export default function AdminDashboard() {
           console.error(t('adminConfigLoadFailed'), error)
         })
     }
-  }, [isAuthenticated, token, fetchSpaces, fetchSystemConfig, t]) // 修复依赖数组，添加缺少的函数依赖
+  }, [isAuthenticated, token, fetchSpaces, fetchSystemConfig, t])
+
+  // 空间索引和排序缓存 (优化性能)
+  const spaceMap = useMemo(() => {
+    const map = new Map<string, Space>()
+    for (const space of spaces) {
+      map.set(space.id, space)
+    }
+    return map
+  }, [spaces])
+
+  const sortedSpaces = useMemo(() => {
+    return [...spaces].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'))
+  }, [spaces])
 
   // 当选择的空间改变时，更新systemCardUrl
   useEffect(() => {
-    if (selectedSpaceId && spaces.length > 0) {
-      const selectedSpace = spaces.find(s => s.id === selectedSpaceId)
+    if (selectedSpaceId && spaceMap.size > 0) {
+      const selectedSpace = spaceMap.get(selectedSpaceId)
       setSystemCardUrl(selectedSpace?.systemCardUrl || '')
     }
-  }, [selectedSpaceId, spaces]) 
+  }, [selectedSpaceId, spaceMap]) 
 
   // 处理标签页切换并更新URL
   const handleTabChange = (tab: TabType) => {
@@ -366,12 +377,11 @@ export default function AdminDashboard() {
         if (selectedSpaceId === defaultSpaceId) {
           await saveDefaultSpaceId(selectedSpaceId)
         }
-        console.log('配置保存成功，准备刷新页面...')
         showSuccess(t('configSaveSuccess'))
-        // 强制刷新页面重新加载数据
-        setTimeout(() => {
-          window.location.reload()
-        }, 1000)
+        // 清除缓存后重新获取数据
+        lastRequestRef.current = ''
+        spacesCacheTimestampRef.current = 0
+        fetchSpaces()
       } else {
         showError(t('saveFailed'))
       }
@@ -405,31 +415,56 @@ export default function AdminDashboard() {
     }
   }
 
-  // 保存网站设置
+  // 保存主题设置（点击主题按钮即刻调用）
+  const saveTheme = useCallback(async (newTheme: 'light' | 'dark', newThemeType: 'neumorphism' | 'skyblue') => {
+    // 立即更新本地状态和 DOM（不等待网络）
+    setDefaultTheme(newTheme)
+    setDefaultThemeType(newThemeType)
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
+      document.documentElement.classList.add(`theme-${newThemeType}`)
+      document.documentElement.classList.toggle('dark', newTheme === 'dark')
+      try {
+        localStorage.setItem('theme', newTheme)
+        localStorage.setItem('themeType', newThemeType)
+      } catch {}
+    }
+
+    // 后台保存到数据库
+    try {
+      await fetch('/api/system-config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ defaultTheme: newTheme, defaultThemeType: newThemeType }),
+      })
+    } catch {}
+  }, [token])
+
+  // 保存网站设置（仅保存网站标题、favicon、SEO，主题由 saveTheme 即时保存）
   const saveSiteSettings = async () => {
     setIsLoading(true)
     try {
+      const payload: Record<string, unknown> = {
+        siteTitle: siteTitle ?? '',
+        faviconUrl: faviconUrl ?? '',
+        seoDescription: seoDescription ?? '',
+        keywords: keywords ?? '',
+      }
       const response = await fetch('/api/system-config', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          siteTitle,
-          faviconUrl,
-          seoDescription,
-          keywords
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
-        console.log('网站设置保存成功，准备刷新页面...')
         showSuccess(t('configSaveSuccess'))
-        // 强制刷新页面重新加载数据
-        setTimeout(() => {
-          window.location.reload()
-        }, 1000)
+        fetchSystemConfig()
       } else {
         showError(t('saveFailed'))
       }
@@ -513,6 +548,11 @@ export default function AdminDashboard() {
 
   // 获取所有文件夹数据，用于导出时按空间分组显示
   const fetchFolders = async () => {
+    if (foldersLoadedRef.current) {
+      return
+    }
+    foldersLoadedRef.current = true
+    
     try {
       const response = await fetch('/api/folders', {
         headers: { Authorization: `Bearer ${token}` }
@@ -521,7 +561,6 @@ export default function AdminDashboard() {
         const data = await response.json()
         const foldersData = Array.isArray(data) ? data : data.folders || []
         
-        // 按空间分组文件夹数据
         const groupedFolders: {[key: string]: FolderData[]} = {}
         foldersData.forEach((folder: FolderData) => {
           const spaceId = folder.spaceId || folder.space?.id || 'unknown'
@@ -532,7 +571,6 @@ export default function AdminDashboard() {
         })
         
         setFolderSpacesFolders(groupedFolders)
-        // 设置默认的全局文件夹列表，用于向下兼容
         setFolders(foldersData)
       }
     } catch (error) {
@@ -552,7 +590,6 @@ export default function AdminDashboard() {
         const data = await response.json()
         const foldersData = Array.isArray(data) ? data : data.folders || []
         
-        // 更新特定空间的文件夹数据
         setFolderSpacesFolders(prev => ({
           ...prev,
           [spaceId]: foldersData
@@ -565,6 +602,22 @@ export default function AdminDashboard() {
       return []
     }
   }
+
+  // 构建文件夹完整路径 (使用 Map 索引替代 O(n) find)
+  const getFolderPath = useCallback((folderId: string, foldersList: FolderData[]): string => {
+    const folderMap = new Map<string, FolderData>()
+    foldersList.forEach(f => folderMap.set(f.id, f))
+    
+    const buildPath = (currentId: string, visited: Set<string>): string[] => {
+      if (visited.has(currentId)) return []
+      visited.add(currentId)
+      const folder = folderMap.get(currentId)
+      if (!folder) return []
+      if (!folder.parentFolderId) return [folder.name]
+      return [...buildPath(folder.parentFolderId, visited), folder.name]
+    }
+    return buildPath(folderId, new Set()).join(' / ')
+  }, [])
 
   // 处理文件选择
   const handleFileSelect = (file: File) => {
@@ -1006,9 +1059,9 @@ export default function AdminDashboard() {
               {t('importExportDesc')}
             </p>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex flex-wrap gap-6">
               {/* 导入书签 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[360px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('importBookmarks')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('importBookmarksDesc')}
@@ -1146,7 +1199,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* 导出书签 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[360px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('exportBookmarks')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('exportBookmarksDesc')}
@@ -1178,8 +1231,9 @@ export default function AdminDashboard() {
                       <CustomSelect
                         value={exportSpaceId}
                         onChange={setExportSpaceId}
-                        options={spaces ? spaces.map((space) => ({ value: space.id, label: space.name })) : []}
+                        options={sortedSpaces.map((space) => ({ value: space.id, label: space.name }))}
                         placeholder={t('exportSpacePlaceholder')}
+                        className="min-w-[220px]"
                       />
                     </div>
                   )}
@@ -1202,8 +1256,9 @@ export default function AdminDashboard() {
                               fetchFoldersBySpace(value)
                             }
                           }}
-                          options={spaces ? spaces.map((space) => ({ value: space.id, label: space.name })) : []}
+                          options={sortedSpaces.map((space) => ({ value: space.id, label: space.name }))}
                           placeholder={t('exportFolderPlaceholder')}
+                          className="min-w-[220px]"
                         />
                       </div>
                       
@@ -1219,7 +1274,7 @@ export default function AdminDashboard() {
                             options={folderSpacesFolders[exportFolderSpaceId] ? 
                               folderSpacesFolders[exportFolderSpaceId].map((folder) => ({ 
                                 value: folder.id, 
-                                label: folder.name 
+                                label: getFolderPath(folder.id, folderSpacesFolders[exportFolderSpaceId]) || folder.name
                               })) : []}
                             placeholder={t('selectExportFolder')}
                           />
@@ -1357,9 +1412,9 @@ export default function AdminDashboard() {
           <div className="neu-card p-6">
             <h2 className="text-xl font-bold mb-6">{t('systemSettings')}</h2>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex flex-wrap gap-6">
               {/* 默认空间设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[300px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('defaultSpaceConfig')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('defaultSpaceDesc')}
@@ -1376,6 +1431,7 @@ export default function AdminDashboard() {
                       onChange={setDefaultSpaceId}
                       options={spaces ? spaces.map((space) => ({ value: space.id, label: space.name })) : []}
                       placeholder={t('selectDefaultSpace')}
+                      className="min-w-[220px]"
                     />
                   </div>
 
@@ -1399,7 +1455,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* 系统卡图设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-[2] min-w-[400px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('systemCardSettings')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('systemCardDesc')}
@@ -1416,6 +1472,7 @@ export default function AdminDashboard() {
                       onChange={setSelectedSpaceId}
                       options={spaces ? spaces.map((space) => ({ value: space.id, label: space.name })) : []}
                       placeholder={t('selectSpace')}
+                      className="min-w-[220px]"
                     />
                     {spaces && spaces.length === 0 && (
                       <div className="mt-2 flex items-center gap-2">
@@ -1493,12 +1550,12 @@ export default function AdminDashboard() {
               </div>
 
               {/* 主题设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[300px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">主题设置</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  选择你喜欢的主题风格和配色方案
+                  选择默认主题风格和明暗模式，这会对所有访客生效
                 </p>
-                
+
                 <div className="space-y-4">
                   {/* 主题类型选择 */}
                   <div>
@@ -1507,9 +1564,9 @@ export default function AdminDashboard() {
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
-                        onClick={() => setThemeType('neumorphism')}
+                        onClick={() => saveTheme(defaultTheme, 'neumorphism')}
                         className={`p-3 rounded-lg border-2 transition-all ${
-                          themeType === 'neumorphism'
+                          defaultThemeType === 'neumorphism'
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         }`}
@@ -1524,9 +1581,9 @@ export default function AdminDashboard() {
                         </div>
                       </button>
                       <button
-                        onClick={() => setThemeType('skyblue')}
+                        onClick={() => saveTheme(defaultTheme, 'skyblue')}
                         className={`p-3 rounded-lg border-2 transition-all ${
-                          themeType === 'skyblue'
+                          defaultThemeType === 'skyblue'
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         }`}
@@ -1550,9 +1607,9 @@ export default function AdminDashboard() {
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
-                        onClick={() => theme === 'dark' && toggleTheme()}
+                        onClick={() => saveTheme('light', defaultThemeType)}
                         className={`p-3 rounded-lg border-2 transition-all ${
-                          theme === 'light'
+                          defaultTheme === 'light'
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         }`}
@@ -1565,9 +1622,9 @@ export default function AdminDashboard() {
                         </div>
                       </button>
                       <button
-                        onClick={() => theme === 'light' && toggleTheme()}
+                        onClick={() => saveTheme('dark', defaultThemeType)}
                         className={`p-3 rounded-lg border-2 transition-all ${
-                          theme === 'dark'
+                          defaultTheme === 'dark'
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         }`}
@@ -1581,11 +1638,13 @@ export default function AdminDashboard() {
                       </button>
                     </div>
                   </div>
+
+                  {/* 保存主题设置按钮已移除：点击主题按钮即刻生效 */}
                 </div>
               </div>
 
               {/* 网站设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-[2] min-w-[400px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('siteSettings')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('siteSettingsDesc')}
@@ -1686,7 +1745,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* 浏览器扩展API Key设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[300px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('browserExtensionApiKey')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('browserExtensionApiKeyDesc')}

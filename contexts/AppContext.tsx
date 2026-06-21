@@ -29,12 +29,15 @@ interface AppContextType {
   login: (token: string, user: User) => void
   logout: () => void
   isAuthenticated: boolean
-  
+
   // Theme
   theme: 'light' | 'dark'
   themeType: 'neumorphism' | 'skyblue'
+  serverDefaultTheme: 'light' | 'dark' | null
+  serverDefaultThemeType: 'neumorphism' | 'skyblue' | null
   toggleTheme: () => void
   setThemeType: (type: 'neumorphism' | 'skyblue') => void
+  isInitialized: boolean
   
   // Language
   language: Language
@@ -66,8 +69,11 @@ const defaultContextValue: AppContextType = {
   isAuthenticated: false,
   theme: 'light',
   themeType: 'neumorphism',
+  serverDefaultTheme: null,
+  serverDefaultThemeType: null,
   toggleTheme: () => {},
   setThemeType: () => {},
+  isInitialized: false,
   language: 'zh',
   setLanguage: () => {},
   t: (key: string, params?: Record<string, string | number>) => {
@@ -100,6 +106,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [themeType, setThemeTypeState] = useState<'neumorphism' | 'skyblue'>('neumorphism')
+  const [serverDefaultTheme, setServerDefaultTheme] = useState<'light' | 'dark' | null>(null)
+  const [serverDefaultThemeType, setServerDefaultThemeType] = useState<'neumorphism' | 'skyblue' | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
   const [language, setLanguageState] = useState<Language>('zh')
   const [loading, setLoading] = useState(true)
   const [collapsedFolders, setCollapsedFoldersState] = useState<Set<string>>(new Set())
@@ -117,7 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // 初始化
   useEffect(() => {
     if (!isClient) return
-    
+
     const initializeApp = async () => {
       try {
         const savedToken = localStorage.getItem('token')
@@ -132,21 +141,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        // 加载主题
+        // 从服务器获取系统配置中的默认主题
+        let svrTheme: 'light' | 'dark' | null = null
+        let svrThemeType: 'neumorphism' | 'skyblue' | null = null
+        try {
+          const res = await fetch('/api/system-config')
+          if (res.ok) {
+            const data = await res.json()
+            if (data.defaultTheme) {
+              svrTheme = data.defaultTheme as 'light' | 'dark'
+              setServerDefaultTheme(svrTheme)
+            }
+            if (data.defaultThemeType) {
+              svrThemeType = data.defaultThemeType as 'neumorphism' | 'skyblue'
+              setServerDefaultThemeType(svrThemeType)
+            }
+          }
+        } catch {
+          // 忽略获取失败，使用默认值
+        }
+
+        // 加载主题：优先使用用户的本地设置，否则使用服务器默认
         const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
         if (savedTheme) {
           setTheme(savedTheme)
           document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+        } else if (svrTheme) {
+          setTheme(svrTheme)
+          document.documentElement.classList.toggle('dark', svrTheme === 'dark')
         }
 
-        // 加载主题类型
+        // 加载主题类型：优先使用用户的本地设置，否则使用服务器默认
         const savedThemeType = localStorage.getItem('themeType') as 'neumorphism' | 'skyblue' | null
         if (savedThemeType) {
           setThemeTypeState(savedThemeType)
           document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
           document.documentElement.classList.add(`theme-${savedThemeType}`)
-        } else {
-          document.documentElement.classList.add('theme-neumorphism')
+        } else if (svrThemeType) {
+          setThemeTypeState(svrThemeType)
+          document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
+          document.documentElement.classList.add(`theme-${svrThemeType}`)
         }
 
         // 加载语言
@@ -165,9 +199,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem('collapsedFolders')
           }
         }
-        
+
       } catch {
       } finally {
+        setIsInitialized(true)
         setLoading(false)
       }
     }
@@ -198,14 +233,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const newTheme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
     localStorage.setItem('theme', newTheme)
-    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+    // 同步立即应用，不依赖任何 useEffect 时序
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', newTheme === 'dark')
+    }
   }
 
   const setThemeType = (type: 'neumorphism' | 'skyblue') => {
     setThemeTypeState(type)
     localStorage.setItem('themeType', type)
-    document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
-    document.documentElement.classList.add(`theme-${type}`)
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
+      document.documentElement.classList.add(`theme-${type}`)
+    }
   }
 
   const setLanguage = (lang: Language) => {
@@ -229,10 +269,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCollapsedFoldersState(folders)
   }
 
-  // 空间数据加载函数
+  // 空间数据加载函数 - 添加内存缓存和请求去重
+  // Map<spaceId, SpaceData>: 已加载的空间数据缓存
+  const spaceDataCacheRef = React.useRef<Map<string, SpaceData>>(new Map())
+  // Set<spaceId>: 正在加载中的请求，避免重复请求
+  const loadingRequestsRef = React.useRef<Set<string>>(new Set())
+  const CACHE_TTL = 5 * 60 * 1000 // 缓存 TTL: 5 分钟
+  const spaceDataTimestampRef = React.useRef<Map<string, number>>(new Map())
+
   const loadSpaceData = async (spaceId: string) => {
     if (!spaceId) return
-    
+
+    // 如果当前空间已有相同数据，且缓存未过期，直接返回，避免重复渲染
+    if (currentSpaceData && currentSpaceData.space.id === spaceId) {
+      const timestamp = spaceDataTimestampRef.current.get(spaceId)
+      if (timestamp && (Date.now() - timestamp) < CACHE_TTL) {
+        return
+      }
+    }
+
+    // 检查请求去重：如果同一空间正在加载，避免重复请求
+    if (loadingRequestsRef.current.has(spaceId)) {
+      return
+    }
+    loadingRequestsRef.current.add(spaceId)
+
+    // 检查内存缓存
+    const cachedData = spaceDataCacheRef.current.get(spaceId)
+    const cachedTimestamp = spaceDataTimestampRef.current.get(spaceId)
+    if (cachedData && cachedTimestamp && (Date.now() - cachedTimestamp) < CACHE_TTL) {
+      setCurrentSpaceData(cachedData)
+      setIsLoadingSpaceData(false)
+      loadingRequestsRef.current.delete(spaceId)
+      return
+    }
+
     setIsLoadingSpaceData(true)
     try {
       const headers: Record<string, string> = {}
@@ -248,17 +319,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       const spaceData = await response.json()
       
+      // 存入缓存
+      spaceDataCacheRef.current.set(spaceId, spaceData)
+      spaceDataTimestampRef.current.set(spaceId, Date.now())
+      
       setCurrentSpaceData(spaceData)
     } catch {
       setCurrentSpaceData(null)
     } finally {
       setIsLoadingSpaceData(false)
+      loadingRequestsRef.current.delete(spaceId)
     }
   }
 
-  // 清除空间数据
+  // 清除空间数据（清除缓存）
   const clearSpaceData = () => {
     setCurrentSpaceData(null)
+    spaceDataCacheRef.current.clear()
+    spaceDataTimestampRef.current.clear()
   }
 
   const t = (key: TranslationKey, params?: Record<string, string | number>): string => {
@@ -283,8 +361,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!token,
     theme,
     themeType,
+    serverDefaultTheme,
+    serverDefaultThemeType,
     toggleTheme,
     setThemeType,
+    isInitialized,
     language,
     setLanguage,
     t,

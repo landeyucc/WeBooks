@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useApp } from '../../contexts/AppContext'
 import { useNotifications } from '../NotificationSystem'
 import NotificationSystem from '../NotificationSystem'
@@ -36,11 +36,16 @@ export default function SpaceManager() {
 
   const lastRequestRef = useRef<string>('')
   const forceRefreshRef = useRef<boolean>(false)
+  const cacheTimestampRef = useRef<number>(0)
 
   const fetchSpaces = useCallback(async () => {
     const requestKey = `space-manager-${isAuthenticated}-${token}`
+    
     if (lastRequestRef.current === requestKey && !forceRefreshRef.current) {
-      return
+      const now = Date.now()
+      if (now - cacheTimestampRef.current < 5 * 60 * 1000) {
+        return
+      }
     }
     lastRequestRef.current = requestKey
 
@@ -51,11 +56,11 @@ export default function SpaceManager() {
       })
       const data = await response.json()
       setSpaces(data.spaces || [])
+      cacheTimestampRef.current = Date.now()
     } catch {
       console.error(t('operationFailedNetwork'))
     } finally {
       setLoading(false)
-      // 重置强制刷新标志
       forceRefreshRef.current = false
     }
   }, [token, t, isAuthenticated])
@@ -68,6 +73,10 @@ export default function SpaceManager() {
       setLoading(false)
     }
   }, [isAuthenticated, token, fetchSpaces])
+
+  const sortedSpaces = useMemo(() => {
+    return [...spaces].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'))
+  }, [spaces])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,12 +106,9 @@ export default function SpaceManager() {
 
       if (response.ok) {
         handleCloseModal()
-        console.log('API操作成功，准备刷新页面...')
         showSuccess(String(t('success')))
-        // 强制刷新页面重新加载数据
-        setTimeout(() => {
-          window.location.reload()
-        }, 1000)
+        forceRefreshRef.current = true
+        fetchSpaces()
       } else {
         const errorData = await response.json().catch(() => ({}))
         console.error(t('operationFailed'), errorData)
@@ -136,12 +142,9 @@ export default function SpaceManager() {
       })
 
       if (response.ok) {
-        console.log('删除操作成功，准备刷新页面...')
         showSuccess(String(t('success')))
-        // 强制刷新页面重新加载数据
-        setTimeout(() => {
-          window.location.reload()
-        }, 1000)
+        forceRefreshRef.current = true
+        fetchSpaces()
       } else {
         showError(t('deleteFailed'))
       }
@@ -218,7 +221,7 @@ export default function SpaceManager() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {spaces.map((space) => (
+        {sortedSpaces.map((space) => (
           <div key={space.id} className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
             {space.name}

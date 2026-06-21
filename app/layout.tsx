@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "./styles/theme-neumorphism.css";
+import "./styles/theme-skyblue.css";
 import { AppProvider } from "@/contexts/AppContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { CustomDialogProvider } from "@/components/CustomDialogProvider";
@@ -34,10 +36,44 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const config = await getSystemConfig();
-  
+
+  const defaultTheme = (config?.defaultTheme as 'light' | 'dark') || 'light';
+  const defaultThemeType = (config?.defaultThemeType as 'neumorphism' | 'skyblue') || 'neumorphism';
+
+  const htmlClasses = [
+    `theme-${defaultThemeType}`,
+    defaultTheme === 'dark' ? 'dark' : ''
+  ].filter(Boolean).join(' ');
+
   return (
-    <html lang="zh" suppressHydrationWarning>
+    <html lang="zh" suppressHydrationWarning className={htmlClasses}>
       <head>
+        {/* 防止主题闪烁：在任何 React 代码执行前加载主题 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (window.__themeInitialized) return;
+                window.__themeInitialized = true;
+                try {
+                  const savedTheme = localStorage.getItem('theme');
+                  const savedThemeType = localStorage.getItem('themeType');
+                  const defaultTheme = '${defaultTheme}';
+                  const defaultThemeType = '${defaultThemeType}';
+                  
+                  const theme = savedTheme || defaultTheme;
+                  const themeType = savedThemeType || defaultThemeType;
+                  
+                  document.documentElement.classList.remove('light', 'dark', 'theme-neumorphism', 'theme-skyblue');
+                  document.documentElement.classList.add('theme-' + themeType);
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         {/* FontAwesome CDN */}
         <link
           rel="stylesheet"
@@ -47,9 +83,9 @@ export default async function RootLayout({
           referrerPolicy="no-referrer"
         />
         {/* Favicon - 使用自定义配置或默认favicon (来自icon文件夹) */}
-        <link 
-          rel="icon" 
-          href={config?.faviconUrl || "/favicon.ico"} 
+        <link
+          rel="icon"
+          href={config?.faviconUrl || "/favicon.ico"}
           type={config?.faviconUrl?.endsWith('.png') ? 'image/png' : 'image/x-icon'}
           sizes={config?.faviconUrl?.endsWith('.png') ? '32x32' : '16x16'}
         />
@@ -59,7 +95,7 @@ export default async function RootLayout({
       >
         <ErrorBoundary>
           <AppProvider>
-            <ThemeLoader />
+            <ThemeLoader defaultTheme={defaultTheme} defaultThemeType={defaultThemeType} />
             <CustomDialogProvider>
               {children}
             </CustomDialogProvider>

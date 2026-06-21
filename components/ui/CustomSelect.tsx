@@ -151,7 +151,7 @@ export default function CustomSelect<T extends Key | null | undefined = string>(
   return (
     <div 
       ref={selectRef}
-      className={`relative ${className}`}
+      className={`relative min-w-[180px] ${className}`}
     >
       {/* Select 触发器 */}
       <button
