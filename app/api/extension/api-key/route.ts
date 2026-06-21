@@ -34,13 +34,7 @@ export async function POST(request: NextRequest) {
     // 获取用户的SystemConfig以验证（generateUserApiKey已确保存在）
     const systemConfig = await prisma.systemConfig.findUnique({
       where: { userId },
-      select: {
-        id: true,
-        userId: true,
-        extensionApiKey: true,
-        createdAt: true,
-        updatedAt: true
-      }
+      select: { id: true, userId: true, extensionApiKey: true, apiKey: true, createdAt: true, updatedAt: true }
     })
 
     return NextResponse.json({
@@ -96,6 +90,7 @@ export async function GET(request: NextRequest) {
         id: true,
         userId: true,
         extensionApiKey: true,
+        apiKey: true,
         createdAt: true,
         updatedAt: true
       }
@@ -109,14 +104,16 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const hasApiKey = !!systemConfig?.extensionApiKey
+    // 同时检查 extensionApiKey 和 apiKey（向后兼容）
+    const hasApiKey = !!(systemConfig?.extensionApiKey || systemConfig?.apiKey)
+    const activeApiKey = systemConfig?.extensionApiKey || systemConfig?.apiKey
 
     return NextResponse.json({
       success: true,
       message: hasApiKey ? 'API Key已存在' : '用户尚未配置API Key',
       hasApiKey,
-      apiKey: hasApiKey ? systemConfig.extensionApiKey : null,
-      maskedKey: hasApiKey && systemConfig.extensionApiKey ? systemConfig.extensionApiKey.substring(0, 10) + '...' : null,
+      apiKey: activeApiKey || null,
+      maskedKey: activeApiKey ? activeApiKey.substring(0, 10) + '...' : null,
       systemConfig: {
         id: systemConfig.id,
         userId: systemConfig.userId,

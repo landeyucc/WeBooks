@@ -317,14 +317,14 @@ export default function AdminDashboard() {
   // 组件首次加载时获取空间数据和系统配置
   useEffect(() => {
     if (isAuthenticated && token) {
-            Promise.all([fetchSpaces(), fetchSystemConfig()])
+            Promise.all([fetchSpaces(), fetchSystemConfig(), fetchApiKey()])
         .then(() => {
         })
         .catch((error) => {
           console.error(t('adminConfigLoadFailed'), error)
         })
     }
-  }, [isAuthenticated, token, fetchSpaces, fetchSystemConfig, t])
+  }, [isAuthenticated, token, fetchSpaces, fetchSystemConfig, fetchApiKey, t])
 
   // 空间索引和排序缓存 (优化性能)
   const spaceMap = useMemo(() => {

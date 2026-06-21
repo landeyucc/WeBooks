@@ -111,6 +111,7 @@ class WebooksExtension {
       const result = await chrome.storage.sync.get(['webooksConfig'])
       this.config = result.webooksConfig || {
         apiUrl: '',
+        apiKey: '',
         autoScrape: true
       }
 
@@ -128,6 +129,7 @@ class WebooksExtension {
       console.error('加载配置失败:', error)
       this.config = {
         apiUrl: '',
+        apiKey: '',
         autoScrape: true
       }
     }

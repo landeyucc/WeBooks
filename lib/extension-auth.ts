@@ -52,7 +52,12 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
 
     console.log('authenticateWithApiKey - 开始查询数据库...')
     const systemConfig = await prisma.systemConfig.findFirst({
-      where: { extensionApiKey: apiKey }
+      where: { 
+        OR: [
+          { extensionApiKey: apiKey },
+          { apiKey: apiKey }
+        ]
+      }
     })
     console.log('authenticateWithApiKey - 数据库查询完成，结果:', systemConfig ? `找到记录 userId=${systemConfig.userId}` : '未找到')
 
@@ -82,26 +87,23 @@ export async function authenticateWithApiKey(request: NextRequest): Promise<{
 }
 
 /**
- * 为用户生成或更新API Key
+ * 为用户生成或更新API key
  */
 export async function generateUserApiKey(userId: string): Promise<string> {
   const apiKey = generateApiKey()
   
-  // 更新用户的SystemConfig
+  // 更新用户的SystemConfig（同时设置 apiKey 和 extensionApiKey 两个字段，确保向后兼容
   await prisma.systemConfig.upsert({
     where: { userId },
-    update: { extensionApiKey: apiKey },
-    create: {
-      userId,
-      extensionApiKey: apiKey
-    }
+    update: { extensionApiKey: apiKey, apiKey: apiKey },
+    create: { userId, extensionApiKey: apiKey, apiKey: apiKey }
   })
 
   return apiKey
 }
 
 /**
- * 验证API Key是否存在且有效
+ * 验证API key是否存在且有效
  */
 export async function validateApiKey(apiKey: string): Promise<boolean> {
   try {
@@ -110,7 +112,12 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
     }
 
     const systemConfig = await prisma.systemConfig.findFirst({
-      where: { extensionApiKey: apiKey }
+      where: { 
+        OR: [
+          { extensionApiKey: apiKey },
+          { apiKey: apiKey }
+        ]
+      }
     })
 
     return !!systemConfig

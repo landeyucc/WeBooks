@@ -14,6 +14,7 @@ chrome.runtime.onInstalled.addListener((details) => {
         webooksConfig: {
           // API URL需要用户在扩展设置中配置，默认为空
           apiUrl: '',
+          apiKey: '',
           autoScrape: true
         }
       })
