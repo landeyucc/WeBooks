@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/generate-prisma-schema.js && node scripts/init-database.js && next dev",
     "build": "node scripts/generate-prisma-schema.js && next build",
-    "start": "node scripts/generate-prisma-schema.js && node scripts/init-database.js && next start",
+    "start": "node scripts/generate-prisma-schema.js && node scripts/init-database.js && node scripts/migrate-database.js && next start",
     "lint": "next lint",
     "postinstall": "node scripts/generate-prisma-schema.js && prisma generate",
     "prisma:schema": "node scripts/generate-prisma-schema.js",

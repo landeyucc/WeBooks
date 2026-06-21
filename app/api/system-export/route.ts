@@ -23,20 +23,35 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取系统配置（排除用户密码）
-    const systemConfig = await prisma.systemConfig.findFirst({
-      where: { userId },
-      include: {
-        defaultSpace: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            iconUrl: true,
-            systemCardUrl: true
+    let systemConfig: Record<string, unknown> | null = null
+    try {
+      systemConfig = await prisma.systemConfig.findFirst({
+        where: { userId },
+        include: {
+          defaultSpace: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              iconUrl: true,
+              systemCardUrl: true
+            }
           }
         }
+      }) as unknown as Record<string, unknown> | null
+    } catch {
+      try {
+        const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+          `SELECT * FROM system_configs WHERE user_id = $1 LIMIT 1`,
+          userId
+        )
+        if (rows && rows.length > 0) {
+          systemConfig = rows[0]
+        }
+      } catch {
+        systemConfig = null
       }
-    })
+    }
 
     // 获取用户信息
     const user = await prisma.user.findUnique({

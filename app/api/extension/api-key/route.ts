@@ -32,10 +32,36 @@ export async function POST(request: NextRequest) {
     const apiKey = await generateUserApiKey(userId)
 
     // 获取用户的SystemConfig以验证（generateUserApiKey已确保存在）
-    const systemConfig = await prisma.systemConfig.findUnique({
-      where: { userId },
-      select: { id: true, userId: true, extensionApiKey: true, apiKey: true, createdAt: true, updatedAt: true }
-    })
+    // 尝试 Prisma 标准查询，失败则回退到 raw SQL
+    let systemConfig: Record<string, unknown> | null = null
+    try {
+      const config = await prisma.systemConfig.findUnique({
+        where: { userId },
+        select: { id: true, userId: true, extensionApiKey: true, apiKey: true, createdAt: true, updatedAt: true }
+      })
+      if (config) systemConfig = config as unknown as Record<string, unknown>
+    } catch (prismaError) {
+      console.warn('[extension/api-key POST] Prisma 查询失败，尝试 raw SQL fallback:', prismaError instanceof Error ? prismaError.message : prismaError)
+      try {
+        const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+          `SELECT id, user_id, created_at, updated_at FROM system_configs WHERE user_id = $1 LIMIT 1`,
+          userId
+        )
+        if (rows && rows.length > 0) {
+          const r = rows[0]
+          systemConfig = {
+            id: r.id,
+            userId: r.user_id,
+            extensionApiKey: apiKey,
+            apiKey: apiKey,
+            createdAt: r.created_at,
+            updatedAt: r.updated_at
+          }
+        }
+      } catch {
+        // 仍然失败，返回最小信息
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -83,18 +109,63 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 获取用户的SystemConfig
-    const systemConfig = await prisma.systemConfig.findUnique({
-      where: { userId },
-      select: {
-        id: true,
-        userId: true,
-        extensionApiKey: true,
-        apiKey: true,
-        createdAt: true,
-        updatedAt: true
+    // 获取用户的SystemConfig（尝试 Prisma 标准查询，失败则回退到 raw SQL）
+    let systemConfig: Record<string, unknown> | null = null
+    try {
+      const config = await prisma.systemConfig.findUnique({
+        where: { userId },
+        select: {
+          id: true,
+          userId: true,
+          extensionApiKey: true,
+          apiKey: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      })
+      if (config) systemConfig = config as unknown as Record<string, unknown>
+    } catch (prismaError) {
+      console.warn('[extension/api-key GET] Prisma 查询失败，尝试 raw SQL fallback:', prismaError instanceof Error ? prismaError.message : prismaError)
+      try {
+        const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+          `SELECT id, user_id, extension_api_key, api_key, created_at, updated_at FROM system_configs WHERE user_id = $1 LIMIT 1`,
+          userId
+        )
+        if (rows && rows.length > 0) {
+          const r = rows[0]
+          systemConfig = {
+            id: r.id,
+            userId: r.user_id,
+            extensionApiKey: r.extension_api_key,
+            apiKey: r.api_key,
+            createdAt: r.created_at,
+            updatedAt: r.updated_at
+          }
+        }
+      } catch (rawError) {
+        console.warn('[extension/api-key GET] raw SQL 查询也失败，但尝试更保守的查询:', rawError instanceof Error ? rawError.message : rawError)
+        // 尝试只查询 id 和 extension_api_key
+        try {
+          const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+            `SELECT id, user_id FROM system_configs WHERE user_id = $1 LIMIT 1`,
+            userId
+          )
+          if (rows && rows.length > 0) {
+            const r = rows[0]
+            systemConfig = {
+              id: r.id,
+              userId: r.user_id,
+              extensionApiKey: null,
+              apiKey: null,
+              createdAt: null,
+              updatedAt: null
+            }
+          }
+        } catch {
+          // 彻底失败，当作没有配置处理
+        }
       }
-    })
+    }
 
     if (!systemConfig) {
       return NextResponse.json({
@@ -106,7 +177,7 @@ export async function GET(request: NextRequest) {
 
     // 同时检查 extensionApiKey 和 apiKey（向后兼容）
     const hasApiKey = !!(systemConfig?.extensionApiKey || systemConfig?.apiKey)
-    const activeApiKey = systemConfig?.extensionApiKey || systemConfig?.apiKey
+    const activeApiKey = (systemConfig?.extensionApiKey as string) || (systemConfig?.apiKey as string)
 
     return NextResponse.json({
       success: true,
