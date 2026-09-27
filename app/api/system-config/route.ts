@@ -133,6 +133,12 @@ export async function GET(request: NextRequest) {
       hasDefaultTheme: !!(config?.defaultTheme || config?.default_theme)
     })
 
+    // 迁移：旧数据库可能存着 'neumorphism'，统一转为 'skyblue'
+    let themeType = config?.defaultThemeType || config?.default_theme_type || null
+    if (themeType === 'neumorphism') {
+      themeType = 'skyblue'
+    }
+
     return NextResponse.json({
       id: config?.id || null,
       defaultSpaceId: config?.defaultSpaceId || config?.default_space_id || null,
@@ -142,7 +148,7 @@ export async function GET(request: NextRequest) {
       seoDescription: config?.seoDescription || config?.seo_description || null,
       keywords: config?.keywords || null,
       defaultTheme: config?.defaultTheme || config?.default_theme || null,
-      defaultThemeType: config?.defaultThemeType || config?.default_theme_type || null,
+      defaultThemeType: themeType,
       createdAt: config?.createdAt || config?.created_at || null,
       updatedAt: config?.updatedAt || config?.updated_at || null
     })

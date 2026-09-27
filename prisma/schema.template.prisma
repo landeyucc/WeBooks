@@ -85,7 +85,7 @@ model SystemConfig {
   seoDescription  String?  @map("seo_description")
   keywords        String?
   defaultTheme    String?  @default("light") @map("default_theme")
-  defaultThemeType String? @default("neumorphism") @map("default_theme_type")
+  defaultThemeType String? @default("skyblue") @map("default_theme_type")
   apiKey          String?  @unique @map("api_key")
   extensionApiKey String?  @unique @map("extension_api_key")
   createdAt       DateTime @default(now()) @map("created_at")

@@ -109,7 +109,6 @@ export default function AdminDashboard() {
   const [seoDescription, setSeoDescription] = useState<string>('')
   const [keywords, setKeywords] = useState<string>('')
   const [defaultTheme, setDefaultTheme] = useState<'light' | 'dark'>('light')
-  const [defaultThemeType, setDefaultThemeType] = useState<'neumorphism' | 'skyblue'>('neumorphism')
   const [isLoading, setIsLoading] = useState(false)
   
   // 书签导入导出相关状态
@@ -305,9 +304,7 @@ export default function AdminDashboard() {
         if (data.defaultTheme) {
           setDefaultTheme(data.defaultTheme as 'light' | 'dark')
         }
-        if (data.defaultThemeType) {
-          setDefaultThemeType(data.defaultThemeType as 'neumorphism' | 'skyblue')
-        }
+        // defaultThemeType 固定为 skyblue，不再读取
       }
     } catch (error) {
       console.error(t('adminFetchSystemConfigFailed'), error)
@@ -416,17 +413,17 @@ export default function AdminDashboard() {
   }
 
   // 保存主题设置（点击主题按钮即刻调用）
-  const saveTheme = useCallback(async (newTheme: 'light' | 'dark', newThemeType: 'neumorphism' | 'skyblue') => {
+  const saveTheme = useCallback(async (newTheme: 'light' | 'dark') => {
+    const THEME_TYPE = 'skyblue';
     // 立即更新本地状态和 DOM（不等待网络）
     setDefaultTheme(newTheme)
-    setDefaultThemeType(newThemeType)
     if (typeof document !== 'undefined') {
       document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
-      document.documentElement.classList.add(`theme-${newThemeType}`)
+      document.documentElement.classList.add(`theme-${THEME_TYPE}`)
       document.documentElement.classList.toggle('dark', newTheme === 'dark')
       try {
         localStorage.setItem('theme', newTheme)
-        localStorage.setItem('themeType', newThemeType)
+        localStorage.setItem('themeType', THEME_TYPE)
       } catch {}
     }
 
@@ -438,7 +435,7 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ defaultTheme: newTheme, defaultThemeType: newThemeType }),
+        body: JSON.stringify({ defaultTheme: newTheme, defaultThemeType: THEME_TYPE }),
       })
     } catch {}
   }, [token])
@@ -1553,50 +1550,18 @@ export default function AdminDashboard() {
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[300px]">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">主题设置</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  选择默认主题风格和明暗模式，这会对所有访客生效
+                  选择默认明暗模式，这会对所有访客生效
                 </p>
 
                 <div className="space-y-4">
-                  {/* 主题类型选择 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      主题风格
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => saveTheme(defaultTheme, 'neumorphism')}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          defaultThemeType === 'neumorphism'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center"
-                               style={{ boxShadow: '3px 3px 6px rgba(0,0,0,0.1), -3px -3px 6px rgba(255,255,255,0.8)' }}>
-                            <span className="text-gray-600 dark:text-gray-300">拟态</span>
-                          </div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Neumorphism</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">柔和拟态风格</p>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => saveTheme(defaultTheme, 'skyblue')}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          defaultThemeType === 'skyblue'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
-                               style={{ boxShadow: '0 4px 6px rgba(59, 130, 246, 0.3)' }}>
-                            <span className="text-white">天蓝</span>
-                          </div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Sky Blue</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">现代扁平风格</p>
-                        </div>
-                      </button>
+                  {/* 当前主题风格显示 */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-md">
+                      <span className="text-white text-xs font-medium">天蓝</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Sky Blue</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">现代扁平风格</p>
                     </div>
                   </div>
 
@@ -1607,10 +1572,10 @@ export default function AdminDashboard() {
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
-                        onClick={() => saveTheme('light', defaultThemeType)}
+                        onClick={() => saveTheme('light')}
                         className={`p-3 rounded-lg border-2 transition-all ${
                           defaultTheme === 'light'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         }`}
                       >
@@ -1622,10 +1587,10 @@ export default function AdminDashboard() {
                         </div>
                       </button>
                       <button
-                        onClick={() => saveTheme('dark', defaultThemeType)}
+                        onClick={() => saveTheme('dark')}
                         className={`p-3 rounded-lg border-2 transition-all ${
                           defaultTheme === 'dark'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         }`}
                       >
@@ -1638,8 +1603,6 @@ export default function AdminDashboard() {
                       </button>
                     </div>
                   </div>
-
-                  {/* 保存主题设置按钮已移除：点击主题按钮即刻生效 */}
                 </div>
               </div>
 

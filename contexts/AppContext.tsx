@@ -32,11 +32,11 @@ interface AppContextType {
 
   // Theme
   theme: 'light' | 'dark'
-  themeType: 'neumorphism' | 'skyblue'
+  themeType: 'skyblue'
   serverDefaultTheme: 'light' | 'dark' | null
-  serverDefaultThemeType: 'neumorphism' | 'skyblue' | null
+  serverDefaultThemeType: 'skyblue' | null
   toggleTheme: () => void
-  setThemeType: (type: 'neumorphism' | 'skyblue') => void
+  setThemeType: () => void
   isInitialized: boolean
   
   // Language
@@ -68,7 +68,7 @@ const defaultContextValue: AppContextType = {
   logout: () => {},
   isAuthenticated: false,
   theme: 'light',
-  themeType: 'neumorphism',
+  themeType: 'skyblue',
   serverDefaultTheme: null,
   serverDefaultThemeType: null,
   toggleTheme: () => {},
@@ -105,9 +105,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  const [themeType, setThemeTypeState] = useState<'neumorphism' | 'skyblue'>('neumorphism')
+  const [themeType, setThemeTypeState] = useState<'skyblue'>('skyblue')
   const [serverDefaultTheme, setServerDefaultTheme] = useState<'light' | 'dark' | null>(null)
-  const [serverDefaultThemeType, setServerDefaultThemeType] = useState<'neumorphism' | 'skyblue' | null>(null)
+  const [serverDefaultThemeType, setServerDefaultThemeType] = useState<'skyblue' | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [language, setLanguageState] = useState<Language>('zh')
   const [loading, setLoading] = useState(true)
@@ -143,7 +143,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         // 从服务器获取系统配置中的默认主题
         let svrTheme: 'light' | 'dark' | null = null
-        let svrThemeType: 'neumorphism' | 'skyblue' | null = null
+        let svrThemeType: 'skyblue' | null = null
         try {
           const res = await fetch('/api/system-config')
           if (res.ok) {
@@ -152,8 +152,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               svrTheme = data.defaultTheme as 'light' | 'dark'
               setServerDefaultTheme(svrTheme)
             }
-            if (data.defaultThemeType) {
-              svrThemeType = data.defaultThemeType as 'neumorphism' | 'skyblue'
+            if (data.defaultThemeType && data.defaultThemeType !== 'neumorphism') {
+              svrThemeType = data.defaultThemeType as 'skyblue'
               setServerDefaultThemeType(svrThemeType)
             }
           }
@@ -172,16 +172,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         // 加载主题类型：优先使用用户的本地设置，否则使用服务器默认
-        const savedThemeType = localStorage.getItem('themeType') as 'neumorphism' | 'skyblue' | null
-        if (savedThemeType) {
-          setThemeTypeState(savedThemeType)
-          document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
-          document.documentElement.classList.add(`theme-${savedThemeType}`)
-        } else if (svrThemeType) {
-          setThemeTypeState(svrThemeType)
-          document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
-          document.documentElement.classList.add(`theme-${svrThemeType}`)
+        // 迁移：旧用户可能存着 'neumorphism'，统一转为 'skyblue'
+        let savedThemeType = localStorage.getItem('themeType')
+        if (savedThemeType === 'neumorphism') {
+          savedThemeType = 'skyblue'
+          localStorage.setItem('themeType', 'skyblue')
         }
+        const finalThemeType: 'skyblue' = savedThemeType === 'skyblue'
+          ? 'skyblue'
+          : (svrThemeType === 'skyblue' ? 'skyblue' : 'skyblue')
+        
+        setThemeTypeState(finalThemeType)
+        document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
+        document.documentElement.classList.add(`theme-${finalThemeType}`)
 
         // 加载语言
         const savedLanguage = localStorage.getItem('language') as Language | null
@@ -239,12 +242,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const setThemeType = (type: 'neumorphism' | 'skyblue') => {
-    setThemeTypeState(type)
-    localStorage.setItem('themeType', type)
+  const setThemeType = () => {
+    // 只保留 skyblue 主题，此函数保留为兼容接口
+    setThemeTypeState('skyblue')
+    localStorage.setItem('themeType', 'skyblue')
     if (typeof document !== 'undefined') {
       document.documentElement.classList.remove('theme-neumorphism', 'theme-skyblue')
-      document.documentElement.classList.add(`theme-${type}`)
+      document.documentElement.classList.add('theme-skyblue')
     }
   }
 

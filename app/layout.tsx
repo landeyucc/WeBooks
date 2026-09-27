@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import "./styles/theme-neumorphism.css";
 import "./styles/theme-skyblue.css";
 import { AppProvider } from "@/contexts/AppContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -38,7 +37,7 @@ export default async function RootLayout({
   const config = await getSystemConfig();
 
   const defaultTheme = (config?.defaultTheme as 'light' | 'dark') || 'light';
-  const defaultThemeType = (config?.defaultThemeType as 'neumorphism' | 'skyblue') || 'neumorphism';
+  const defaultThemeType = (config?.defaultThemeType as 'skyblue') || 'skyblue';
 
   const htmlClasses = [
     `theme-${defaultThemeType}`,
@@ -57,9 +56,18 @@ export default async function RootLayout({
                 window.__themeInitialized = true;
                 try {
                   const savedTheme = localStorage.getItem('theme');
-                  const savedThemeType = localStorage.getItem('themeType');
+                  let savedThemeType = localStorage.getItem('themeType');
                   const defaultTheme = '${defaultTheme}';
-                  const defaultThemeType = '${defaultThemeType}';
+                  let defaultThemeType = '${defaultThemeType}';
+                  
+                  // 迁移：旧用户可能存着 'neumorphism'，统一转为 'skyblue'
+                  if (savedThemeType === 'neumorphism') {
+                    savedThemeType = 'skyblue';
+                    localStorage.setItem('themeType', 'skyblue');
+                  }
+                  if (defaultThemeType === 'neumorphism') {
+                    defaultThemeType = 'skyblue';
+                  }
                   
                   const theme = savedTheme || defaultTheme;
                   const themeType = savedThemeType || defaultThemeType;

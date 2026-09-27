@@ -4,11 +4,11 @@ const prisma = new PrismaClient();
 
 const DEFAULT_CONFIG = {
   siteTitle: "Webooks",
-  seoDescription: "现代化的拟态浏览器书签管理系统",
+  seoDescription: "现代化的浏览器书签管理系统",
   keywords: "书签管理,浏览器书签,bookmark manager",
   faviconUrl: "/favicon.ico",
   defaultTheme: "light",
-  defaultThemeType: "neumorphism"
+  defaultThemeType: "skyblue"
 };
 
 async function safeGetSystemConfigRaw() {
@@ -55,7 +55,11 @@ export async function getSystemConfig() {
     const keywords = getField(['keywords'])?.trim() || DEFAULT_CONFIG.keywords;
     const faviconUrl = getField(['faviconUrl', 'favicon_url'])?.trim() || DEFAULT_CONFIG.faviconUrl;
     const defaultTheme = getField(['defaultTheme', 'default_theme'])?.trim() || DEFAULT_CONFIG.defaultTheme;
-    const defaultThemeType = getField(['defaultThemeType', 'default_theme_type'])?.trim() || DEFAULT_CONFIG.defaultThemeType;
+    let defaultThemeType = getField(['defaultThemeType', 'default_theme_type'])?.trim() || DEFAULT_CONFIG.defaultThemeType;
+    // 迁移：旧数据库可能存着 'neumorphism'，统一转为 'skyblue'
+    if (defaultThemeType === 'neumorphism') {
+      defaultThemeType = 'skyblue';
+    }
 
     return {
       siteTitle,

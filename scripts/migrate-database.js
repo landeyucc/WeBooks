@@ -37,7 +37,7 @@ const EXPECTED_COLUMNS = [
   { name: "seo_description", type: "TEXT", postgresType: "TEXT", required: false },
   { name: "keywords", type: "TEXT", postgresType: "TEXT", required: false },
   { name: "default_theme", type: "TEXT", postgresType: "TEXT", required: false, default: "'light'" },
-  { name: "default_theme_type", type: "TEXT", postgresType: "TEXT", required: false, default: "'neumorphism'" },
+  { name: "default_theme_type", type: "TEXT", postgresType: "TEXT", required: false, default: "'skyblue'" },
   { name: "api_key", type: "TEXT", postgresType: "TEXT", required: false, unique: true },
   { name: "extension_api_key", type: "TEXT", postgresType: "TEXT", required: false, unique: true },
   { name: "created_at", type: "DATETIME", postgresType: "TIMESTAMP(3)", required: true, default: "CURRENT_TIMESTAMP" },
