@@ -1,70 +1,69 @@
-# 多阶段构建 - 构建阶段
+# ============ 构建阶段 ============
 FROM node:18-alpine AS builder
 
-# 设置工作目录
 WORKDIR /app
 
-# 安装系统依赖
+# 系统依赖（prisma native、python）
 RUN apk add --no-cache python3 make g++ openssl
 
-# 复制 package.json 和 package-lock.json
+# 先复制依赖声明层，最大化缓存命中
 COPY package*.json ./
-
-# 安装所有依赖（包括开发依赖）
 RUN npm ci
-
-# 复制源代码
-COPY . .
 
 # 生成 Prisma Client
 RUN npx prisma generate
 
-# 构建应用
+# 源代码
+COPY . .
+
+# 构建 Next.js 产物
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
-# 生产阶段
-FROM node:18-alpine AS production
 
-# 安装系统依赖
-RUN apk add --no-cache openssl
+# ============ 运行阶段 ============
+FROM node:18-alpine AS runner
 
-# 创建应用用户
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
-# 设置工作目录
 WORKDIR /app
 
-# 复制 package.json
+RUN apk add --no-cache openssl tini curl
+
+# 非 root 用户
+RUN addgroup -S nodejs -g 1001 && adduser -S nextjs -u 1001 -G nodejs
+
+# 1. 依赖：只装生产依赖
 COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
-# 只安装生产依赖
-RUN npm ci --only=production && npm cache clean --force
+# 诊断：确认 next CLI 在生产依赖里（npm start 会调 next start）
+RUN node -e "console.log('next CLI:', require.resolve('next/dist/bin/next'))"
 
-# 复制构建结果
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# 2. Next.js 构建产物
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 
-# 设置权限
-RUN chown -R nextjs:nodejs /app
+# 3. 运行时脚本（generate-prisma-schema / init-database / migrate-database 都要跑）
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
+# 4. 公共资源 & Prisma schema（migrate 要读）
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+# 5. 构建产物完整性自检（防止镜像里缺 BUILD_ID）
+RUN test -f .next/BUILD_ID && echo "✅ BUILD_ID: $(cat .next/BUILD_ID)" || echo "❌ BUILD_ID MISSING!"
+RUN ls -la .next/ | head -15
+
 USER nextjs
 
-# 暴露端口
 EXPOSE 3000
 
-# 设置环境变量
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-ENV NODE_OPTIONS="--max-old-space-size=512"
+ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--max-old-space-size=512"
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD curl -fsS http://localhost:3000/api/health || exit 1
 
-# 启动应用
-CMD ["node", "server.js"]
+# 入口：generate schema → init DB → migrate → next start
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["npm", "start"]

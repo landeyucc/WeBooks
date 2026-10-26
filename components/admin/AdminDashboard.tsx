@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import CustomSelect from '../ui/CustomSelect'
 import BookmarkManager from './BookmarkManager'
 import FolderManager from './FolderManager'
@@ -104,12 +105,23 @@ export default function AdminDashboard() {
   const [systemCardUrl, setSystemCardUrl] = useState<string>('')
 
   // 网站设置状态
+  const [settingsSection, setSettingsSection] = useState<'site' | 'startPage' | 'theme' | 'defaultSpace' | 'systemCard' | 'apiKey'>('site')
   const [siteTitle, setSiteTitle] = useState<string>('')
   const [faviconUrl, setFaviconUrl] = useState<string>('')
   const [seoDescription, setSeoDescription] = useState<string>('')
   const [keywords, setKeywords] = useState<string>('')
   const [defaultTheme, setDefaultTheme] = useState<'light' | 'dark'>('light')
   const [isLoading, setIsLoading] = useState(false)
+
+  // 开始页（新标签页）设置
+  const [startPageBgUrl, setStartPageBgUrl] = useState<string>('')
+  const [startPageBgType, setStartPageBgType] = useState<'image' | 'video'>('image')
+  const [startPageBgOpacity, setStartPageBgOpacity] = useState<number>(0.5)
+  const [startPageLayout, setStartPageLayout] = useState<string>('centered')
+  const [startPageShowClock, setStartPageShowClock] = useState<boolean>(false)
+  const [startPageShowLunar, setStartPageShowLunar] = useState<boolean>(false)
+  const [pinnedList, setPinnedList] = useState<Array<{ id: string; title: string; url: string; iconUrl?: string | null; pinnedOrder: number }>>([])
+  const [movingPinId, setMovingPinId] = useState<string | null>(null)
   
   // 书签导入导出相关状态
   const [exportScope, setExportScope] = useState<'all' | 'space' | 'folder'>('all')
@@ -305,7 +317,27 @@ export default function AdminDashboard() {
           setDefaultTheme(data.defaultTheme as 'light' | 'dark')
         }
         // defaultThemeType 固定为 skyblue，不再读取
+        // 开始页设置
+        setStartPageBgUrl(data.startPageBgUrl || '')
+        setStartPageBgType((data.startPageBgType === 'video' ? 'video' : 'image'))
+        setStartPageBgOpacity(data.startPageBgOpacity != null ? Number(data.startPageBgOpacity) : 0.5)
+        setStartPageLayout(data.startPageLayout || 'centered')
+        setStartPageShowClock(data.startPageShowClock === true || data.startPageShowClock === 1 || data.startPageShowClock === '1')
+        setStartPageShowLunar(data.startPageShowLunar === true || data.startPageShowLunar === 1 || data.startPageShowLunar === '1')
       }
+      // 顺带拉一下 pinned 书签列表（不在 try 里，失败不影响主流程）
+      try {
+        const pinnedRes = await fetch('/api/bookmarks?pinned=true', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+        if (pinnedRes.ok) {
+          type PinnedRow = { id: string; title: string; url: string; iconUrl?: string | null; pinnedOrder?: number }
+          const pData = (await pinnedRes.json()) as PinnedRow[] | { bookmarks: PinnedRow[] }
+          const list: PinnedRow[] = Array.isArray(pData) ? pData : pData.bookmarks
+          list.sort((a, b) => (a.pinnedOrder ?? 0) - (b.pinnedOrder ?? 0))
+          setPinnedList(list.map((x, i) => ({ ...x, pinnedOrder: x.pinnedOrder ?? i })))
+        }
+      } catch { /* 忽略 */ }
     } catch (error) {
       console.error(t('adminFetchSystemConfigFailed'), error)
     }
@@ -449,6 +481,12 @@ export default function AdminDashboard() {
         faviconUrl: faviconUrl ?? '',
         seoDescription: seoDescription ?? '',
         keywords: keywords ?? '',
+        startPageBgUrl: startPageBgUrl || null,
+        startPageBgType,
+        startPageBgOpacity,
+        startPageLayout,
+        startPageShowClock,
+        startPageShowLunar,
       }
       const response = await fetch('/api/system-config', {
         method: 'PUT',
@@ -462,6 +500,11 @@ export default function AdminDashboard() {
       if (response.ok) {
         showSuccess(t('configSaveSuccess'))
         fetchSystemConfig()
+        // 清 StartPage 缓存，让用户刷新首页后看到最新设置
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('startpage-bg')
+          localStorage.removeItem('startpage-bg-at')
+        }
       } else {
         showError(t('saveFailed'))
       }
@@ -470,6 +513,43 @@ export default function AdminDashboard() {
       showError(t('saveFailed'))
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // 移动 pinned bookmark 顺序（上移/下移）——采用全量重排，避免 pinnedOrder 重复
+  const movePinned = async (id: string, dir: -1 | 1) => {
+    setMovingPinId(id)
+    try {
+      const sorted = [...pinnedList].sort((a, b) => (a.pinnedOrder ?? 0) - (b.pinnedOrder ?? 0))
+      const idx = sorted.findIndex((x) => x.id === id)
+      const targetIdx = idx + dir
+      if (idx < 0 || targetIdx < 0 || targetIdx >= sorted.length) return
+
+      // 交换位置
+      const swapped = [...sorted]
+      ;[swapped[idx], swapped[targetIdx]] = [swapped[targetIdx], swapped[idx]]
+
+      // 重新分配顺序 0..N-1（给所有 pinned 项都补一份）
+      const reordered = swapped.map((bm, i) => ({ ...bm, pinnedOrder: i }))
+
+      // 并发推所有 pinnedOrder
+      await Promise.all(
+        reordered.map((bm) =>
+          fetch(`/api/bookmarks/${bm.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ pinnedOrder: bm.pinnedOrder }),
+          })
+        )
+      )
+      setPinnedList(reordered)
+    } catch {
+      fetchSystemConfig()
+    } finally {
+      setMovingPinId(null)
     }
   }
 
@@ -1408,10 +1488,41 @@ export default function AdminDashboard() {
         {activeTab === 'settings' && (
           <div className="neu-card p-6">
             <h2 className="text-xl font-bold mb-6">{t('systemSettings')}</h2>
-            
-            <div className="flex flex-wrap gap-6">
-              {/* 默认空间设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[300px]">
+
+            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6">
+              {/* 左侧导航 */}
+              <nav className="md:border-r border-gray-200 dark:border-gray-700 md:pr-4 md:sticky md:top-4 md:self-start">
+                <div className="flex md:flex-col gap-1 md:gap-0 md:w-full overflow-x-auto pb-1 md:overflow-visible">
+                  {[
+                    { key: 'site', label: '网站信息' },
+                    { key: 'startPage', label: '开始页设置' },
+                    { key: 'theme', label: '主题外观' },
+                    { key: 'defaultSpace', label: '默认空间' },
+                    { key: 'systemCard', label: '系统卡图' },
+                    { key: 'apiKey', label: '浏览器 API' },
+                  ].map((item) => {
+                    const active = settingsSection === (item.key as typeof settingsSection)
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => setSettingsSection(item.key as typeof settingsSection)}
+                        className={`flex-shrink-0 md:w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                          active
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border-transparent'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </nav>
+
+              {/* 右侧详情面板 */}
+              <div className="min-w-0">
+              {settingsSection === 'defaultSpace' && (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('defaultSpaceConfig')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('defaultSpaceDesc')}
@@ -1450,9 +1561,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+              )}
 
-              {/* 系统卡图设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-[2] min-w-[400px]">
+              {settingsSection === 'systemCard' && (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('systemCardSettings')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('systemCardDesc')}
@@ -1545,9 +1657,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+              )}
 
-              {/* 主题设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[300px]">
+              {settingsSection === 'theme' && (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">主题设置</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   选择默认明暗模式，这会对所有访客生效
@@ -1605,9 +1718,250 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+              )}
 
-              {/* 网站设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-[2] min-w-[400px]">
+              {settingsSection === 'startPage' && (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">开始页设置</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  自定义开始页的背景图片或视频，置顶书签可在书签卡片上点击图钉添加
+                </p>
+
+                <div className="space-y-4">
+                  {/* 背景 URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      背景 URL（留空使用默认）
+                    </label>
+                    <input
+                      type="url"
+                      value={startPageBgUrl}
+                      onChange={(e) => setStartPageBgUrl(e.target.value)}
+                      placeholder="https://example.com/background.jpg"
+                      className="neu-input"
+                    />
+                  </div>
+
+                  {/* 背景类型 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      背景类型
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setStartPageBgType('image')}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                          startPageBgType === 'image'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                        }`}
+                      >
+                        🖼️ 图片
+                      </button>
+                      <button
+                        onClick={() => setStartPageBgType('video')}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                          startPageBgType === 'video'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                        }`}
+                      >
+                        🎬 视频
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 遮罩透明度 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      遮罩强度：{startPageBgOpacity.toFixed(1)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={startPageBgOpacity}
+                      onChange={(e) => setStartPageBgOpacity(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>背景清晰</span>
+                      <span>遮罩加深</span>
+                    </div>
+                  </div>
+
+                  {/* 预览 */}
+                  {startPageBgUrl && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        预览
+                      </label>
+                      <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        {startPageBgType === 'video' ? (
+                          <video
+                            src={startPageBgUrl}
+                            className="w-full h-full object-cover"
+                            muted
+                            loop
+                            playsInline
+                          />
+                        ) : (
+                          <Image
+                            src={startPageBgUrl}
+                            alt="预览"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 400px"
+                            className="object-cover"
+                          />
+                        )}
+                        <div
+                          className="absolute inset-0 bg-white/70 dark:bg-gray-900/70"
+                          style={{ opacity: startPageBgOpacity }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 风格选择 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      布局风格
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { v: 'centered', label: '居中', icon: '⬤' },
+                        { v: 'left-aligned', label: '左对齐', icon: '▢' },
+                        { v: 'minimal', label: '极简', icon: '─' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.v}
+                          onClick={() => setStartPageLayout(opt.v)}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium border-2 transition-all flex flex-col items-center gap-1 ${
+                            startPageLayout === opt.v
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                          }`}
+                        >
+                          <span className="text-base">{opt.icon}</span>
+                          <span>{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 时钟 / 农历 开关 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      首页时间显示
+                    </label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={startPageShowClock}
+                          onChange={(e) => setStartPageShowClock(e.target.checked)}
+                          className="w-4 h-4 accent-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">显示时钟（右上角）</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={startPageShowLunar}
+                          onChange={(e) => setStartPageShowLunar(e.target.checked)}
+                          disabled={!startPageShowClock}
+                          className="w-4 h-4 accent-blue-500 disabled:opacity-40"
+                        />
+                        <span className={`text-sm ${startPageShowClock ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-600'}`}>
+                          同时显示农历（含节气、生肖）
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 固定书签管理 */}
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      固定书签顺序
+                    </label>
+                    <a
+                      href="/bookmarks"
+                      className="text-xs text-blue-500 hover:text-blue-600"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      管理全部书签 →
+                    </a>
+                  </div>
+                  {pinnedList.length === 0 ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 py-4 text-center border border-dashed border-gray-300 dark:border-gray-600 rounded">
+                      还没有固定的书签，去书签页点击卡片上的📌置顶
+                    </p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {pinnedList.map((bm, idx) => (
+                        <li
+                          key={bm.id}
+                          className="flex items-center gap-2 p-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                        >
+                          <span className="text-xs text-gray-400 w-5 text-center">{idx + 1}</span>
+                          <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {bm.iconUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={bm.iconUrl} alt="" className="w-4 h-4" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                            ) : (
+                              <span className="text-[10px] font-bold text-blue-600">{bm.title.charAt(0)}</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{bm.title}</div>
+                            <div className="text-[10px] text-gray-400 truncate">{bm.url}</div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              disabled={movingPinId === bm.id || idx === 0}
+                              onClick={() => movePinned(bm.id, -1)}
+                              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              title="上移"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                            </button>
+                            <button
+                              disabled={movingPinId === bm.id || idx === pinnedList.length - 1}
+                              onClick={() => movePinned(bm.id, 1)}
+                              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              title="下移"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* 保存按钮 */}
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-3">
+                  <button
+                    onClick={saveSiteSettings}
+                    disabled={isLoading}
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? t('saving') : '保存开始页设置'}
+                  </button>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    固定书签顺序修改后会自动保存
+                  </span>
+                </div>
+              </div>
+              )}
+
+              {settingsSection === 'site' && (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('siteSettings')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('siteSettingsDesc')}
@@ -1706,9 +2060,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+              )}
 
-              {/* 浏览器扩展API Key设置 */}
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit flex-1 min-w-[300px]">
+              {settingsSection === 'apiKey' && (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-fit">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('browserExtensionApiKey')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {t('browserExtensionApiKeyDesc')}
@@ -1806,6 +2161,8 @@ export default function AdminDashboard() {
                     </ul>
                   </div>
                 </div>
+              </div>
+              )}
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import RobustImage from './RobustImage'
 import type { TranslationKey } from '@/lib/i18n'
+import { useApp } from '@/contexts/AppContext'
 
 interface BookmarkCardProps {
   bookmark: {
@@ -9,6 +10,7 @@ interface BookmarkCardProps {
     url: string
     description: string | null
     iconUrl: string | null
+    pinned?: boolean
     folder?: {
       name: string
     } | null
@@ -21,6 +23,7 @@ interface BookmarkCardProps {
   onMouseLeave: () => void
   calculateTooltipPosition: (mouseX: number, mouseY: number) => { left: number, top: number }
   t: (key: TranslationKey, params?: Record<string, string | number>) => string
+  onPinnedChange?: (bookmarkId: string, pinned: boolean) => void
 }
 
 const isValidImageUrl = (url: string): boolean => {
@@ -49,15 +52,73 @@ export default function BookmarkCard({
   onMouseMove,
   onMouseLeave,
   calculateTooltipPosition,
-  t
+  t,
+  onPinnedChange
 }: BookmarkCardProps) {
+  const { token, isAuthenticated } = useApp()
+  const [pinnedState, setPinnedState] = useState<boolean | null>(null)
+  const [pinning, setPinning] = useState(false)
+
+  // 显示用的 pinned 值（本地状态优先回退到 props）
+  const isPinned = pinnedState !== null ? pinnedState : !!bookmark.pinned
+
+  const handleTogglePin = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!token || pinning) return
+
+    setPinning(true)
+    const next = !isPinned
+    try {
+      const res = await fetch(`/api/bookmarks/${bookmark.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pinned: next }),
+      })
+      if (res.ok) {
+        setPinnedState(next)
+        onPinnedChange?.(bookmark.id, next)
+      }
+    } catch {
+      // 忽略
+    } finally {
+      setPinning(false)
+    }
+  }
+
   return (
     <div
-      className="relative"
+      className="relative group"
       onMouseEnter={(e) => onMouseEnter(e, bookmark.id)}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
     >
+      {/* 置顶按钮：hover 显示，已置顶则常显 */}
+      {isAuthenticated && (
+        <button
+          onClick={handleTogglePin}
+          disabled={pinning}
+          title={isPinned ? '取消置顶' : '置顶到开始页'}
+          className={`absolute -top-2 -right-2 z-20 p-1.5 rounded-full transition-all ${
+            isPinned
+              ? 'bg-amber-400 hover:bg-amber-500 text-white shadow-md opacity-100'
+              : 'bg-white dark:bg-gray-700 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-gray-400 hover:text-amber-500 border border-gray-200 dark:border-gray-600 shadow opacity-0 group-hover:opacity-100'
+          } ${pinning ? 'animate-pulse' : ''}`}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 21l1.9-5.7a8.5 8.5 0 113.8 3.8L3 21z"
+            />
+          </svg>
+        </button>
+      )}
+
       <a
         href={bookmark.url}
         target="_blank"

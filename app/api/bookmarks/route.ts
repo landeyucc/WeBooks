@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     const folderPathParam = searchParams.get('folderPath')
     const folderIdsParam = searchParams.get('folderIds')
     const noFolder = searchParams.get('noFolder') === 'true'
+    const pinnedOnly = searchParams.get('pinned') === 'true'
     const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const allParam = searchParams.get('all')
@@ -99,6 +100,10 @@ export async function GET(request: NextRequest) {
       where.folderId = null
     }
 
+    if (pinnedOnly) {
+      where.pinned = true
+    }
+
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -107,8 +112,11 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // pinned 查询时优先按 pinnedOrder 排序
     const orderBy: Record<string, string> = {}
-    if (sortBy === 'title') {
+    if (pinnedOnly) {
+      orderBy['pinnedOrder'] = 'asc'
+    } else if (sortBy === 'title') {
       orderBy['title'] = sortOrder
     } else {
       orderBy['createdAt'] = sortOrder

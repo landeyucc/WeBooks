@@ -38,10 +38,22 @@ const EXPECTED_COLUMNS = [
   { name: "keywords", type: "TEXT", postgresType: "TEXT", required: false },
   { name: "default_theme", type: "TEXT", postgresType: "TEXT", required: false, default: "'light'" },
   { name: "default_theme_type", type: "TEXT", postgresType: "TEXT", required: false, default: "'skyblue'" },
+  { name: "start_page_bg_url", type: "TEXT", postgresType: "TEXT", required: false },
+  { name: "start_page_bg_type", type: "TEXT", postgresType: "TEXT", required: false, default: "'image'" },
+  { name: "start_page_bg_opacity", type: "REAL", postgresType: "DOUBLE PRECISION", required: false, default: "0.5" },
+  { name: "start_page_layout", type: "TEXT", postgresType: "TEXT", required: false, default: "'centered'" },
+  { name: "start_page_show_clock", type: "INTEGER", postgresType: "BOOLEAN", required: false, default: "0" },
+  { name: "start_page_show_lunar", type: "INTEGER", postgresType: "BOOLEAN", required: false, default: "0" },
   { name: "api_key", type: "TEXT", postgresType: "TEXT", required: false, unique: true },
   { name: "extension_api_key", type: "TEXT", postgresType: "TEXT", required: false, unique: true },
   { name: "created_at", type: "DATETIME", postgresType: "TIMESTAMP(3)", required: true, default: "CURRENT_TIMESTAMP" },
   { name: "updated_at", type: "DATETIME", postgresType: "TIMESTAMP(3)", required: true, default: "CURRENT_TIMESTAMP" }
+];
+
+// bookmarks 表新增的列
+const BOOKMARK_EXTRA_COLUMNS = [
+  { name: "pinned", type: "INTEGER", postgresType: "BOOLEAN", required: false, default: "0" },
+  { name: "pinned_order", type: "INTEGER", postgresType: "INTEGER", required: false, default: "0" }
 ];
 
 function log(message, level = "info") {
@@ -154,9 +166,15 @@ async function createTable(prisma, dbType) {
   log("system_configs 表创建成功", "success");
 }
 
-async function addMissingColumn(prisma, dbType, column) {
+async function addMissingColumn(prisma, dbType, column, tableName = "system_configs") {
   const colType = dbType === "postgresql" ? column.postgresType : column.type;
-  let sql = `ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS ${column.name} ${colType}`;
+  // SQLite (版本 < 3.35) 不支持 ADD COLUMN IF NOT EXISTS
+  let sql;
+  if (dbType === "sqlite") {
+    sql = `ALTER TABLE ${tableName} ADD COLUMN ${column.name} ${colType}`;
+  } else {
+    sql = `ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS ${column.name} ${colType}`;
+  }
 
   if (column.default) {
     sql += ` DEFAULT ${column.default}`;
@@ -179,6 +197,33 @@ async function addMissingColumn(prisma, dbType, column) {
     }
     log(`添加列 ${column.name} 失败: ${error.message}`, "warn");
     return false;
+  }
+}
+
+// 通用函数：确保指定表拥有指定的列（幂等）
+async function ensureTableColumns(prisma, dbType, tableName, columns) {
+  let existingColumns = [];
+  try {
+    if (dbType === "sqlite") {
+      const rows = await prisma.$queryRawUnsafe(`PRAGMA table_info(${tableName})`);
+      existingColumns = rows.map((r) => (r.name || r.Name || r.COLUMN_NAME || "").toLowerCase());
+    } else {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT column_name FROM information_schema.columns WHERE table_name = '${tableName}'`
+      );
+      existingColumns = rows.map((r) => (r.column_name || r.COLUMN_NAME || "").toLowerCase());
+    }
+  } catch (error) {
+    log(`无法获取 ${tableName} 表列信息: ${error.message}`, "warn");
+    return;
+  }
+
+  for (const column of columns) {
+    if (existingColumns.includes(column.name.toLowerCase())) {
+      log(`列 ${column.name} 已存在，跳过`, "info");
+      continue;
+    }
+    await addMissingColumn(prisma, dbType, column, tableName);
   }
 }
 
@@ -251,6 +296,15 @@ async function main() {
 
     log("=".repeat(60), "info");
     log("迁移检查完成", "success");
+
+    // ========== 迁移 bookmarks 表 ==========
+    log("=".repeat(60), "info");
+    log("检查 bookmarks 表新增列 (pinned, pinned_order)", "info");
+    try {
+      await ensureTableColumns(prisma, dbType, "bookmarks", BOOKMARK_EXTRA_COLUMNS);
+    } catch (error) {
+      log(`bookmarks 表迁移警告: ${error.message}`, "warn");
+    }
 
     await prisma.$disconnect();
   } catch (error) {

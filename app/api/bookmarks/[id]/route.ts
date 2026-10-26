@@ -28,7 +28,7 @@ export async function PUT(
     
     console.log('PUT bookmark - User ID:', userId)
 
-    const { title, url, description, iconUrl, folderId } = await request.json()
+    const { title, url, description, iconUrl, folderId, pinned, pinnedOrder } = await request.json()
 
     // 查找并验证书签所有权
     const existingBookmark = await prisma.bookmark.findUnique({
@@ -43,17 +43,21 @@ export async function PUT(
       )
     }
 
+    // 仅更新明确提供的字段，避免把未提供字段置 null
+    const updateData: Record<string, unknown> = {}
+    if (title !== undefined) updateData.title = title
+    if (url !== undefined) updateData.url = url
+    if (description !== undefined) updateData.description = description
+    if (iconUrl !== undefined) updateData.iconUrl = iconUrl
+    if (folderId !== undefined) updateData.folderId = folderId
+    if (pinned !== undefined) updateData.pinned = pinned
+    if (pinnedOrder !== undefined) updateData.pinnedOrder = pinnedOrder
+
     const bookmark = await prisma.bookmark.update({
       where: {
         id: params.id
       },
-      data: {
-        title,
-        url,
-        description,
-        iconUrl,
-        folderId
-      },
+      data: updateData,
       include: {
         folder: {
           select: {

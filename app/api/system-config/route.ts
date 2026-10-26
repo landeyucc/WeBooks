@@ -6,6 +6,16 @@ import { updateVersionKey } from '@/lib/version-manager'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
+function toBoolean(...vals: unknown[]): boolean | null {
+  for (const v of vals) {
+    if (v === undefined || v === null) continue
+    if (typeof v === 'boolean') return v
+    if (typeof v === 'number') return v !== 0
+    if (typeof v === 'string') return v === '1' || v.toLowerCase() === 'true'
+  }
+  return null
+}
+
 /**
  * 用 raw SQL 查询 system_config - 兼容数据库可能缺少某些列的情况
  * 返回一个安全的、只包含存在列的配置对象
@@ -42,6 +52,12 @@ async function safeGetSystemConfig(userId: string): Promise<Record<string, unkno
       keywords: getCol(['keywords', 'Keywords']),
       defaultTheme: getCol(['default_theme', 'defaultTheme', 'DefaultTheme']),
       defaultThemeType: getCol(['default_theme_type', 'defaultThemeType', 'DefaultThemeType']),
+      startPageBgUrl: getCol(['start_page_bg_url', 'startPageBgUrl']),
+      startPageBgType: getCol(['start_page_bg_type', 'startPageBgType']),
+      startPageBgOpacity: getCol(['start_page_bg_opacity', 'startPageBgOpacity']),
+      startPageLayout: getCol(['start_page_layout', 'startPageLayout']),
+      startPageShowClock: getCol(['start_page_show_clock', 'startPageShowClock']),
+      startPageShowLunar: getCol(['start_page_show_lunar', 'startPageShowLunar']),
       extensionApiKey: getCol(['extension_api_key', 'extensionApiKey', 'ExtensionApiKey']),
       apiKey: getCol(['api_key', 'apiKey', 'ApiKey']),
       createdAt: getCol(['created_at', 'createdAt', 'CreatedAt']),
@@ -149,6 +165,12 @@ export async function GET(request: NextRequest) {
       keywords: config?.keywords || null,
       defaultTheme: config?.defaultTheme || config?.default_theme || null,
       defaultThemeType: themeType,
+      startPageBgUrl: config?.startPageBgUrl || config?.start_page_bg_url || null,
+      startPageBgType: config?.startPageBgType || config?.start_page_bg_type || null,
+      startPageBgOpacity: config?.startPageBgOpacity != null ? config?.startPageBgOpacity : (config?.start_page_bg_opacity != null ? config?.start_page_bg_opacity : null),
+      startPageLayout: config?.startPageLayout || config?.start_page_layout || null,
+      startPageShowClock: toBoolean(config?.startPageShowClock, config?.start_page_show_clock),
+      startPageShowLunar: toBoolean(config?.startPageShowLunar, config?.start_page_show_lunar),
       createdAt: config?.createdAt || config?.created_at || null,
       updatedAt: config?.updatedAt || config?.updated_at || null
     })
@@ -172,7 +194,13 @@ export async function PUT(request: NextRequest) {
       seoDescription,
       keywords,
       defaultTheme,
-      defaultThemeType
+      defaultThemeType,
+      startPageBgUrl,
+      startPageBgType,
+      startPageBgOpacity,
+      startPageLayout,
+      startPageShowClock,
+      startPageShowLunar
     } = body
 
     // 先确保存在一个用户
@@ -213,6 +241,12 @@ export async function PUT(request: NextRequest) {
     if (keywords !== undefined) updateData.keywords = keywords
     if (defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
     if (defaultThemeType !== undefined) updateData.defaultThemeType = defaultThemeType
+    if (startPageBgUrl !== undefined) updateData.startPageBgUrl = startPageBgUrl
+    if (startPageBgType !== undefined) updateData.startPageBgType = startPageBgType
+    if (startPageBgOpacity !== undefined) updateData.startPageBgOpacity = startPageBgOpacity
+    if (startPageLayout !== undefined) updateData.startPageLayout = startPageLayout
+    if (startPageShowClock !== undefined) updateData.startPageShowClock = Boolean(startPageShowClock)
+    if (startPageShowLunar !== undefined) updateData.startPageShowLunar = Boolean(startPageShowLunar)
 
     // 检查现有记录（用安全方式）
     let existingConfig: Record<string, unknown> | null = null
@@ -296,7 +330,13 @@ export async function PUT(request: NextRequest) {
             ['seo_description', 'seoDescription', seoDescription],
             ['keywords', 'keywords', keywords],
             ['default_theme', 'defaultTheme', defaultTheme],
-            ['default_theme_type', 'defaultThemeType', defaultThemeType]
+            ['default_theme_type', 'defaultThemeType', defaultThemeType],
+            ['start_page_bg_url', 'startPageBgUrl', updateData['startPageBgUrl']],
+            ['start_page_bg_type', 'startPageBgType', updateData['startPageBgType']],
+            ['start_page_bg_opacity', 'startPageBgOpacity', updateData['startPageBgOpacity']],
+            ['start_page_layout', 'startPageLayout', updateData['startPageLayout']],
+            ['start_page_show_clock', 'startPageShowClock', updateData['startPageShowClock'] ? 1 : 0],
+            ['start_page_show_lunar', 'startPageShowLunar', updateData['startPageShowLunar'] ? 1 : 0],
           ]
 
           for (const [colName, , value] of safeUpdateFields) {
@@ -373,7 +413,13 @@ export async function PUT(request: NextRequest) {
               ['seo_description', seoDescription],
               ['keywords', keywords],
               ['default_theme', defaultTheme],
-              ['default_theme_type', defaultThemeType]
+              ['default_theme_type', defaultThemeType],
+              ['start_page_bg_url', updateData['startPageBgUrl']],
+              ['start_page_bg_type', updateData['startPageBgType']],
+              ['start_page_bg_opacity', updateData['startPageBgOpacity']],
+              ['start_page_layout', updateData['startPageLayout']],
+              ['start_page_show_clock', updateData['startPageShowClock'] ? 1 : 0],
+              ['start_page_show_lunar', updateData['startPageShowLunar'] ? 1 : 0],
             ]
 
             for (const [colName, value] of safeUpdateFields) {

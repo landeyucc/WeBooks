@@ -57,20 +57,12 @@ out
 .nuxt
 dist
 
-# Gatsby files
-.cache/
-public
-
-# Storybook build outputs
-.out
-.storybook-out
-
-# Rollup.js default build output
-dist/
-
-# Uncomment the public line in if your project uses Gatsby and not Next.js
-# https://nextjs.org/blog/next-9-1#public-directory-support
-# public
+# Environment variables（compose / Dockerfile 会显式 COPY 特定文件）
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vuepress build output
 .vuepress/dist
@@ -138,9 +130,8 @@ tests/
 coverage/
 .jest/
 
-# Scripts (except init scripts)
+# Scripts（保留启动链路需要的脚本：generate-prisma-schema / init-database / migrate-database）
 scripts/test-script/
-scripts/*.js
 
 # Logs
 logs
